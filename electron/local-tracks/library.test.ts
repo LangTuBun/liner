@@ -89,6 +89,30 @@ describe("LocalTrackLibrary", () => {
     expect(result.failed).toEqual(["song.mp3"]);
   });
 
+  it("updates a record and gives it a cover when it has none", async () => {
+    const library = new LocalTrackLibrary(root);
+    const { added } = await library.importFiles([
+      await source("Artist - Song.wav", "wav"),
+    ]);
+    const [record] = added;
+
+    const updated = await library.update(
+      record.id,
+      { source: "soulseek", matchKey: "artist\u0000song", hiRes: null },
+      { data: Buffer.from("png"), extension: "png" },
+    );
+
+    expect(updated).toMatchObject({
+      source: "soulseek",
+      coverFile: `${record.id}.png`,
+    });
+    expect((await library.list())[0].matchKey).toBe("artist\u0000song");
+    await expect(
+      fs.readFile(path.join(root, "covers", `${record.id}.png`), "utf8"),
+    ).resolves.toBe("png");
+    expect(await library.update("missing", { hiRes: "hires" })).toBeNull();
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

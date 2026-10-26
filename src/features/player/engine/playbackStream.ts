@@ -7,11 +7,16 @@ import type { ResolvedSoundCloudStream } from "@/shared/media/soundcloud";
 import type { LinerAudioStream } from "@/shared/media/liner/linerPlayback";
 import type { Track } from "@/shared/types";
 
+export type PlaybackOrigin =
+  "youtube" | "youtube-tv" | "soundcloud" | "liner" | "local";
+
 interface PlaybackStreamFormat {
   mimeType: string;
   codec: string;
   bitrate: number;
   contentLength?: number;
+  origin?: PlaybackOrigin;
+  itag?: number;
 }
 
 export interface UrlPlaybackStream extends PlaybackStreamFormat {
@@ -36,6 +41,17 @@ export interface BufferedPlaybackStream extends PlaybackStreamFormat {
 
 export type PlaybackStream = UrlPlaybackStream | BufferedPlaybackStream;
 
+// what is attached to the audio element right now, for the audio quality monitor
+export interface AttachedSourceInfo {
+  trackId: string;
+  origin: PlaybackOrigin | "cache";
+  mimeType: string;
+  codec: string;
+  bitrate: number;
+  contentLength?: number;
+  itag?: number;
+}
+
 export type PlayableTrack = Pick<
   Track,
   "id" | "title" | "artists" | "durationMs" | "artistList" | "audioVariant"
@@ -55,6 +71,8 @@ export function fromInnertubeStream(
     mimeType: direct.mimeType,
     codec: direct.codec,
     bitrate: direct.bitrate,
+    origin: "youtube",
+    itag: direct.itag,
     expiresAtMs: toTimestamp(direct.expiresAt),
     ...(direct.contentLength ? { contentLength: direct.contentLength } : {}),
   };
@@ -66,6 +84,7 @@ export function fromTvStream(stream: TvAudioStream): PlaybackStream {
     mimeType: stream.mimeType,
     codec: stream.codec,
     bitrate: stream.bitrate,
+    origin: "youtube-tv",
     contentLength: stream.contentLength,
     expiresAtMs: null,
   };
@@ -79,6 +98,7 @@ export function fromTvProgressiveStream(
     mimeType: stream.mimeType,
     codec: stream.codec,
     bitrate: stream.bitrate,
+    origin: "youtube-tv",
     expiresAtMs: null,
     completed: stream.completed,
     needsFullSource: stream.needsFullSource,
@@ -94,6 +114,7 @@ export function fromSoundCloudStream(
     mimeType: stream.mimeType,
     codec: stream.codec,
     bitrate: stream.bitrate,
+    origin: "soundcloud" as const,
   };
   if (stream.blob) {
     return {
@@ -120,6 +141,7 @@ export function fromLinerStream(
     url: stream.url,
     mimeType: stream.mimeType,
     codec: stream.codec ?? "opus",
+    origin: "liner",
     fromLiner: true,
     bitrate: seconds > 0 ? Math.round((stream.size * 8) / seconds) : 0,
     expiresAtMs: toTimestamp(stream.expiresAt),

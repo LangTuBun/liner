@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/languages";
 import { usePlayerStore } from "@/features/player";
-import { ToggleSwitch } from "@/shared/ui";
+import { Button, ToggleSwitch } from "@/shared/ui";
+import { useAudioQualityStore } from "@/features/audio-quality";
+import { useLosslessStore } from "@/features/lossless";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
@@ -109,6 +111,44 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
           )
         }
       />
+
+      <SettingRow
+        title={t("settings.audio_quality.title")}
+        description={t("settings.audio_quality.description")}
+        explained
+        titleKey="settings.audio_quality.title"
+        descKey="settings.audio_quality.description"
+        searchQuery={searchQuery}
+        control={
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => useAudioQualityStore.getState().setOpen(true)}
+          >
+            {t("settings.audio_quality.open")}
+          </Button>
+        }
+      />
+
+      {window.linerElectron ? (
+        <SettingRow
+          title={t("settings.lossless.title")}
+          description={t("settings.lossless.description")}
+          explained
+          titleKey="settings.lossless.title"
+          descKey="settings.lossless.description"
+          searchQuery={searchQuery}
+          control={
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => useLosslessStore.getState().setDialogOpen(true)}
+            >
+              {t("settings.lossless.manage")}
+            </Button>
+          }
+        />
+      ) : null}
 
       <SettingRow
         title={t("settings.audio.pause_on_device_change.title")}

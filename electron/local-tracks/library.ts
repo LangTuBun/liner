@@ -1,7 +1,11 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { importLocalFile } from "./importer.js";
-import type { LocalImportResult, LocalTrackRecord } from "./types.js";
+import type {
+  LocalImportResult,
+  LocalTrackPatch,
+  LocalTrackRecord,
+} from "./types.js";
 
 const ID_PATTERN = /^[a-f0-9]{20}$/;
 
@@ -78,6 +82,29 @@ export class LocalTrackLibrary {
       }
       if (result.added.length > 0) await this.save(records);
       return result;
+    });
+  }
+
+  update(
+    id: string,
+    patch: LocalTrackPatch,
+    cover?: { data: Uint8Array; extension: string },
+  ): Promise<LocalTrackRecord | null> {
+    return this.serialized(async () => {
+      const records = await this.load();
+      const index = records.findIndex((record) => record.id === id);
+      if (index < 0) return null;
+      const next = { ...records[index], ...patch };
+      if (cover && !next.coverFile) {
+        const coverFile = `${id}.${cover.extension}`;
+        await fsp.mkdir(this.filePath("covers"), { recursive: true });
+        await fsp.writeFile(this.filePath("covers", coverFile), cover.data);
+        next.coverFile = coverFile;
+      }
+      await this.save(
+        records.map((record, i) => (i === index ? next : record)),
+      );
+      return next;
     });
   }
 

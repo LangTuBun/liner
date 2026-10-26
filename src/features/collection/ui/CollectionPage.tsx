@@ -53,6 +53,7 @@ import {
   TrackSearchEmpty,
 } from "@/features/library/ui/TrackSearch";
 import { useTrackSort, TrackSortMenu } from "@/features/library/ui/TrackSort";
+import { losslessBatchMenuItem } from "@/features/lossless";
 
 const NO_TRACKS: Track[] = [];
 
@@ -72,6 +73,11 @@ function CollectionContent() {
     return data.tracks.every((track) => track.artists === first);
   }, [type, data]);
   const entityType = type === "playlist" ? "playlist" : "album";
+  const losslessItem = losslessBatchMenuItem(
+    data?.tracks ?? [],
+    data?.title ?? "",
+    t(type === "playlist" ? "lossless.menu.playlist" : "lossless.menu.album"),
+  );
   const decodedId = id ? decodeURIComponent(id) : "";
   const isDailyMix = Boolean(
     data?.isDailyMix ||
@@ -466,7 +472,7 @@ function CollectionContent() {
                         sort={sort}
                         disabled={!data || data.tracks.length < 2}
                       />
-                      {!isDailyMix && (
+                      {(!isDailyMix || losslessItem) && (
                         <DropdownMenu
                           trigger={
                             <Button
@@ -478,6 +484,9 @@ function CollectionContent() {
                             </Button>
                           }
                           items={[
+                            ...(isDailyMix
+                              ? []
+                              : [
                             {
                               id: "library",
                               icon: inLibrary ? (
@@ -490,12 +499,18 @@ function CollectionContent() {
                                 : t("common.save_to_library"),
                               onClick: handleSaveToLibrary,
                             },
+                                ]),
+                            ...(losslessItem ? [losslessItem] : []),
+                            ...(isDailyMix
+                              ? []
+                              : [
                             {
                               id: "share",
                               icon: <ShareForwardLine size={16} />,
                               label: t("common.share"),
                               onClick: handleShare,
                             },
+                                ]),
                           ]}
                         />
                       )}

@@ -6,6 +6,7 @@ import {
   toVolumeLevel,
 } from "@/features/player";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
+import { useAudioQualityStore } from "@/features/audio-quality";
 import {
   isBlockingOverlayOpen,
   isKeyHandledByFocusedControl,
@@ -128,6 +129,12 @@ export function useGlobalShortcuts(options: GlobalShortcutsOptions): void {
             opts.openFullscreen();
           }
         }
+        return;
+      }
+
+      if (matchesShortcut(event, mainApp.audioQuality)) {
+        event.preventDefault();
+        useAudioQualityStore.getState().toggle();
         return;
       }
 

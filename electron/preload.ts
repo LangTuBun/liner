@@ -8,6 +8,14 @@ import type { TvSession as YoutubeTvSession } from "./youtube/tv-session";
 import type { SolveResult as YoutubeSolveResult } from "./youtube/n-solver";
 import type { MainNetResult } from "./netdiag";
 import type { LocalImportResult, LocalTrackRecord } from "./local-tracks/types";
+import type { LocalAudioFormat } from "./local-tracks/metadata";
+import type { OutputEndpoints } from "./audio-quality/endpoints";
+import type {
+  LosslessBatchSummary,
+  LosslessDownloadRequest,
+  LosslessJob,
+  LosslessSnapshot,
+} from "./lossless/types";
 
 export interface DiscordStatus {
   connected: boolean;
@@ -197,6 +205,29 @@ export interface LinerElectronApi {
   localTracksImport: (paths: string[]) => Promise<LocalImportResult>;
   localTracksPick: () => Promise<LocalImportResult | null>;
   localTracksRemove: (ids: string[]) => Promise<void>;
+  localTracksProbe: (id: string) => Promise<LocalAudioFormat | null>;
+  audioOutputEndpoints: () => Promise<OutputEndpoints>;
+  losslessSnapshot: () => Promise<LosslessSnapshot>;
+  losslessInstall: () => Promise<LosslessSnapshot>;
+  losslessSetAccount: (
+    username: string,
+    password: string,
+  ) => Promise<LosslessSnapshot>;
+  losslessClearAccount: () => Promise<LosslessSnapshot>;
+  losslessDownload: (
+    track: LosslessDownloadRequest,
+    preferHiRes: boolean,
+  ) => Promise<LosslessJob>;
+  losslessDownloadBatch: (
+    tracks: LosslessDownloadRequest[],
+    name: string,
+    preferHiRes: boolean,
+  ) => Promise<LosslessBatchSummary>;
+  losslessCancel: (id: string) => Promise<void>;
+  losslessClearFinished: () => Promise<void>;
+  losslessSetHiRes: (localId: string, verdict: string) => Promise<void>;
+  losslessAnalysisSlice: (localId: string) => Promise<Uint8Array>;
+  onLosslessChanged: (cb: (snapshot: LosslessSnapshot) => void) => () => void;
   pathForFile: (file: File) => string;
 }
 
@@ -450,6 +481,31 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("local-tracks:import", paths),
   localTracksPick: () => ipcRenderer.invoke("local-tracks:pick"),
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
+  localTracksProbe: (id) => ipcRenderer.invoke("local-tracks:probe", id),
+  audioOutputEndpoints: () => ipcRenderer.invoke("audio-quality:endpoints"),
+  losslessSnapshot: () => ipcRenderer.invoke("lossless:snapshot"),
+  losslessInstall: () => ipcRenderer.invoke("lossless:install"),
+  losslessSetAccount: (username, password) =>
+    ipcRenderer.invoke("lossless:account", username, password),
+  losslessClearAccount: () => ipcRenderer.invoke("lossless:account-clear"),
+  losslessDownload: (track, preferHiRes) =>
+    ipcRenderer.invoke("lossless:download", track, preferHiRes),
+  losslessDownloadBatch: (tracks, name, preferHiRes) =>
+    ipcRenderer.invoke("lossless:download-batch", tracks, name, preferHiRes),
+  losslessCancel: (id) => ipcRenderer.invoke("lossless:cancel", id),
+  losslessClearFinished: () => ipcRenderer.invoke("lossless:clear-finished"),
+  losslessSetHiRes: (localId, verdict) =>
+    ipcRenderer.invoke("lossless:set-hires", localId, verdict),
+  losslessAnalysisSlice: (localId) =>
+    ipcRenderer.invoke("lossless:analysis-slice", localId),
+  onLosslessChanged: (cb) => {
+    const listener = (_event: unknown, snapshot: LosslessSnapshot) =>
+      cb(snapshot);
+    ipcRenderer.on("lossless:changed", listener);
+    return () => {
+      ipcRenderer.removeListener("lossless:changed", listener);
+    };
+  },
   pathForFile: (file) => webUtils.getPathForFile(file),
 };
 

@@ -7,6 +7,8 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
+import { AudioQualityDialog } from "@/features/audio-quality";
+import { LosslessBridge, LosslessDialog } from "@/features/lossless";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -1066,6 +1068,9 @@ export default function AppFrame({ children }: AppFrameProps) {
       <ImportReviewModal />
       <LocalDropZone />
       <SettingsModal />
+      <AudioQualityDialog />
+      <LosslessDialog />
+      <LosslessBridge />
       <UpdateModal />
       <YoutubeSignInNotice />
       <UpdateToastBridge />

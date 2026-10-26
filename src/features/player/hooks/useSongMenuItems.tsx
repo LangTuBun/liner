@@ -8,7 +8,7 @@ import {
   LuTrash2,
   LuFolderPlus,
 } from "react-icons/lu";
-import { ShareForwardLine } from "@mingcute/react";
+import { DownloadLine, ShareForwardLine } from "@mingcute/react";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { playerEngine } from "../engine/playerEngine";
 import {
@@ -22,6 +22,7 @@ import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
 import { buildShareUrl } from "@/shared/utils/share";
 import { isLocalTrackId } from "@/shared/media/local";
+import { useLosslessStore } from "@/features/lossless";
 
 const CLOUD_ONLY_ITEMS = new Set([
   "start-radio",
@@ -30,6 +31,7 @@ const CLOUD_ONLY_ITEMS = new Set([
   "add-to-playlist",
   "remove-from-playlist",
   "share",
+  "download-lossless",
 ]);
 
 export interface SongMenuContext {
@@ -97,6 +99,25 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
 
   const buildMenu = useCallback((): DropdownMenuItem[] => {
     const isTrack = searchType === "track" || !searchType;
+    // desktop only: soulseek runs in the electron main process
+    const losslessItems: DropdownMenuItem[] =
+      id && typeof window !== "undefined" && window.linerElectron
+        ? [
+            {
+              id: "download-lossless",
+              label: t("lossless.menu.track"),
+              icon: <DownloadLine size={15} />,
+              onClick: () => {
+                void useLosslessStore.getState().download({
+                  title,
+                  artist: artists,
+                  durationMs,
+                  thumbnail: coverUrl,
+                });
+              },
+            },
+          ]
+        : [];
 
     if (isTrack) {
       if (playlistId) {
@@ -165,6 +186,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             ),
             onClick: handleLike,
           },
+          ...losslessItems,
           {
             id: "share",
             label: t("common.share"),
@@ -273,6 +295,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
             });
           },
         },
+        ...losslessItems,
         {
           id: "share",
           label: t("common.share"),

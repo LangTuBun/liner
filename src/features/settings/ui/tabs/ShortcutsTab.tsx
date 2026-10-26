@@ -19,6 +19,7 @@ import {
   FastForwardLine,
   FastRewindLine,
   ExternalLinkLine,
+  VoiceLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { Dialog, Button, Tooltip, useToast } from "@/shared/ui";
@@ -169,6 +170,10 @@ export function ShortcutsTab({
       desc:
         t("settings.shortcuts.toggle_queue_desc") ||
         "Open or close the playback queue panel.",
+    },
+    audioQuality: {
+      title: t("settings.shortcuts.audio_quality"),
+      desc: t("settings.shortcuts.audio_quality_desc"),
     },
     toggleFullscreen: {
       title:
@@ -451,6 +456,18 @@ export function ShortcutsTab({
         onChange: (val) => setMainAppShortcut("toggleFullscreen", val),
         onReset: () => resetShortcut("mainApp", "toggleFullscreen"),
         validateCandidate: validateMainAppCandidate("toggleFullscreen"),
+      },
+      {
+        id: "mainApp-audioQuality",
+        scope: "mainApp",
+        title: mainAppLabels.audioQuality.title,
+        desc: mainAppLabels.audioQuality.desc,
+        icon: VoiceLine,
+        value: mainApp.audioQuality,
+        defaultValue: DEFAULT_SHORTCUTS.mainApp.audioQuality,
+        onChange: (val) => setMainAppShortcut("audioQuality", val),
+        onReset: () => resetShortcut("mainApp", "audioQuality"),
+        validateCandidate: validateMainAppCandidate("audioQuality"),
       },
 
       // Miniplayer Actions

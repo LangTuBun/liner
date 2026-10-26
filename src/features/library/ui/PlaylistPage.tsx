@@ -62,6 +62,7 @@ import {
   TrackSearchEmpty,
 } from "./TrackSearch";
 import { useTrackSort, TrackSortMenu } from "./TrackSort";
+import { losslessBatchMenuItem } from "@/features/lossless";
 
 interface TrackItemProps {
   track: Track;
@@ -224,6 +225,11 @@ function LibraryPlaylistContent() {
   const currentTracks = useMemo(() => {
     return optimisticTracks ?? viewData?.tracks ?? [];
   }, [optimisticTracks, viewData?.tracks]);
+  const losslessItem = losslessBatchMenuItem(
+    currentTracks,
+    viewData?.title ?? "",
+    t("lossless.menu.playlist"),
+  );
 
   const sort = useTrackSort(currentTracks, id);
   const sortedTracks = sort.sorted;
@@ -722,7 +728,7 @@ function LibraryPlaylistContent() {
                         sort={sort}
                         disabled={currentTracks.length < 2}
                       />
-                      {!isLikesMode && (
+                      {(!isLikesMode || losslessItem) && (
                         <DropdownMenu
                           trigger={
                             <Button
@@ -734,6 +740,9 @@ function LibraryPlaylistContent() {
                             </Button>
                           }
                           items={[
+                            ...(isLikesMode
+                              ? []
+                              : [
                             {
                               id: "rename",
                               icon: <LuPencil size={15} />,
@@ -746,6 +755,11 @@ function LibraryPlaylistContent() {
                               label: t("common.edit_description"),
                               onClick: () => setIsEditingDescription(true),
                             },
+                                ]),
+                            ...(losslessItem ? [losslessItem] : []),
+                            ...(isLikesMode
+                              ? []
+                              : [
                             {
                               id: "share",
                               icon: <ShareForwardLine size={15} />,
@@ -768,6 +782,7 @@ function LibraryPlaylistContent() {
                                 });
                               },
                             },
+                                ]),
                           ]}
                         />
                       )}

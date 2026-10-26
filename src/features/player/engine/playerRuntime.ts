@@ -10,6 +10,7 @@ import { isLocalTrackId } from "@/shared/media/local";
 import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
+import type { AttachedSourceInfo } from "./playbackStream";
 import {
   downloadAudioBytes,
   isBotCheckError,
@@ -42,6 +43,7 @@ export class PlayerRuntime {
   private attachedTrackId: string | null = null;
   // the attached source is a presigned r2 url (not a blob, not youtube)
   private attachedFromLiner = false;
+  private attachedSource: AttachedSourceInfo | null = null;
   private preloadingTrackId: string | null = null;
   private preloadingPromise: Promise<void> | null = null;
   private preloadAbortController: AbortController | null = null;
@@ -622,6 +624,7 @@ export class PlayerRuntime {
       this.audio.removeAttribute("src");
       this.audio.load();
       this.attachedTrackId = null;
+      this.attachedSource = null;
     } catch {
     } finally {
       this.isResetting = false;
@@ -650,6 +653,13 @@ export class PlayerRuntime {
     this.attachedTrackId = trackId;
     this.attachedFromLiner = false;
     if (previousBlob && previousBlob !== url) URL.revokeObjectURL(previousBlob);
+  }
+
+  public getAttachedSource(): AttachedSourceInfo | null {
+    return this.attachedSource &&
+      this.attachedSource.trackId === this.attachedTrackId
+      ? this.attachedSource
+      : null;
   }
 
   public cancelPendingLoad(): void {
@@ -817,6 +827,14 @@ export class PlayerRuntime {
         void linerDb.putTrack(track);
         const blobUrl = URL.createObjectURL(cachedAudio.blob);
         this.attachSource(blobUrl, true, track.id);
+        this.attachedSource = {
+          trackId: track.id,
+          origin: "cache",
+          mimeType: cachedAudio.blob.type,
+          codec: "",
+          bitrate: 0,
+          contentLength: cachedAudio.blob.size,
+        };
         this.audio.volume = 0;
         this.audio.load();
         this.applyPlaybackRateAndPitch();
@@ -891,6 +909,15 @@ export class PlayerRuntime {
       const url = stream.blob ? URL.createObjectURL(stream.blob) : stream.url;
       this.attachSource(url, Boolean(stream.blob), track.id);
       this.attachedFromLiner = Boolean(stream.fromLiner);
+      this.attachedSource = {
+        trackId: track.id,
+        origin: stream.origin ?? "youtube",
+        mimeType: stream.mimeType,
+        codec: stream.codec,
+        bitrate: stream.bitrate,
+        contentLength: stream.contentLength,
+        itag: stream.itag,
+      };
       this.releaseActiveStream = stream.release ?? null;
       this.watchFullSource(track.id, stream);
       this.audio.volume = 0;

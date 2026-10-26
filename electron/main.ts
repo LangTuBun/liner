@@ -74,6 +74,8 @@ import {
 import { DiscordRpcManager } from "./discord.js";
 import { PoTokenService } from "./youtube/potoken.js";
 import { setupLocalTracks } from "./local-tracks/ipc.js";
+import { setupAudioQuality } from "./audio-quality/ipc.js";
+import { setupLossless } from "./lossless/ipc.js";
 import { registerLocalTrackScheme } from "./local-tracks/protocol.js";
 import { attachZoomControls } from "./zoom.js";
 import {
@@ -169,8 +171,15 @@ function unmaximizeWindow() {
 
 // single owner of "the app is going away": releases the overlay, shortcuts,
 // helper processes and every window, then quits and force-exits if that stalls
+let lossless: { stop: () => void } | null = null;
+
 const shutdown = createShutdown({
   cleanup: [
+    () => {
+      // the sockseek daemon is a separate process and holds the soulseek login
+      lossless?.stop();
+      lossless = null;
+    },
     () => touchBarManager?.unregisterShortcut(),
     () => overlayManager?.dispose(),
     () => {
@@ -524,7 +533,9 @@ if (!gotTheLock) {
     } else {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
-    setupLocalTracks();
+    const localLibrary = setupLocalTracks();
+    setupAudioQuality();
+    lossless = setupLossless(localLibrary);
     touchBarManager = new TouchBarManager(
       path.join(__dirname, "preload.cjs"),
       RENDERER_DIST,

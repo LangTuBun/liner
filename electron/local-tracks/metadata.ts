@@ -83,3 +83,41 @@ export async function readLocalTrackTags(
     return { ...fallback, durationMs: 0, mimeType };
   }
 }
+
+export interface LocalAudioFormat {
+  container: string;
+  codec: string;
+  codecProfile: string;
+  lossless: boolean;
+  sampleRate: number | null;
+  bitDepth: number | null;
+  channels: number | null;
+  bitrate: number | null;
+  durationSec: number | null;
+}
+
+const positive = (value: number | undefined) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+
+export async function probeLocalAudio(
+  filePath: string,
+): Promise<LocalAudioFormat> {
+  const { format } = await parseFile(filePath, {
+    duration: true,
+    skipCovers: true,
+  });
+  const lossless = Boolean(format.lossless);
+  return {
+    container: format.container ?? "",
+    codec: format.codec ?? "",
+    codecProfile: format.codecProfile ?? "",
+    lossless,
+    sampleRate: positive(format.sampleRate),
+    bitDepth: lossless ? positive(format.bitsPerSample) : null,
+    channels: positive(format.numberOfChannels),
+    bitrate: positive(format.bitrate),
+    durationSec: positive(format.duration),
+  };
+}

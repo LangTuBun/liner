@@ -235,11 +235,28 @@ export interface AudioEffectsParams {
   eqGains?: number[];
 }
 
+export interface QualityMonitorTaps {
+  context: AudioContext;
+  // the decoded source before any effect, at the context rate
+  source: AnalyserNode;
+  // what leaves the graph for the speakers, after pitch, reverb and eq
+  left: AnalyserNode;
+  right: AnalyserNode;
+}
+
+interface QualityMonitorNodes extends QualityMonitorTaps {
+  upmix: GainNode;
+  splitter: ChannelSplitterNode;
+}
+
 export class PitchShifterController {
   private context: AudioContext | null = null;
   private sourceNode: MediaElementAudioSourceNode | null = null;
   private graph: AudioEffectsGraph | null = null;
   private isConnected = false;
+  private monitor: QualityMonitorNodes | null = null;
+  private monitorGraph: AudioEffectsGraph | null = null;
+  private monitorWanted = false;
 
   public attach(audio: HTMLAudioElement): void {
     if (typeof window === "undefined") return;
@@ -442,10 +459,76 @@ export class PitchShifterController {
       this.sourceNode = graph.sourceNode;
       this.graph = graph;
       this.isConnected = true;
+      // a rebuild disconnects the source node, which drops the monitor taps
+      if (this.monitorWanted) this.connectMonitor();
     } catch (err) {
       console.error("[AudioEffects] Failed to attach to audio element:", err);
       this.isConnected = false;
     }
+  }
+
+  public attachQualityMonitor(): QualityMonitorTaps | null {
+    this.monitorWanted = true;
+    if (!this.isConnected) {
+      const win = window as any;
+      const audio = win.__liner_audio || document.getElementById("liner-audio");
+      if (audio) this.attach(audio);
+    }
+    return this.connectMonitor();
+  }
+
+  public detachQualityMonitor(): void {
+    this.monitorWanted = false;
+    this.disconnectMonitor();
+  }
+
+  private connectMonitor(): QualityMonitorTaps | null {
+    const graph = this.graph;
+    if (!graph) return null;
+    if (!this.monitor || this.monitor.context !== graph.ctx) {
+      const ctx = graph.ctx;
+      const source = ctx.createAnalyser();
+      source.fftSize = 16384;
+      source.smoothingTimeConstant = 0;
+      source.minDecibels = -140;
+      source.maxDecibels = 0;
+      // fold mono sources to two channels so both meters read
+      const upmix = ctx.createGain();
+      upmix.channelCount = 2;
+      upmix.channelCountMode = "explicit";
+      upmix.channelInterpretation = "speakers";
+      const splitter = ctx.createChannelSplitter(2);
+      const left = ctx.createAnalyser();
+      const right = ctx.createAnalyser();
+      left.fftSize = 4096;
+      right.fftSize = 4096;
+      upmix.connect(splitter);
+      splitter.connect(left, 0);
+      splitter.connect(right, 1);
+      this.monitor = { context: ctx, source, upmix, splitter, left, right };
+      this.monitorGraph = null;
+    }
+    if (this.monitorGraph !== graph) {
+      this.disconnectMonitor();
+      graph.sourceNode.connect(this.monitor.source);
+      graph.eqFilters[graph.eqFilters.length - 1].connect(this.monitor.upmix);
+      this.monitorGraph = graph;
+    }
+    const { context, source, left, right } = this.monitor;
+    return { context, source, left, right };
+  }
+
+  private disconnectMonitor(): void {
+    const graph = this.monitorGraph;
+    const monitor = this.monitor;
+    this.monitorGraph = null;
+    if (!graph || !monitor) return;
+    try {
+      graph.sourceNode.disconnect(monitor.source);
+    } catch {}
+    try {
+      graph.eqFilters[graph.eqFilters.length - 1].disconnect(monitor.upmix);
+    } catch {}
   }
 
   public isAttached(): boolean {

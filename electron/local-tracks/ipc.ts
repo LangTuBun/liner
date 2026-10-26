@@ -1,6 +1,7 @@
 import path from "node:path";
 import { BrowserWindow, app, dialog, ipcMain } from "electron";
 import { LocalTrackLibrary } from "./library.js";
+import { probeLocalAudio } from "./metadata.js";
 import { handleLocalTrackScheme } from "./protocol.js";
 import { LOCAL_AUDIO_EXTENSIONS } from "./types.js";
 
@@ -39,4 +40,10 @@ export function setupLocalTracks() {
   ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>
     library.remove(stringList(ids)),
   );
+  ipcMain.handle("local-tracks:probe", async (_event, id: unknown) => {
+    const found =
+      typeof id === "string" ? await library.locate("audio", id) : null;
+    return found ? probeLocalAudio(found.path).catch(() => null) : null;
+  });
+  return library;
 }

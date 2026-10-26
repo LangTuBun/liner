@@ -32,6 +32,7 @@ export interface ResolveStreamOptions {
 
 export type {
   BufferedPlaybackStream,
+  PlaybackOrigin,
   PlayableTrack,
   PlaybackStream,
   UrlPlaybackStream,
@@ -146,6 +147,7 @@ export async function resolvePlaybackStream(
       mimeType: "",
       codec: "local",
       bitrate: 0,
+      origin: "local",
     };
   if (toSoundCloudTrackId(track.id))
     return resolveSoundCloud(track, progressive, signal);

@@ -608,7 +608,9 @@
       "scope_global": "Global",
       "scope_main_app": "Main App",
       "scope_overlay": "Overlay",
-      "reset_section": "Reset section"
+      "reset_section": "Reset section",
+      "audio_quality": "Audio quality",
+      "audio_quality_desc": "Open or close the audio quality monitor."
     },
     "overlay": {
       "description": "Desktop overlay behavior, global shortcut and position settings.",
@@ -943,6 +945,16 @@
       "title": "Cover glow",
       "description": "Blurred artwork glow behind pages. Turn off to keep a plain background.",
       "disabled_for_light": "Off in light theme."
+    },
+    "audio_quality": {
+      "title": "Audio quality monitor",
+      "description": "See the format of the playing track, what Liner does to it and what reaches your output device.",
+      "open": "Open"
+    },
+    "lossless": {
+      "title": "Lossless downloads",
+      "description": "Find FLAC copies of songs on Soulseek and keep them on this device.",
+      "manage": "Manage"
     }
   },
   "toast": {
@@ -1105,5 +1117,149 @@
     "copy_code": "Copy code",
     "connected": "YouTube connected",
     "qr_label": "Sign-in QR code"
+  },
+  "audio_quality": {
+    "title": "Audio quality",
+    "nothing_playing": "Nothing playing",
+    "probing": "Reading format",
+    "lossless": "Lossless",
+    "lossy": "Lossy",
+    "none": "None",
+    "source": "Source",
+    "engine": "Liner engine",
+    "output": "Output device",
+    "codec": "Codec",
+    "bit_depth": "Bit depth",
+    "lossy_depth": "n/a, decoded to float",
+    "bitrate": "Bitrate",
+    "channels": "Channels",
+    "from": "From",
+    "origin": {
+      "youtube": "YouTube",
+      "youtube-tv": "YouTube (TV client)",
+      "soundcloud": "SoundCloud",
+      "liner": "Liner servers",
+      "local": "File on this device",
+      "cache": "Offline cache"
+    },
+    "engine_sub": "Web Audio graph",
+    "engine_idle": "Starts with playback",
+    "resampling": "Resampling",
+    "speed": "Speed",
+    "speed_resampled": "resampled, pitch moves",
+    "speed_stretched": "time-stretched",
+    "latency": "Latency",
+    "buffered": "Buffered ahead",
+    "state": "State",
+    "ctx": {
+      "running": "Running",
+      "suspended": "Suspended",
+      "closed": "Closed",
+      "interrupted": "Interrupted"
+    },
+    "float_bits": "{bits}-bit float",
+    "int_bits": "{bits}-bit",
+    "int_bits_in": "{bits}-bit in {container}",
+    "device_resamples": "Windows resamples {from} to {to}",
+    "device_format_note": "Default format in Windows sound settings",
+    "device_unsupported": "Device format is not exposed on this system",
+    "device_unknown": "Device format not found",
+    "device": "Device",
+    "system_default": "System default",
+    "mixer": "Mixer",
+    "mixer_wasapi": "WASAPI shared, float32",
+    "mixer_os": "System mixer",
+    "processing": "Processing in the path",
+    "chip": {
+      "clean": "Nothing changes the signal",
+      "volume": "Volume {db} dB",
+      "eq": "Equalizer",
+      "preamp": "EQ preamp {db} dB",
+      "pitch": "Pitch {semitones} st",
+      "reverb": "Reverb {level}%",
+      "speed": "Speed {rate}×",
+      "resampler": "Resampler {from} to {to}",
+      "windows_resampler": "Windows resampler {from} to {to}"
+    },
+    "live": "Live signal",
+    "peak_hold": "Peak",
+    "clips_one": "{count} clipped frame",
+    "clips_other": "{count} clipped frames",
+    "paused": "Meters run while music plays",
+    "measuring": "Measuring bandwidth",
+    "bandwidth": "Content up to about {khz} kHz · {verdict}",
+    "verdict": {
+      "full": "full band",
+      "wide": "wide band",
+      "high_lossy": "cut near 20 kHz, typical of high bitrate lossy",
+      "lossy": "low-pass typical of lossy encoding",
+      "low_lossy": "low-pass of a low bitrate lossy file"
+    }
+  },
+  "lossless": {
+    "title": "Lossless downloads",
+    "description": "Liner searches Soulseek for a FLAC or WAV copy of a song and adds it to On this device.",
+    "downloader": "Downloader",
+    "install": {
+      "needed": "Downloads need sockseek, an open-source Soulseek client. It comes from GitHub and is checked before it runs.",
+      "button": "Install",
+      "downloading": "Downloading sockseek · {percent}%",
+      "ready": "sockseek {version} is installed",
+      "error": "Install failed: {error}",
+      "unsupported": "sockseek has no build for this system"
+    },
+    "account": {
+      "title": "Soulseek account",
+      "hint": "Any username and password work. New names are registered on first sign-in. The password is encrypted on this device.",
+      "username": "Username",
+      "password": "Password",
+      "save": "Save",
+      "signed_in": "Signed in as {name}",
+      "sign_out": "Sign out",
+      "no_secure_storage": "This system has no secure storage, so Liner cannot keep a Soulseek password.",
+      "mock": "Test mode: files come from a local folder"
+    },
+    "prefer_hires": {
+      "title": "Prefer hi-res",
+      "description": "Rank 24-bit files at 88.2 kHz and above first. Hi-res files are checked for upsampled copies."
+    },
+    "downloads_one": "{count} download",
+    "downloads_other": "{count} downloads",
+    "clear_finished": "Clear finished",
+    "empty": "Use Download lossless in a song, album or playlist menu.",
+    "legal": "Soulseek is peer-to-peer file sharing. Only download music you have the right to keep.",
+    "state": {
+      "starting": "Starting",
+      "searching": "Searching Soulseek",
+      "downloading": "Downloading · {percent}%",
+      "importing": "Adding to this device",
+      "done": "Saved",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "skipped": "Skipped"
+    },
+    "hires": {
+      "verified": "real hi-res",
+      "upsampled": "upsampled from CD quality"
+    },
+    "cover": "cover {size}",
+    "menu": {
+      "track": "Download lossless",
+      "playlist": "Download playlist lossless",
+      "album": "Download album lossless"
+    },
+    "toast": {
+      "searching": "Looking for a lossless copy",
+      "saved": "Saved lossless to this device",
+      "failed": "Lossless download failed",
+      "cancelled": "Download cancelled",
+      "upsampled": "This hi-res file is upsampled",
+      "batch_started_one": "Looking for {count} lossless copy",
+      "batch_started_other": "Looking for {count} lossless copies",
+      "batch_skipped": "{name} · {count} already here",
+      "batch_done_one": "{count} song saved lossless",
+      "batch_done_other": "{count} songs saved lossless",
+      "batch_detail": "{name} · {missing} not found"
+    }
   }
 }
