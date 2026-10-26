@@ -172,6 +172,9 @@ function unmaximizeWindow() {
 // single owner of "the app is going away": releases the overlay, shortcuts,
 // helper processes and every window, then quits and force-exits if that stalls
 let lossless: { stop: () => void } | null = null;
+// a personal build keeps its own renderer: no ota bundles and no github installers
+const PERSONAL_BUILD =
+  typeof __LINER_PERSONAL_BUILD__ !== "undefined" && __LINER_PERSONAL_BUILD__;
 
 const shutdown = createShutdown({
   cleanup: [
@@ -432,6 +435,8 @@ function createWindow() {
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  } else if (PERSONAL_BUILD) {
+    mainWindow.loadFile(path.join(RENDERER_DIST, "index.html"));
   } else {
     bundleManager = new BundleManager({
       defaultRendererDist: RENDERER_DIST,
@@ -1883,8 +1888,8 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle("updater:check-for-updates", async () => {
-      if (!app.isPackaged) {
-        return { available: false, error: "Updater is disabled in dev mode" };
+      if (!app.isPackaged || PERSONAL_BUILD) {
+        return { available: false, error: "Updater is disabled in this build" };
       }
       try {
         const result = await autoUpdater.checkForUpdates();
@@ -1908,7 +1913,7 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle("updater:download-update", async () => {
-      if (!app.isPackaged) {
+      if (!app.isPackaged || PERSONAL_BUILD) {
         return { success: false, error: "Updater is disabled in dev mode" };
       }
       try {
@@ -1971,7 +1976,7 @@ if (!gotTheLock) {
     });
 
     // automatic update check after window initialization (packaged app only)
-    if (app.isPackaged) {
+    if (app.isPackaged && !PERSONAL_BUILD) {
       setTimeout(() => {
         autoUpdater.checkForUpdates().catch((err) => {
           console.error(

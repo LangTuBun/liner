@@ -23,6 +23,15 @@ export default defineConfig(({ command, mode }) => {
     electron({
       main: {
         entry: "electron/main.ts",
+        vite: {
+          define: {
+            // LINER_PERSONAL_BUILD=1: a local build that must not swap in upstream ui
+            // bundles or installers, which would drop the local changes
+            __LINER_PERSONAL_BUILD__: JSON.stringify(
+              process.env.LINER_PERSONAL_BUILD === "1",
+            ),
+          },
+        },
       },
       preload: {
         input: "electron/preload.ts",

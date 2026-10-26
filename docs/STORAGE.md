@@ -36,6 +36,13 @@ played tracks are evicted (`src/shared/storage/audioCache.ts`).
 | `local-tracks/library.json` | Index of imported audio files | `electron/local-tracks/library.ts` |
 | `local-tracks/audio/<hash>.<ext>` | Copies of imported audio files | same |
 | `local-tracks/covers/<hash>.<ext>` | Artwork taken from their tags | same |
+| `lossless/bin/sockseek(.exe)` | The sockseek downloader, installed on request | `electron/lossless/install.ts` |
+| `lossless/soulseek-auth.enc` | Soulseek username and password, encrypted with `safeStorage` | `electron/lossless/daemon.ts` |
+| `lossless/incoming/` | Downloads in progress; each file moves into `local-tracks/` when it finishes | same |
+| `lossless/sockseek.conf`, `lossless/daemon.pid` | Plain-text config with the Soulseek login and the daemon pid, only while sockseek runs. Removed when it stops, and on the next start after a crash | same |
+
+Lossless downloads become ordinary `local-tracks/` records with `source: "soulseek"`,
+the search they came from (`matchKey`) and the result of the upsample check (`hiRes`).
 
 Imported files are copies, so the originals can be moved or deleted. They are served to
 the renderer through the `liner-local://audio/<hash>` and `liner-local://cover/<hash>`
@@ -51,6 +58,7 @@ Settings and small state, as zustand `persist` stores or plain keys.
 | `liner_lyrics_session_v1` | Lyrics view settings |
 | `liner_customization_v1` | Appearance settings |
 | `liner_shortcuts_settings_v1` | Keyboard shortcuts |
+| `liner_lossless_v1` | The "Prefer hi-res" setting for lossless downloads |
 | `liner_overlay_settings_v1` | Overlay settings |
 | `liner_discord_settings_v1` | Discord Rich Presence settings |
 | `liner_youtube_preferences` | YouTube playback and sync settings |
@@ -83,8 +91,8 @@ into the encrypted files above on first launch and then removed.
 | Metadata | `artists` store, `queryCache`, search caches and search history |
 | Any | Chromium's HTTP cache |
 
-Never removed: the sign-in sessions, `liner_locale`, `theme`, settings stores and
-`local-tracks/`.
+Never removed: the sign-in sessions, `liner_locale`, `theme`, settings stores,
+`local-tracks/` and `lossless/`.
 
 ## Where to put new data
 

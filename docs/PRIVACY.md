@@ -84,6 +84,9 @@ If you sign in with your YouTube account (TV device-code sign-in):
 | **Google Fonts** | Your IP and browser user agent | At launch, to load the fonts |
 | **Image hosts** (YouTube, Google, SoundCloud, `covers.tryliner.fun`) | Requests for cover images | Showing covers |
 | **GitHub releases**, `updates.tryliner.fun` | Your IP and user agent | Update checks: 4 seconds after launch, then every 15 minutes |
+| **GitHub** (`github.com/fiso64/sockseek` releases) | Your IP and user agent | Once, when you press Install under Lossless downloads. The download is checked against a pinned SHA-256 before it is kept |
+| **Soulseek network** (through sockseek) | Your Soulseek username and password (to the Soulseek server), the search "artist - title" of each song you ask for, and your IP to the peers you download from | Only while lossless downloads are running. Soulseek searches are visible to other users of the network |
+| **iTunes Search** (`itunes.apple.com`) | Artist and title of a song you downloaded lossless | After each lossless download, to find a full-size cover |
 | **Connectivity checks** (`api`, `covers` and `link.tryliner.fun`, `google.com/generate_204`, Cloudflare trace, a traceroute to the API) | Your IP | When several requests fail in a row, or when you run the check. Results are shown only to you |
 
 ## Your own audio files
@@ -98,6 +101,10 @@ from there. Their id is a hash of the file content. The app never:
 
 The only place a local track's title and artist go is Discord Rich Presence, when it is
 on.
+
+Lossless downloads are the exception by design: you choose a catalog song, and its
+artist and title are searched on Soulseek and iTunes (see the table above). Files
+already on the device are never searched for.
 
 ## What stays on your device
 
