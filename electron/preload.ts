@@ -227,7 +227,16 @@ export interface LinerElectronApi {
   losslessClearFinished: () => Promise<void>;
   losslessSetHiRes: (localId: string, verdict: string) => Promise<void>;
   losslessAnalysisSlice: (localId: string) => Promise<Uint8Array>;
+  losslessImportStream: (payload: {
+    bytes: Uint8Array;
+    mimeType: string;
+    title: string;
+    artist: string;
+    album?: string;
+    thumbnail?: string;
+  }) => Promise<{ localId: string }>;
   onLosslessChanged: (cb: (snapshot: LosslessSnapshot) => void) => () => void;
+  onLocalTracksChanged: (cb: () => void) => () => void;
   pathForFile: (file: File) => string;
 }
 
@@ -498,12 +507,21 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("lossless:set-hires", localId, verdict),
   losslessAnalysisSlice: (localId) =>
     ipcRenderer.invoke("lossless:analysis-slice", localId),
+  losslessImportStream: (payload) =>
+    ipcRenderer.invoke("lossless:import-stream", payload),
   onLosslessChanged: (cb) => {
     const listener = (_event: unknown, snapshot: LosslessSnapshot) =>
       cb(snapshot);
     ipcRenderer.on("lossless:changed", listener);
     return () => {
       ipcRenderer.removeListener("lossless:changed", listener);
+    };
+  },
+  onLocalTracksChanged: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on("local-tracks:changed", listener);
+    return () => {
+      ipcRenderer.removeListener("local-tracks:changed", listener);
     };
   },
   pathForFile: (file) => webUtils.getPathForFile(file),

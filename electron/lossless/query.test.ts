@@ -120,9 +120,7 @@ it("asks itunes for the largest original artwork", () => {
     maxItunesArtwork(
       "https://is1-ssl.mzstatic.com/image/thumb/a/b.jpg/100x100bb.jpg",
     ),
-  ).toBe(
-    "https://is1-ssl.mzstatic.com/image/thumb/a/b.jpg/3000x3000bb-100.jpg",
-  );
+  ).toBe("https://is1-ssl.mzstatic.com/image/thumb/a/b.jpg/1200x1200bb-85.jpg");
   expect(maxItunesArtwork("https://example.com/x.jpg")).toBe(
     "https://example.com/x.jpg",
   );

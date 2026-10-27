@@ -74,6 +74,9 @@ import {
 import { DiscordRpcManager } from "./discord.js";
 import { PoTokenService } from "./youtube/potoken.js";
 import { setupLocalTracks } from "./local-tracks/ipc.js";
+import { shrinkPicture } from "./local-tracks/coverShrink.js";
+import { migrateRiffLibrary } from "./local-tracks/riffMigration.js";
+import { MAX_COVER_BYTES } from "./lossless/query.js";
 import { setupAudioQuality } from "./audio-quality/ipc.js";
 import { setupLossless } from "./lossless/ipc.js";
 import { registerLocalTrackScheme } from "./local-tracks/protocol.js";
@@ -539,6 +542,18 @@ if (!gotTheLock) {
       app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     }
     const localLibrary = setupLocalTracks();
+    const notifyLocalTracks = () => {
+      for (const win of BrowserWindow.getAllWindows())
+        if (!win.isDestroyed()) win.webContents.send("local-tracks:changed");
+    };
+    void migrateRiffLibrary(
+      localLibrary,
+      path.join(app.getPath("userData"), "local-tracks"),
+      notifyLocalTracks,
+    )
+      .then(() => localLibrary.shrinkCovers(shrinkPicture, MAX_COVER_BYTES))
+      .then(notifyLocalTracks)
+      .catch(() => undefined);
     setupAudioQuality();
     lossless = setupLossless(localLibrary);
     touchBarManager = new TouchBarManager(

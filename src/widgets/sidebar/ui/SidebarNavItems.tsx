@@ -20,6 +20,9 @@ export function SidebarNavItems({
     if (href === "/") {
       return pathname === "/" || pathname === "/home";
     }
+    // the downloaded tab owns /library/local, so Library stays off there
+    if (href === "/library" && pathname?.startsWith("/library/local"))
+      return false;
     return pathname === href || pathname?.startsWith(`${href}/`);
   };
 

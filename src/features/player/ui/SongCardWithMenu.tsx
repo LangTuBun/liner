@@ -8,6 +8,7 @@ import { useTranslation } from "@/languages";
 
 import type { TrackArtist } from "@/shared/types";
 import { isLocalTrackId } from "@/shared/media/local";
+import { useIsDownloaded } from "@/features/library/local/hooks/useIsDownloaded";
 
 export interface SongCardWithMenuProps {
   id?: string;
@@ -104,6 +105,8 @@ function SongCardWithMenu({
     onRemoveFromDevice,
   });
 
+  const downloaded = useIsDownloaded({ id, title, artists });
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
     x: number;
@@ -192,6 +195,7 @@ function SongCardWithMenu({
       showReorderHandle={showReorderHandle}
       onGrabStart={onGrabStart}
       trailingAction={trailingAction}
+      downloaded={downloaded}
     />
   );
 }

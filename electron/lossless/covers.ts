@@ -1,5 +1,6 @@
 import { nativeImage } from "electron";
 import { parseFile } from "music-metadata";
+import { shrinkPicture } from "../local-tracks/coverShrink.js";
 import {
   maxItunesArtwork,
   pickBestCover,
@@ -9,6 +10,8 @@ import {
 export interface CoverImage extends CoverCandidate {
   data: Buffer;
   mimeType: string;
+  // re-encoded smaller than the source picture, so an embedded original is stale
+  shrunk?: boolean;
 }
 
 // itunes rate-limits bursts, so playlist downloads ask one track at a time
@@ -84,6 +87,15 @@ function measure(
     : null;
 }
 
+// big originals (3000px, near-lossless) cost megabytes per track in the file
+// and again in the covers folder; a 1200px jpeg looks the same at player size
+function shrinkCover(cover: CoverImage): CoverImage {
+  const small = shrinkPicture(cover.data);
+  return small
+    ? { ...cover, ...small, mimeType: "image/jpeg", shrunk: true }
+    : cover;
+}
+
 async function download(url: string): Promise<Buffer | null> {
   const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) return null;
@@ -119,5 +131,6 @@ export async function findBestCover(
       if (stream) candidates.push(stream);
     } catch {}
   }
-  return pickBestCover(candidates);
+  const best = pickBestCover(candidates);
+  return best ? shrinkCover(best) : null;
 }

@@ -51,9 +51,11 @@
       "home": "Start",
       "search": "Szukaj",
       "library": "Biblioteka",
+      "downloads": "Pobrane",
       "settings": "Ustawienia"
     },
     "loading": "Ładowanie",
+    "downloaded": "Pobrano",
     "signed_in": "Zalogowano",
     "signed_out": "Wylogowano",
     "sign_out": "Wyloguj się",

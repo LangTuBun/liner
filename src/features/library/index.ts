@@ -29,4 +29,10 @@ export * from "./store/modalStore";
 export * from "./store/importStore";
 
 
-export { LocalTracksPage, LocalFilesCard, LocalDropZone } from "./local";
+export {
+  LocalTracksPage,
+  LocalFilesCard,
+  LocalDropZone,
+  useIsDownloaded,
+  findDownloadedTrackId,
+} from "./local";

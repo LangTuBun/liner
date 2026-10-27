@@ -127,9 +127,16 @@ export function isLosslessExtension(ext: string): boolean {
   );
 }
 
+// the player shows covers at 1000px at most, so anything bigger only costs disk
+export const MAX_COVER_EDGE = 1200;
+export const MAX_COVER_BYTES = 400 * 1024;
+
 export function maxItunesArtwork(url: string): string {
   return /\/\d+x\d+bb\.(jpg|png)$/i.test(url)
-    ? url.replace(/\/\d+x\d+bb\.(jpg|png)$/i, "/3000x3000bb-100.jpg")
+    ? url.replace(
+        /\/\d+x\d+bb\.(jpg|png)$/i,
+        `/${MAX_COVER_EDGE}x${MAX_COVER_EDGE}bb-85.jpg`,
+      )
     : url;
 }
 

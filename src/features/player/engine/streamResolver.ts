@@ -12,6 +12,7 @@ import {
 } from "@/shared/media/soundcloud";
 import { resolveLinerStream } from "@/shared/media/liner/linerPlayback";
 import { isLocalTrackId, localTrackAudioUrl } from "@/shared/media/local";
+import { findDownloadedTrackId } from "@/features/library/local/store/localLibraryStore";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import {
@@ -140,15 +141,21 @@ export async function resolvePlaybackStream(
   options: ResolveStreamOptions = {},
 ): Promise<PlaybackStream> {
   const progressive = options.progressive ?? false;
-  if (isLocalTrackId(track.id))
+  const localId = isLocalTrackId(track.id)
+    ? track.id
+    : await findDownloadedTrackId(track);
+  if (localId) {
+    if (localId !== track.id)
+      log("cyan", "playback", `playing downloaded file for "${track.title}"`);
     return {
-      url: localTrackAudioUrl(track.id),
+      url: localTrackAudioUrl(localId),
       expiresAtMs: null,
       mimeType: "",
       codec: "local",
       bitrate: 0,
       origin: "local",
     };
+  }
   if (toSoundCloudTrackId(track.id))
     return resolveSoundCloud(track, progressive, signal);
   const videoId = toVideoId(track.id);

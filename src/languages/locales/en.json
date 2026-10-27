@@ -51,6 +51,7 @@
       "home": "Home",
       "search": "Search",
       "library": "Library",
+      "downloads": "Downloaded",
       "settings": "Settings"
     },
     "minimize": "Minimize",
@@ -58,6 +59,7 @@
     "restore": "Restore",
     "maximize": "Maximize",
     "loading": "Loading",
+    "downloaded": "Downloaded",
     "signed_in": "Signed in",
     "signed_out": "Signed out",
     "sign_out": "Sign out",
@@ -210,6 +212,41 @@
     "popularPlaylists": "Popular Playlists",
     "dailyMixes": "Your Mixes",
     "dailyMixesSubtitle": "Fresh playlists curated around your favorite artists and genres"
+  },
+  "mix": {
+    "title": "Smart mix",
+    "subtitle": "Pick songs from your downloads and playlists. Liner groups the ones that belong together and puts each group in a good order.",
+    "sources": "Songs from",
+    "downloaded": "Downloaded · {count}",
+    "mode_flow": "Flow",
+    "mode_variety": "Variety",
+    "mode_flow_hint": "Each mix drifts from song to song, staying close in feel.",
+    "mode_variety_hint": "Artists and moods are spread out, so nothing bunches up.",
+    "build": "Make mixes",
+    "build_again": "Make again",
+    "listening": "Listening to your songs {done}/{total}",
+    "failed": "Could not read one of the playlists. Try again.",
+    "empty": "No songs to mix. Pick a source above.",
+    "result": "{songs} songs in {mixes} mixes",
+    "duplicates": "{count} repeats left out",
+    "cluster_meta": "{songs} songs · {minutes} min",
+    "play_all": "Play all",
+    "play": "Play",
+    "save": "Save as playlist",
+    "save_all": "Save all as playlists",
+    "saved": "Saved to your playlists",
+    "saved_all": "Saved to your playlists",
+    "saved_mixes": "Saved mixes",
+    "group_saved_playlists": "Saved playlists",
+    "group_albums": "Saved albums",
+    "delete_confirm": "Click again to delete",
+    "not_found": "This mix is gone.",
+    "empty_mix": "No songs left in this mix.",
+    "delete": "Delete mix",
+    "rename": "Click to rename",
+    "show_songs": "Show {count} songs",
+    "hide_songs": "Hide songs",
+    "remove_song": "Leave this song out"
   },
   "library": {
     "title": "Library",
@@ -1219,6 +1256,10 @@
       "no_secure_storage": "This system has no secure storage, so Liner cannot keep a Soulseek password.",
       "mock": "Test mode: files come from a local folder"
     },
+    "youtube_fallback": {
+      "title": "Save from YouTube when Soulseek has no copy",
+      "description": "After about a minute and a half without a lossless copy, the song is saved from the same stream the player uses, at the best quality it offers."
+    },
     "prefer_hires": {
       "title": "Prefer hi-res",
       "description": "Rank 24-bit files at 88.2 kHz and above first. Hi-res files are checked for upsampled copies."
@@ -1231,12 +1272,22 @@
     "state": {
       "starting": "Starting",
       "searching": "Searching Soulseek",
+      "searching_youtube": "Searching Soulseek · YouTube in {seconds}s",
       "downloading": "Downloading · {percent}%",
+      "downloading_watch": "Downloading · {percent}% · YouTube if it stalls",
       "importing": "Adding to this device",
       "done": "Saved",
       "failed": "Failed",
       "cancelled": "Cancelled",
       "skipped": "Skipped"
+    },
+    "youtube": {
+      "no_copy": "Not on Soulseek",
+      "stalled": "Soulseek transfer stalled",
+      "queued": "waiting to save from YouTube",
+      "saving": "saving from YouTube…",
+      "saved": "saved from YouTube",
+      "failed": "could not save from YouTube"
     },
     "hires": {
       "verified": "real hi-res",
@@ -1259,7 +1310,14 @@
       "batch_skipped": "{name} · {count} already here",
       "batch_done_one": "{count} song saved lossless",
       "batch_done_other": "{count} songs saved lossless",
-      "batch_detail": "{name} · {missing} not found"
+      "batch_detail": "{name} · {missing} not found",
+      "youtube_saving": "No lossless copy, saving from YouTube",
+      "youtube_saved": "Saved from YouTube",
+      "youtube_failed": "Could not save from YouTube",
+      "youtube_batch_saved_one": "{count} song saved from YouTube",
+      "youtube_batch_saved_other": "{count} songs saved from YouTube",
+      "youtube_batch_missing_one": "{count} could not be saved",
+      "youtube_batch_missing_other": "{count} could not be saved"
     }
   }
 }

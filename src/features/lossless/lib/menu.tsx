@@ -15,6 +15,7 @@ export function losslessBatchMenuItem(
   const requests = tracks
     .filter((track) => !isLocalTrackId(track.id) && track.title)
     .map((track) => ({
+      trackId: track.id,
       title: track.title,
       artist: track.artists,
       album: track.album?.title,

@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { More2Fill, RepeatFill } from "@mingcute/react";
+import { Check2Fill, More2Fill, RepeatFill } from "@mingcute/react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
 import { useTranslation } from "@/languages";
@@ -41,6 +41,8 @@ export interface SongCardProps {
   highlight?: string;
   hideArtists?: boolean;
   trailingAction?: React.ReactNode;
+  /** a file for this song is saved on this device and plays from there */
+  downloaded?: boolean;
 }
 
 function SongCard({
@@ -72,6 +74,7 @@ function SongCard({
   highlight,
   hideArtists = false,
   trailingAction,
+  downloaded = false,
 }: SongCardProps) {
   const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(() => isCoverReady(coverUrl));
@@ -253,6 +256,16 @@ function SongCard({
       </div>
 
       <div className="flex items-center shrink-0 ml-[16px] gap-[16px]">
+        {downloaded && (
+          <span
+            role="img"
+            aria-label={t("common.downloaded")}
+            title={t("common.downloaded")}
+            className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full bg-accent-primary text-white"
+          >
+            <Check2Fill size={11} />
+          </span>
+        )}
         {releaseDate && (
           <span
             className="text-[14px] text-text-tertiary"

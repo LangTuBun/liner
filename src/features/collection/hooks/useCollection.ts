@@ -17,6 +17,30 @@ export interface CollectionPageData {
   isDailyMix?: boolean;
 }
 
+// the songs of a saved album or playlist, from the page cache when it is warm
+export async function fetchCollectionTracks(
+  type: "album" | "playlist",
+  id: string,
+): Promise<Track[]> {
+  const cached = queryCache.get<CollectionPageData>(`collection:${type}:${id}`);
+  if (cached) return cached.tracks;
+  const collection =
+    type === "playlist" ? await api.getPlaylist(id) : await api.getAlbum(id);
+  const cover = collection.cover ? mediaUrl(collection.cover.url) : "";
+  return (collection.tracks || []).map((raw: any) => {
+    const track = toClientTrack(raw);
+    if (type !== "album") return track;
+    return {
+      ...track,
+      album: track.album?.id ? track.album : { id, title: collection.title },
+      coverUrl:
+        track.coverUrl && !track.coverUrl.includes(YOUTUBE_THUMBNAIL_HOST)
+          ? track.coverUrl
+          : cover || track.coverUrl,
+    };
+  });
+}
+
 export function useCollection(type: string | null, id: string | null) {
   const cacheKey = type && id ? `collection:${type}:${id}` : null;
   const cached = cacheKey

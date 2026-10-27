@@ -1,16 +1,21 @@
 import { create } from "zustand";
 import {
+  isLocalTrackId,
   localRecordToTrack,
+  toLocalTrackId,
   type LocalImportResult,
   type LocalTrackRecord,
 } from "@/shared/media/local";
 import type { Track } from "@/shared/types";
+import { recordMatchKey, trackMatchKey } from "../lib/downloadMatch";
 
 type LoadState = "idle" | "loading" | "ready" | "unavailable";
 
 interface LocalLibraryState {
   records: LocalTrackRecord[];
   tracks: Track[];
+  // match key of a song -> local track id of the file saved for it
+  downloadIndex: Map<string, string>;
   loadState: LoadState;
   importing: boolean;
   load: () => Promise<void>;
@@ -24,10 +29,48 @@ const newestFirst = (records: LocalTrackRecord[]) =>
 
 const withTracks = (records: LocalTrackRecord[]) => {
   const sorted = newestFirst(records);
-  return { records: sorted, tracks: sorted.map(localRecordToTrack) };
+  const downloadIndex = new Map<string, string>();
+  for (const record of sorted) {
+    const key = recordMatchKey(record);
+    if (key && !downloadIndex.has(key))
+      downloadIndex.set(key, toLocalTrackId(record.id));
+  }
+  return {
+    records: sorted,
+    tracks: sorted.map(localRecordToTrack),
+    downloadIndex,
+  };
 };
 
+export function downloadedTrackKey(track: {
+  id?: string;
+  title?: string;
+  artists?: string;
+}): string | null {
+  if (!track.id || isLocalTrackId(track.id)) return null;
+  return trackMatchKey(track.title, track.artists);
+}
+
+// local track id of the file saved for a catalog song, once the library is loaded
+export async function findDownloadedTrackId(track: {
+  id?: string;
+  title?: string;
+  artists?: string;
+}): Promise<string | null> {
+  const key = downloadedTrackKey(track);
+  if (!key) return null;
+  const state = useLocalLibraryStore.getState();
+  if (state.loadState === "idle") await state.load();
+  return useLocalLibraryStore.getState().downloadIndex.get(key) ?? null;
+}
+
 export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
+  // tracks the main process adds on its own (the riff migration)
+  if (typeof window !== "undefined")
+    window.linerElectron?.onLocalTracksChanged?.(() => {
+      if (get().loadState !== "idle") void get().load();
+    });
+
   const runImport = async (
     request: () => Promise<LocalImportResult | null>,
   ): Promise<LocalImportResult | null> => {
@@ -46,6 +89,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
   return {
     records: [],
     tracks: [],
+    downloadIndex: new Map(),
     loadState: "idle",
     importing: false,
 

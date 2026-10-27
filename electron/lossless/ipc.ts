@@ -12,7 +12,15 @@ import {
 import { readAnalysisSlice } from "./analysisSlice.js";
 import { embedFlacCover } from "./flacPicture.js";
 import { SOCKSEEK_VERSION, SockseekInstaller } from "./install.js";
-import type { HiResVerdict } from "./query.js";
+import {
+  cleanSoulseekQuery,
+  cleanTitle,
+  primaryArtist,
+  queryKey,
+  type HiResVerdict,
+} from "./query.js";
+import { tidyTitle } from "../local-tracks/riffMigration.js";
+import { MAX_STREAM_BYTES, extensionForMime } from "./streamImport.js";
 import type {
   LosslessDownloadRequest,
   LosslessJob,
@@ -93,7 +101,7 @@ export function setupLossless(library: LocalTrackLibrary) {
       thumbnail: job.thumbnail,
     }).catch(() => null);
     const extension = path.extname(filePath).slice(1).toLowerCase();
-    let embedded = cover?.source === "embedded";
+    let embedded = cover?.source === "embedded" && !cover.shrunk;
     if (cover && !embedded && extension === "flac") {
       embedded = await embedFlacCover(filePath, cover).then(
         () => true,
@@ -188,6 +196,61 @@ export function setupLossless(library: LocalTrackLibrary) {
     daemon.cancel(text(id, 64)),
   );
   ipcMain.handle("lossless:clear-finished", () => daemon.clearFinished());
+  // a song the app saved from the stream it would have played, for when
+  // soulseek has no copy
+  ipcMain.handle("lossless:import-stream", async (_event, raw: unknown) => {
+    const r = (raw ?? {}) as Record<string, unknown>;
+    const title = text(r.title);
+    if (!title) throw new Error("Track title is missing");
+    const bytes = r.bytes instanceof Uint8Array ? r.bytes : null;
+    if (!bytes || bytes.byteLength === 0 || bytes.byteLength > MAX_STREAM_BYTES)
+      throw new Error("Audio data is missing or too large");
+    const extension = extensionForMime(text(r.mimeType, 100));
+    if (!extension) throw new Error("Unsupported audio format");
+    const artist = text(r.artist);
+    const streamsDir = path.join(workDir, "streams");
+    await fsp.mkdir(streamsDir, { recursive: true });
+    const file = path.join(
+      streamsDir,
+      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${extension}`,
+    );
+    try {
+      await fsp.writeFile(file, bytes);
+      const cover = await findBestCover(file, {
+        artist: primaryArtist(artist),
+        title: cleanTitle(title),
+        thumbnail: text(r.thumbnail, 2000),
+      }).catch(() => null);
+      const key = queryKey(
+        cleanSoulseekQuery({ title, artist, artistMaybeWrong: true }),
+      );
+      const result = await library.importWithMetadata([
+        {
+          source: file,
+          patch: {
+            source: "youtube",
+            matchKey: key,
+            title: tidyTitle(title, artist),
+            ...(artist ? { artist: primaryArtist(artist) || artist } : {}),
+          },
+        },
+      ]);
+      const localId = result.ids[0];
+      if (!localId) throw new Error("Could not add the song to this device");
+      if (cover)
+        await library.update(
+          localId,
+          {},
+          {
+            data: cover.data,
+            extension: EXTENSION_BY_MIME[cover.mimeType] ?? "jpg",
+          },
+        );
+      return { localId };
+    } finally {
+      await fsp.rm(file, { force: true });
+    }
+  });
   ipcMain.handle(
     "lossless:analysis-slice",
     async (_event, localId: unknown) => {

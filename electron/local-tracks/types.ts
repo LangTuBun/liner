@@ -11,13 +11,16 @@ export interface LocalTrackRecord {
   byteSize: number;
   addedAt: number;
   // set on lossless downloads from soulseek
-  source?: "soulseek";
+  source?: "soulseek" | "youtube";
   matchKey?: string;
   hiRes?: "hires" | "upsampled" | "unknown" | null;
 }
 
 export type LocalTrackPatch = Partial<
-  Pick<LocalTrackRecord, "source" | "matchKey" | "hiRes">
+  Pick<
+    LocalTrackRecord,
+    "source" | "matchKey" | "hiRes" | "title" | "artist" | "addedAt"
+  >
 >;
 
 export interface LocalImportResult {

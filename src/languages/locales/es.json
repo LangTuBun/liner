@@ -51,9 +51,11 @@
       "home": "Inicio",
       "search": "Buscar",
       "library": "Biblioteca",
+      "downloads": "Descargas",
       "settings": "Ajustes"
     },
     "loading": "Cargando",
+    "downloaded": "Descargado",
     "signed_in": "Sesión iniciada",
     "signed_out": "Sesión cerrada",
     "sign_out": "Cerrar sesión",

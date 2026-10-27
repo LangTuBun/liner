@@ -63,6 +63,8 @@ export interface LosslessDownloadRequest {
   thumbnail?: string;
   // youtube catalog rows, whose channel names and video lengths may not match the release
   fromYoutube?: boolean;
+  // the catalog song this asks for, so a missing copy can be saved from its stream
+  trackId?: string;
 }
 
 export interface LosslessBatchSummary {

@@ -51,6 +51,7 @@
       "home": "Início",
       "search": "Pesquisa",
       "library": "Biblioteca",
+      "downloads": "Baixados",
       "settings": "Configurações"
     },
     "minimize": "Minimizar",
@@ -58,6 +59,7 @@
     "restore": "Restaurar",
     "maximize": "Maximizar",
     "loading": "Carregando",
+    "downloaded": "Baixado",
     "signed_in": "Conectado",
     "signed_out": "Desconectado",
     "sign_out": "Sair",

@@ -1,6 +1,7 @@
 export {
   usePlaylistsList,
   usePlaylist,
+  fetchPlaylistTracks,
   type LibraryPlaylistSummary,
   type LibraryPlaylistDetail,
 } from "./usePlaylists";

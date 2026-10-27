@@ -6,6 +6,7 @@ import {
   GridFill,
   ListCheckLine,
   ListCheckFill,
+  Magic1Line,
 } from "@mingcute/react";
 import Button from "@/shared/ui/Button";
 import {
@@ -24,6 +25,7 @@ interface LibraryControlsProps {
   onViewModeChange: (mode: LibraryViewMode) => void;
   /** shown only when provided (playlist tabs) */
   onCreatePlaylist?: () => void;
+  onSmartMix?: () => void;
 }
 
 export default function LibraryControls({
@@ -33,6 +35,7 @@ export default function LibraryControls({
   viewMode,
   onViewModeChange,
   onCreatePlaylist,
+  onSmartMix,
 }: LibraryControlsProps) {
   const { t } = useTranslation();
 
@@ -90,7 +93,9 @@ export default function LibraryControls({
         aria-pressed={viewMode === "grid"}
         onClick={() => onViewModeChange("grid")}
         className={`${iconButtonClass} ${
-          viewMode === "grid" ? "" : "!text-text-tertiary hover:!text-text-primary"
+          viewMode === "grid"
+            ? ""
+            : "!text-text-tertiary hover:!text-text-primary"
         }`}
       >
         {viewMode === "grid" ? <GridFill size={16} /> : <GridLine size={16} />}
@@ -102,7 +107,9 @@ export default function LibraryControls({
         aria-pressed={viewMode === "list"}
         onClick={() => onViewModeChange("list")}
         className={`${iconButtonClass} ${
-          viewMode === "list" ? "" : "!text-text-tertiary hover:!text-text-primary"
+          viewMode === "list"
+            ? ""
+            : "!text-text-tertiary hover:!text-text-primary"
         }`}
       >
         {viewMode === "list" ? (
@@ -111,6 +118,17 @@ export default function LibraryControls({
           <ListCheckLine size={16} />
         )}
       </Button>
+      {onSmartMix && (
+        <Button
+          variant="secondary"
+          onClick={onSmartMix}
+          className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} px-[14px]`}
+          title={t("mix.title")}
+        >
+          <Magic1Line size={16} />
+          <span>{t("mix.title")}</span>
+        </Button>
+      )}
       {onCreatePlaylist && (
         <Button
           variant="primary"

@@ -109,6 +109,7 @@ export function useSongMenuItems(ctx: SongMenuContext): DropdownMenuItem[] {
               icon: <DownloadLine size={15} />,
               onClick: () => {
                 void useLosslessStore.getState().download({
+                  trackId: id,
                   title,
                   artist: artists,
                   durationMs,

@@ -180,6 +180,14 @@ function toTrack(item: ApiUserPlaylistItem): Track {
   };
 }
 
+// the songs of one playlist, from the detail cache when it is warm
+export async function fetchPlaylistTracks(id: string): Promise<Track[]> {
+  const cached = queryCache.get<LibraryPlaylistDetail>(`playlist:detail:${id}`);
+  if (cached) return cached.tracks;
+  const response = await api.getUserPlaylist(id);
+  return response.items.map(toTrack);
+}
+
 export function usePlaylistsList() {
   const state = useSyncExternalStore(subscribe, snapshot, () => SERVER_SNAPSHOT);
   useEffect(() => {

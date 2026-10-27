@@ -51,9 +51,11 @@
       "home": "Ana sayfa",
       "search": "Ara",
       "library": "Kitaplık",
+      "downloads": "İndirilenler",
       "settings": "Ayarlar"
     },
     "loading": "Yükleniyor",
+    "downloaded": "İndirildi",
     "signed_in": "Giriş yapıldı",
     "signed_out": "Çıkış yapıldı",
     "sign_out": "Çıkış yap",

@@ -51,6 +51,7 @@
       "home": "Startseite",
       "search": "Suche",
       "library": "Mediathek",
+      "downloads": "Downloads",
       "settings": "Einstellungen"
     },
     "minimize": "Minimieren",
@@ -58,6 +59,7 @@
     "restore": "Wiederherstellen",
     "maximize": "Maximieren",
     "loading": "Wird geladen…",
+    "downloaded": "Heruntergeladen",
     "signed_in": "Angemeldet",
     "signed_out": "Abgemeldet",
     "sign_out": "Abmelden",

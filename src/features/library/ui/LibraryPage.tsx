@@ -22,6 +22,7 @@ import { useImportStore } from "../store/importStore";
 import { usePageBackdrop } from "@/shared/lib";
 import ImportingPlaylistCard from "./ImportingPlaylistCard";
 import { LocalFilesCard } from "../local";
+import { MixCards } from "@/features/mix/ui/MixCard";
 
 const PAGE_SIZE = 24;
 
@@ -412,6 +413,7 @@ export default function LibraryPage() {
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               onCreatePlaylist={showsPlaylists ? () => openCreatePlaylist() : undefined}
+              onSmartMix={() => navigate("/library/mix")}
             />
           </div>
         </div>
@@ -460,6 +462,7 @@ export default function LibraryPage() {
                             key="local-files-card"
                             viewMode={viewMode}
                           />,
+                          <MixCards key="mix-cards" viewMode={viewMode} />,
                           ...(isImporting && importJob
                             ? [
                                 <ImportingPlaylistCard

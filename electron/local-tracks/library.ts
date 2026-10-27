@@ -1,6 +1,6 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { importLocalFile } from "./importer.js";
+import { hashFile, importLocalFile } from "./importer.js";
 import type {
   LocalImportResult,
   LocalTrackPatch,
@@ -105,6 +105,78 @@ export class LocalTrackLibrary {
         records.map((record, i) => (i === index ? next : record)),
       );
       return next;
+    });
+  }
+
+  // imports files and stamps each record with the metadata it came with; a file
+  // already in the library only gets the metadata
+  importWithMetadata(
+    entries: { source: string; patch: LocalTrackPatch }[],
+  ): Promise<{
+    imported: number;
+    updated: number;
+    failed: number;
+    ids: string[];
+  }> {
+    return this.serialized(async () => {
+      const records = [...(await this.load())];
+      const known = new Set(records.map((record) => record.id));
+      const tally = {
+        imported: 0,
+        updated: 0,
+        failed: 0,
+        ids: [] as string[],
+      };
+      await fsp.mkdir(this.filePath("audio"), { recursive: true });
+      await fsp.mkdir(this.filePath("covers"), { recursive: true });
+      for (const { source, patch } of entries) {
+        try {
+          const added = await importLocalFile(source, this.root, known);
+          const id = added?.id ?? (await hashFile(await fsp.realpath(source)));
+          if (added) {
+            known.add(id);
+            records.push(added);
+            tally.imported += 1;
+          } else tally.updated += 1;
+          tally.ids.push(id);
+          const index = records.findIndex((record) => record.id === id);
+          if (index >= 0) records[index] = { ...records[index], ...patch };
+        } catch {
+          tally.failed += 1;
+        }
+      }
+      await this.save(records);
+      return tally;
+    });
+  }
+
+  // re-encodes covers that are bigger than the player ever shows
+  shrinkCovers(
+    shrink: (data: Buffer) => { data: Buffer } | null,
+    minBytes: number,
+  ): Promise<number> {
+    return this.serialized(async () => {
+      const records = [...(await this.load())];
+      let saved = 0;
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        if (!record.coverFile) continue;
+        const file = this.filePath("covers", record.coverFile);
+        try {
+          const before = await fsp.stat(file);
+          if (before.size <= minBytes) continue;
+          const small = shrink(await fsp.readFile(file));
+          if (!small) continue;
+          const coverFile = `${record.id}.jpg`;
+          await fsp.writeFile(this.filePath("covers", coverFile), small.data);
+          if (coverFile !== record.coverFile)
+            await fsp.rm(file, { force: true });
+          records[i] = { ...record, coverFile };
+          saved += before.size - small.data.length;
+        } catch {}
+      }
+      if (saved > 0) await this.save(records);
+      return saved;
     });
   }
 

@@ -51,9 +51,11 @@
       "home": "Accueil",
       "search": "Rechercher",
       "library": "Bibliothèque",
+      "downloads": "Téléchargements",
       "settings": "Paramètres"
     },
     "loading": "Chargement",
+    "downloaded": "Téléchargé",
     "signed_in": "Connecté",
     "signed_out": "Déconnecté",
     "sign_out": "Se déconnecter",

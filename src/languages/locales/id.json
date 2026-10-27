@@ -51,6 +51,7 @@
       "home": "Beranda",
       "search": "Cari",
       "library": "Pustaka",
+      "downloads": "Unduhan",
       "settings": "Pengaturan"
     },
     "minimize": "Minimalkan",
@@ -58,6 +59,7 @@
     "restore": "Pulihkan",
     "maximize": "Maksimalkan",
     "loading": "Memuat",
+    "downloaded": "Diunduh",
     "signed_in": "Sudah masuk",
     "signed_out": "Sudah keluar",
     "sign_out": "Keluar",

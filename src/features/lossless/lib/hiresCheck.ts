@@ -11,7 +11,7 @@ export const ABOVE_CD_NYQUIST: [number, number] = [24_000, 30_000];
 const ULTRASONIC_FROM = 30_000;
 const ULTRASONIC_TO = 40_000;
 
-function fft(re: Float64Array, im: Float64Array) {
+export function fft(re: Float64Array, im: Float64Array) {
   const n = re.length;
   for (let i = 1, j = 0; i < n; i++) {
     let bit = n >> 1;

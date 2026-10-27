@@ -8,7 +8,7 @@ import { LOCAL_AUDIO_EXTENSIONS, type LocalTrackRecord } from "./types.js";
 
 const SUPPORTED = new Set<string>(LOCAL_AUDIO_EXTENSIONS);
 
-async function hashFile(filePath: string): Promise<string> {
+export async function hashFile(filePath: string): Promise<string> {
   const hash = crypto.createHash("sha1");
   await pipeline(fs.createReadStream(filePath), hash);
   return hash.digest("hex").slice(0, 20);

@@ -51,9 +51,11 @@
       "home": "Головна",
       "search": "Пошук",
       "library": "Бібліотека",
+      "downloads": "Завантажене",
       "settings": "Налаштування"
     },
     "loading": "Завантаження",
+    "downloaded": "Завантажено",
     "signed_in": "У системі",
     "signed_out": "Ви вийшли",
     "sign_out": "Вийти",

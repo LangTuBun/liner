@@ -11,8 +11,11 @@ import {
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib/utils";
 import {
+  SEARCH_PATIENCE_MS,
+  fallbackAvailable,
   ipcErrorMessage,
   isFinishedJob,
+  searchingSinceOf,
   useLosslessStore,
   type LosslessJob,
 } from "../store/losslessStore";
@@ -40,15 +43,58 @@ function formatQuality(job: LosslessJob): string {
   return parts.join(" · ");
 }
 
+// re-renders every second while a search is counting down
+function useNow(running: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+  return now;
+}
+
 function JobRow({ job }: { job: LosslessJob }) {
   const { t } = useTranslation();
   const cancel = useLosslessStore((s) => s.cancel);
+  const fallback = useLosslessStore((s) => s.fallback[job.id]);
+  const searching = job.state === "starting" || job.state === "searching";
+  const now = useNow(searching);
   const active = !isFinishedJob(job);
   const quality = formatQuality(job);
 
   let status: string;
-  if (job.state === "downloading")
-    status = t("lossless.state.downloading", { percent: job.progress });
+  if (fallback) {
+    // soulseek had nothing: say so, then where the song went
+    status = [
+      fallback.reason === "stalled"
+        ? t("lossless.youtube.stalled")
+        : t("lossless.youtube.no_copy"),
+      fallback.state === "queued"
+        ? t("lossless.youtube.queued")
+        : fallback.state === "saving"
+          ? t("lossless.youtube.saving")
+          : fallback.state === "saved"
+            ? t("lossless.youtube.saved")
+            : t("lossless.youtube.failed"),
+      fallback.detail,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  } else if (searching && fallbackAvailable(job)) {
+    const since = searchingSinceOf(job.id) ?? now;
+    const seconds = Math.max(
+      0,
+      Math.ceil((SEARCH_PATIENCE_MS - (now - since)) / 1000),
+    );
+    status = t("lossless.state.searching_youtube", { seconds });
+  } else if (job.state === "downloading")
+    status = t(
+      fallbackAvailable(job)
+        ? "lossless.state.downloading_watch"
+        : "lossless.state.downloading",
+      { percent: job.progress },
+    );
   else if (job.state === "done") {
     const extra = [
       quality,
@@ -69,7 +115,7 @@ function JobRow({ job }: { job: LosslessJob }) {
   else status = t(`lossless.state.${job.state}`);
 
   return (
-    <div className="flex items-center gap-[12px] py-[8px]">
+    <div className="flex shrink-0 items-center gap-[12px] py-[8px]">
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span
           className="truncate text-[14px] font-[500] text-text-primary"
@@ -80,7 +126,9 @@ function JobRow({ job }: { job: LosslessJob }) {
         <span
           className={cn(
             "truncate text-[12.5px]",
-            job.state === "failed" || job.hiRes === "upsampled"
+            fallback?.state === "failed" ||
+              (!fallback && job.state === "failed") ||
+              job.hiRes === "upsampled"
               ? "text-accent-warning"
               : "text-text-tertiary",
           )}
@@ -88,6 +136,9 @@ function JobRow({ job }: { job: LosslessJob }) {
         >
           {[job.artist, status].filter(Boolean).join(" · ")}
         </span>
+        {fallback?.state === "saving" ? (
+          <div className="mt-[3px] h-[3px] animate-pulse overflow-hidden rounded-full bg-text-primary/30" />
+        ) : null}
         {job.state === "downloading" ? (
           <div className="mt-[3px] h-[3px] overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.1]">
             <div
@@ -118,6 +169,8 @@ function SetupSection() {
   const setAccount = useLosslessStore((s) => s.setAccount);
   const clearAccount = useLosslessStore((s) => s.clearAccount);
   const preferHiRes = useLosslessStore((s) => s.preferHiRes);
+  const youtubeFallback = useLosslessStore((s) => s.youtubeFallback);
+  const setYoutubeFallback = useLosslessStore((s) => s.setYoutubeFallback);
   const setPreferHiRes = useLosslessStore((s) => s.setPreferHiRes);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -264,6 +317,26 @@ function SetupSection() {
         </div>
         <ToggleSwitch checked={preferHiRes} onChange={setPreferHiRes} />
       </div>
+
+      <div
+        className={cn(card, "flex-row items-center justify-between gap-[12px]")}
+      >
+        <div className="flex min-w-0 flex-col gap-[2px]">
+          <span
+            className="text-[14px] font-[500] text-text-primary"
+            style={font}
+          >
+            {t("lossless.youtube_fallback.title")}
+          </span>
+          <span
+            className="text-[12.5px] leading-[1.45] text-text-tertiary"
+            style={font}
+          >
+            {t("lossless.youtube_fallback.description")}
+          </span>
+        </div>
+        <ToggleSwitch checked={youtubeFallback} onChange={setYoutubeFallback} />
+      </div>
     </>
   );
 }
@@ -285,7 +358,7 @@ export function LosslessDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen} maxWidth={560}>
-      <div className="flex flex-col gap-[12px] px-[20px] pb-[20px]">
+      <div className="flex min-h-0 flex-col gap-[12px] overflow-y-auto px-[20px] pb-[20px]">
         <DialogHeader
           title={t("lossless.title")}
           description={t("lossless.description")}
