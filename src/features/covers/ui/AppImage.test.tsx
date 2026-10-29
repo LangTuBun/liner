@@ -25,15 +25,27 @@ describe("AppImage Letterbox Auto-Scaling", () => {
 
   it("does not apply scale transform on square images (1:1 aspect ratio)", async () => {
     await act(async () => {
-      root.render(<AppImage src="https://example.com/cover.jpg" width={100} height={100} />);
+      root.render(
+        <AppImage
+          src="https://example.com/cover.jpg"
+          width={100}
+          height={100}
+        />,
+      );
     });
 
     const img = container.querySelector("img") as HTMLImageElement;
     expect(img).not.toBeNull();
 
     // Mock natural dimensions for square artwork (512x512)
-    Object.defineProperty(img, "naturalWidth", { value: 512, configurable: true });
-    Object.defineProperty(img, "naturalHeight", { value: 512, configurable: true });
+    Object.defineProperty(img, "naturalWidth", {
+      value: 512,
+      configurable: true,
+    });
+    Object.defineProperty(img, "naturalHeight", {
+      value: 512,
+      configurable: true,
+    });
 
     await act(async () => {
       img.dispatchEvent(new Event("load"));
@@ -44,15 +56,27 @@ describe("AppImage Letterbox Auto-Scaling", () => {
 
   it("automatically scales up 4:3 / video thumbnails with letterbox bars (e.g. 480x360)", async () => {
     await act(async () => {
-      root.render(<AppImage src="https://i.ytimg.com/vi/abc/hqdefault.jpg" width={100} height={100} />);
+      root.render(
+        <AppImage
+          src="https://i.ytimg.com/vi/abc/hqdefault.jpg"
+          width={100}
+          height={100}
+        />,
+      );
     });
 
     const img = container.querySelector("img") as HTMLImageElement;
     expect(img).not.toBeNull();
 
     // Mock natural dimensions for 4:3 YouTube thumbnail (480x360)
-    Object.defineProperty(img, "naturalWidth", { value: 480, configurable: true });
-    Object.defineProperty(img, "naturalHeight", { value: 360, configurable: true });
+    Object.defineProperty(img, "naturalWidth", {
+      value: 480,
+      configurable: true,
+    });
+    Object.defineProperty(img, "naturalHeight", {
+      value: 360,
+      configurable: true,
+    });
 
     await act(async () => {
       img.dispatchEvent(new Event("load"));
@@ -76,8 +100,14 @@ describe("AppImage Letterbox Auto-Scaling", () => {
     const img = container.querySelector("img") as HTMLImageElement;
     expect(img).not.toBeNull();
 
-    Object.defineProperty(img, "naturalWidth", { value: 480, configurable: true });
-    Object.defineProperty(img, "naturalHeight", { value: 360, configurable: true });
+    Object.defineProperty(img, "naturalWidth", {
+      value: 480,
+      configurable: true,
+    });
+    Object.defineProperty(img, "naturalHeight", {
+      value: 360,
+      configurable: true,
+    });
 
     await act(async () => {
       img.dispatchEvent(new Event("load"));
@@ -101,8 +131,14 @@ describe("AppImage Letterbox Auto-Scaling", () => {
     const img = container.querySelector("img") as HTMLImageElement;
     expect(img).not.toBeNull();
 
-    Object.defineProperty(img, "naturalWidth", { value: 480, configurable: true });
-    Object.defineProperty(img, "naturalHeight", { value: 360, configurable: true });
+    Object.defineProperty(img, "naturalWidth", {
+      value: 480,
+      configurable: true,
+    });
+    Object.defineProperty(img, "naturalHeight", {
+      value: 360,
+      configurable: true,
+    });
 
     await act(async () => {
       img.dispatchEvent(new Event("load"));

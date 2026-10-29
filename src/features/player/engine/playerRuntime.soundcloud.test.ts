@@ -109,7 +109,9 @@ describe("PlayerRuntime with soundcloud streams", () => {
     removeSrc.mockClear();
 
     let release!: (value: unknown) => void;
-    mocks.resolveSoundCloudStream.mockReturnValueOnce(new Promise((resolve) => (release = resolve)));
+    mocks.resolveSoundCloudStream.mockReturnValueOnce(
+      new Promise((resolve) => (release = resolve)),
+    );
     const pending = playerRuntime!.loadAndPlay(soundCloudTrack("sc:202"));
     await new Promise((resolve) => setTimeout(resolve, 0));
 

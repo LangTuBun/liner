@@ -37,7 +37,10 @@ export const Slider = memo(function Slider({
   const currentValue = isDragging && dragValue !== null ? dragValue : value;
   const clampedValue = Math.max(min, Math.min(max, currentValue));
   const range = max - min || 1;
-  const percentage = Math.max(0, Math.min(100, ((clampedValue - min) / range) * 100));
+  const percentage = Math.max(
+    0,
+    Math.min(100, ((clampedValue - min) / range) * 100),
+  );
 
   const roundToStep = useCallback(
     (val: number): number => {
@@ -62,7 +65,10 @@ export const Slider = memo(function Slider({
     (clientX: number): number => {
       const rect = trackRef.current?.getBoundingClientRect();
       if (!rect || rect.width === 0) return clampedValue;
-      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const ratio = Math.max(
+        0,
+        Math.min(1, (clientX - rect.left) / rect.width),
+      );
       const raw = min + ratio * (max - min);
       return roundToStep(raw);
     },

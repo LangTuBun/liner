@@ -33,7 +33,9 @@ function importGraph(entry: string): string[] {
       }
     }
   }
-  return [...seen].map((file) => path.relative(src, file).replaceAll("\\", "/"));
+  return [...seen].map((file) =>
+    path.relative(src, file).replaceAll("\\", "/"),
+  );
 }
 
 describe("overlay window bundle", () => {

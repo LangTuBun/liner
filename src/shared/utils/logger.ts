@@ -9,17 +9,18 @@ export type LogColor =
   | "white"
   | "black";
 
-const COLOR_MAP: Record<LogColor, { bg: string; text: string; ansi: string }> = {
-  red: { bg: "#ef4444", text: "#ffffff", ansi: "\x1b[41;37m" },
-  green: { bg: "#22c55e", text: "#000000", ansi: "\x1b[42;30m" },
-  yellow: { bg: "#eab308", text: "#000000", ansi: "\x1b[43;30m" },
-  blue: { bg: "#3b82f6", text: "#ffffff", ansi: "\x1b[44;37m" },
-  magenta: { bg: "#ec4899", text: "#ffffff", ansi: "\x1b[45;37m" },
-  cyan: { bg: "#06b6d4", text: "#000000", ansi: "\x1b[46;30m" },
-  gray: { bg: "#6b7280", text: "#ffffff", ansi: "\x1b[100;37m" },
-  white: { bg: "#f3f4f6", text: "#000000", ansi: "\x1b[47;30m" },
-  black: { bg: "#18181b", text: "#ffffff", ansi: "\x1b[40;37m" },
-};
+const COLOR_MAP: Record<LogColor, { bg: string; text: string; ansi: string }> =
+  {
+    red: { bg: "#ef4444", text: "#ffffff", ansi: "\x1b[41;37m" },
+    green: { bg: "#22c55e", text: "#000000", ansi: "\x1b[42;30m" },
+    yellow: { bg: "#eab308", text: "#000000", ansi: "\x1b[43;30m" },
+    blue: { bg: "#3b82f6", text: "#ffffff", ansi: "\x1b[44;37m" },
+    magenta: { bg: "#ec4899", text: "#ffffff", ansi: "\x1b[45;37m" },
+    cyan: { bg: "#06b6d4", text: "#000000", ansi: "\x1b[46;30m" },
+    gray: { bg: "#6b7280", text: "#ffffff", ansi: "\x1b[100;37m" },
+    white: { bg: "#f3f4f6", text: "#000000", ansi: "\x1b[47;30m" },
+    black: { bg: "#18181b", text: "#ffffff", ansi: "\x1b[40;37m" },
+  };
 
 export function log(
   color: LogColor,

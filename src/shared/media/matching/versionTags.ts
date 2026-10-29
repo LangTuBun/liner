@@ -7,7 +7,10 @@ export const VERSION_PATTERNS: Array<{ tag: string; regex: RegExp }> = [
   { tag: "edit", regex: /\b((?:radio|club|extended)?\s*edit|эдит)\b/i },
   { tag: "slowed", regex: /\b(slowed(?:\s*(?:\+|&|and)\s*reverb)?|слоу)\b/i },
   { tag: "reverb", regex: /\b(reverb|реверб)\b/i },
-  { tag: "sped_up", regex: /\b(sp(?:ed|eed)\s*up|sp(?:ed|eed)up|спид\s*ап|спидап)\b/i },
+  {
+    tag: "sped_up",
+    regex: /\b(sp(?:ed|eed)\s*up|sp(?:ed|eed)up|спид\s*ап|спидап)\b/i,
+  },
   { tag: "nightcore", regex: /\b(nightcore|найткор)\b/i },
   { tag: "instrumental", regex: /\b(instrumental|инструментал|inst\b\.?)\b/i },
   { tag: "acoustic", regex: /\b(acoustic|акустика)\b/i },
@@ -35,13 +38,18 @@ export interface VersionComparison {
   bonus: number;
 }
 
-export function compareVersionTags(sourceTags: Set<string>, candidateTags: Set<string>): VersionComparison {
+export function compareVersionTags(
+  sourceTags: Set<string>,
+  candidateTags: Set<string>,
+): VersionComparison {
   if (sourceTags.size === 0 && candidateTags.size === 0) {
     return { matches: true, penalty: 0, bonus: 5 };
   }
   if (sourceTags.size > 0 && candidateTags.size > 0) {
     const hasCommon = [...sourceTags].some((tag) => candidateTags.has(tag));
-    return hasCommon ? { matches: true, penalty: 0, bonus: 15 } : { matches: false, penalty: 50, bonus: 0 };
+    return hasCommon
+      ? { matches: true, penalty: 0, bonus: 15 }
+      : { matches: false, penalty: 50, bonus: 0 };
   }
   return { matches: false, penalty: 50, bonus: 0 };
 }

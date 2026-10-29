@@ -10,24 +10,33 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layout;
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            delete cleanProps.whileHover;
-            delete cleanProps.whileTap;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layout;
+                delete cleanProps.initial;
+                delete cleanProps.animate;
+                delete cleanProps.exit;
+                delete cleanProps.transition;
+                delete cleanProps.whileHover;
+                delete cleanProps.whileTap;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -70,7 +79,7 @@ describe("Slider Component", () => {
           onChange={handleChange}
           label="Hit Chance"
           unit="%"
-        />
+        />,
       );
     });
 
@@ -88,18 +97,22 @@ describe("Slider Component", () => {
           max={100}
           step={5}
           onChange={handleChange}
-        />
+        />,
       );
     });
 
     const slider = container?.querySelector('[role="slider"]') as HTMLElement;
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+      );
     });
     expect(handleChange).toHaveBeenCalledWith(55);
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+      );
     });
     expect(handleChange).toHaveBeenCalledWith(45);
   });
@@ -114,18 +127,22 @@ describe("Slider Component", () => {
           max={100}
           step={1}
           onChange={handleChange}
-        />
+        />,
       );
     });
 
     const slider = container?.querySelector('[role="slider"]') as HTMLElement;
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Home", bubbles: true }),
+      );
     });
     expect(handleChange).toHaveBeenCalledWith(0);
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "End", bubbles: true }),
+      );
     });
     expect(handleChange).toHaveBeenCalledWith(100);
   });
@@ -134,11 +151,7 @@ describe("Slider Component", () => {
     const handleChange = vi.fn();
     act(() => {
       root?.render(
-        <Slider
-          value={50}
-          disabled={true}
-          onChange={handleChange}
-        />
+        <Slider value={50} disabled={true} onChange={handleChange} />,
       );
     });
 
@@ -146,7 +159,9 @@ describe("Slider Component", () => {
     expect(slider.getAttribute("aria-disabled")).toBe("true");
 
     act(() => {
-      slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      slider.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+      );
     });
     expect(handleChange).not.toHaveBeenCalled();
   });

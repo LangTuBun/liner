@@ -291,7 +291,10 @@ describe("auth-session token system", () => {
     it("a one-off 401 (e.g. a rejected signature) is retried and does not sign out", async () => {
       vi.spyOn(console, "warn").mockImplementation(() => {});
       setAuthSession(base());
-      globalThis.fetch = vi.fn().mockResolvedValueOnce(reject()).mockResolvedValueOnce(okRefresh()) as any;
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(reject())
+        .mockResolvedValueOnce(okRefresh()) as any;
       const res = await refreshAuthSession();
       expect(res?.refreshToken).toBe("rt_2");
       expect(getAuthSession()?.accessToken).toBe("new_token");
@@ -300,7 +303,11 @@ describe("auth-session token system", () => {
 
     it("adopts a token rotated elsewhere instead of signing out", async () => {
       setAuthSession(base());
-      const rotated = { ...base(), accessToken: "other_window_token", refreshToken: "rt_9" };
+      const rotated = {
+        ...base(),
+        accessToken: "other_window_token",
+        refreshToken: "rt_9",
+      };
       globalThis.fetch = vi.fn().mockImplementation(async () => {
         // another window finished a refresh meanwhile
         storageMap.set("liner_auth_session", JSON.stringify(rotated));
@@ -315,18 +322,24 @@ describe("auth-session token system", () => {
     it("signs out on an expired refresh session, and logs why", async () => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       setAuthSession(base());
-      globalThis.fetch = vi.fn().mockResolvedValue(reject(401, "REFRESH_SESSION_EXPIRED")) as any;
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(reject(401, "REFRESH_SESSION_EXPIRED")) as any;
       const res = await refreshAuthSession();
       expect(res).toBeNull();
       expect(getAuthSession()).toBeNull();
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls.flat().join(" ")).toContain("REFRESH_SESSION_EXPIRED");
+      expect(warn.mock.calls.flat().join(" ")).toContain(
+        "REFRESH_SESSION_EXPIRED",
+      );
     });
 
     it("keeps the session when signature rejections never clear up", async () => {
       vi.spyOn(console, "warn").mockImplementation(() => {});
       setAuthSession(base());
-      globalThis.fetch = vi.fn().mockResolvedValue(reject(401, "SIGNATURE_SKEWED")) as any;
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(reject(401, "SIGNATURE_SKEWED")) as any;
       expect(await refreshAuthSession()).toBeNull();
       expect(getAuthSession()?.refreshToken).toBe("rt_1");
       expect(globalThis.fetch).toHaveBeenCalledTimes(2);
@@ -335,7 +348,11 @@ describe("auth-session token system", () => {
     it("keeps the session on server errors", async () => {
       vi.spyOn(console, "warn").mockImplementation(() => {});
       setAuthSession(base());
-      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, headers: { get: () => null } }) as any;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        headers: { get: () => null },
+      }) as any;
       expect(await refreshAuthSession()).toBeNull();
       expect(getAuthSession()?.refreshToken).toBe("rt_1");
     });

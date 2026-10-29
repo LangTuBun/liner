@@ -73,18 +73,24 @@ function SectionSkeleton({
   );
 }
 
+export const MixesSectionSkeleton = memo(function MixesSectionSkeleton() {
+  return (
+    <SectionSkeleton
+      headingMarginTop="mt-0"
+      titleWidth="w-[190px]"
+      titleHeight="h-[36px]"
+      hasIcon={true}
+      iconClassName="w-[32px] h-[32px] rounded-[10px]"
+      gapClassName="gap-3"
+      cardsCount={7}
+    />
+  );
+});
+
 function HomePageSkeletonComponent() {
   return (
     <div className="relative min-h-full w-full bg-transparent pb-[16px] select-none overflow-hidden">
-      <SectionSkeleton
-        headingMarginTop="mt-0"
-        titleWidth="w-[190px]"
-        titleHeight="h-[36px]"
-        hasIcon={true}
-        iconClassName="w-[32px] h-[32px] rounded-[10px]"
-        gapClassName="gap-3"
-        cardsCount={7}
-      />
+      <MixesSectionSkeleton />
       <SectionSkeleton
         headingMarginTop="mt-[22px]"
         titleWidth="w-[170px]"

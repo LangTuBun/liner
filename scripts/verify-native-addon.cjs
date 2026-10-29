@@ -6,7 +6,16 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 const file = path.resolve(
-  process.argv[2] || path.join(__dirname, "..", "native", "snap-preview", "build", "Release", "snap_preview.node"),
+  process.argv[2] ||
+    path.join(
+      __dirname,
+      "..",
+      "native",
+      "snap-preview",
+      "build",
+      "Release",
+      "snap_preview.node",
+    ),
 );
 
 // keep in sync with the `required` list in electron/snap-native.ts (loadSnapPreviewAddon)
@@ -41,12 +50,16 @@ let addon;
 try {
   addon = require(file);
 } catch (err) {
-  console.error(`verify-native-addon: failed to load ${file}\n${err && err.stack ? err.stack : err}`);
+  console.error(
+    `verify-native-addon: failed to load ${file}\n${err && err.stack ? err.stack : err}`,
+  );
   process.exit(1);
 }
 const missing = REQUIRED.filter((name) => typeof addon[name] !== "function");
 if (missing.length) {
-  console.error(`verify-native-addon: ${file} is missing: ${missing.join(", ")} (outdated build?)`);
+  console.error(
+    `verify-native-addon: ${file} is missing: ${missing.join(", ")} (outdated build?)`,
+  );
   process.exit(1);
 }
 console.log(`verify-native-addon: ok (${REQUIRED.length} functions) ${file}`);

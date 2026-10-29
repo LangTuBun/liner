@@ -67,22 +67,32 @@ function ScrollingLabel({ text }: { text: string }) {
   const [hovered, setHovered] = useState(false);
 
   useLayoutEffect(() => {
-    if (!outerRef.current || !innerRef.current) return;
-    const d = Math.round(innerRef.current.scrollWidth - outerRef.current.clientWidth);
-    setDelta(d > 4 ? d : 0);
-  });
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const measure = () => {
+      const d = Math.round(inner.scrollWidth - outer.clientWidth);
+      setDelta(d > 4 ? d : 0);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(outer);
+    return () => observer.disconnect();
+  }, [text]);
 
-  const maskStyle = delta > 0
-    ? {
-        maskImage: hovered
-          ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
-          : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
-        WebkitMaskImage: hovered
-          ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
-          : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
-        transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
-      }
-    : undefined;
+  const maskStyle =
+    delta > 0
+      ? {
+          maskImage: hovered
+            ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
+            : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
+          WebkitMaskImage: hovered
+            ? "linear-gradient(to right, transparent 0px, black 10px, black calc(100% - 12px), transparent 100%)"
+            : "linear-gradient(to right, black 0px, black calc(100% - 12px), transparent 100%)",
+          transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+        }
+      : undefined;
 
   return (
     <span
@@ -92,13 +102,14 @@ function ScrollingLabel({ text }: { text: string }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-
       <span
         ref={innerRef}
         className="inline-block whitespace-nowrap"
         style={{
           transform:
-            hovered && delta > 0 ? `translateX(-${delta + 8}px)` : "translateX(0)",
+            hovered && delta > 0
+              ? `translateX(-${delta + 8}px)`
+              : "translateX(0)",
           transition: hovered
             ? `transform ${Math.max(800, delta * 12)}ms linear`
             : "transform 300ms ease",

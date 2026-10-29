@@ -1,10 +1,22 @@
-import type { Track } from './track';
+import type { Track } from "./track";
 
-export const IMPORT_SOURCES = ['youtube', 'soundcloud', 'spotify', 'deezer', 'apple_music'] as const;
+export const IMPORT_SOURCES = [
+  "youtube",
+  "soundcloud",
+  "spotify",
+  "deezer",
+  "apple_music",
+] as const;
 
-export type ImportSource = typeof IMPORT_SOURCES[number];
+export type ImportSource = (typeof IMPORT_SOURCES)[number];
 
-export type ImportJobStatus = 'queued' | 'running' | 'awaiting_decision' | 'finalizing' | 'completed' | 'failed';
+export type ImportJobStatus =
+  | "queued"
+  | "running"
+  | "awaiting_decision"
+  | "finalizing"
+  | "completed"
+  | "failed";
 
 export interface ImportResult {
   total: number;
@@ -46,12 +58,12 @@ export interface ImportedPlaylist {
 }
 
 export type ImportReviewReason =
-  | 'auto_matched'
-  | 'no_catalog_candidates'
-  | 'low_confidence_match'
-  | 'ambiguous_match'
-  | 'duration_mismatch'
-  | 'catalog_lookup_failed';
+  | "auto_matched"
+  | "no_catalog_candidates"
+  | "low_confidence_match"
+  | "ambiguous_match"
+  | "duration_mismatch"
+  | "catalog_lookup_failed";
 
 export interface ImportReview {
   id: string;
@@ -59,7 +71,7 @@ export interface ImportReview {
   proposedTrack?: Track;
   score?: number;
   reason: ImportReviewReason;
-  status: 'pending' | 'approved' | 'denied';
+  status: "pending" | "approved" | "denied";
   position: number;
   createdAt: Date | string;
   reviewedAt?: Date | string;
@@ -67,6 +79,5 @@ export interface ImportReview {
 
 export interface ImportReviewDecision {
   reviewId: string;
-  decision: 'approve' | 'deny';
+  decision: "approve" | "deny";
 }
-

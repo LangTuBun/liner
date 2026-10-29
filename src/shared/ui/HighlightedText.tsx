@@ -8,7 +8,10 @@ interface HighlightedTextProps {
 
 /** Text with the parts matching `query` softly marked (search results). */
 function HighlightedText({ text, query }: HighlightedTextProps) {
-  const ranges = useMemo(() => (query ? findHighlightRanges(text, query) : []), [text, query]);
+  const ranges = useMemo(
+    () => (query ? findHighlightRanges(text, query) : []),
+    [text, query],
+  );
   if (ranges.length === 0) return <>{text}</>;
 
   const parts: React.ReactNode[] = [];

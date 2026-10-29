@@ -19,7 +19,10 @@ interface DiscordSettingsState extends DiscordRpcSettings {
 }
 
 function notifyElectron(patch: Partial<DiscordRpcSettings>) {
-  if (typeof window !== "undefined" && window.linerElectron?.discordUpdateSettings) {
+  if (
+    typeof window !== "undefined" &&
+    window.linerElectron?.discordUpdateSettings
+  ) {
     window.linerElectron.discordUpdateSettings(patch);
   }
 }
@@ -88,13 +91,17 @@ export const useDiscordSettingsStore = create<DiscordSettingsState>()(
           state.setEnabled(DEFAULT_DISCORD_SETTINGS.enabled);
         }
         if (!VALID_STATUS_DISPLAY_TYPES.includes(state.statusDisplayType)) {
-          state.setStatusDisplayType(DEFAULT_DISCORD_SETTINGS.statusDisplayType);
+          state.setStatusDisplayType(
+            DEFAULT_DISCORD_SETTINGS.statusDisplayType,
+          );
         }
         if (typeof state.showArtwork !== "boolean") {
           state.setShowArtwork(DEFAULT_DISCORD_SETTINGS.showArtwork);
         }
         if (typeof state.showArtistSmallImage !== "boolean") {
-          state.setShowArtistSmallImage(DEFAULT_DISCORD_SETTINGS.showArtistSmallImage);
+          state.setShowArtistSmallImage(
+            DEFAULT_DISCORD_SETTINGS.showArtistSmallImage,
+          );
         }
         if (typeof state.showTime !== "boolean") {
           state.setShowTime(DEFAULT_DISCORD_SETTINGS.showTime);
@@ -106,9 +113,11 @@ export const useDiscordSettingsStore = create<DiscordSettingsState>()(
           state.setShowButton(DEFAULT_DISCORD_SETTINGS.showButton);
         }
         if (typeof state.showDownloadButton !== "boolean") {
-          state.setShowDownloadButton(DEFAULT_DISCORD_SETTINGS.showDownloadButton);
+          state.setShowDownloadButton(
+            DEFAULT_DISCORD_SETTINGS.showDownloadButton,
+          );
         }
       },
-    }
-  )
+    },
+  ),
 );

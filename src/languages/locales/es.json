@@ -406,7 +406,28 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Reverberación",
     "reverb_hint": "Espacio atmosférico y profundidad ambiental",
-    "reverb_amount": "Reverberación"
+    "reverb_amount": "Reverberación",
+    "beta_visuals": {
+      "label": "Aviso",
+      "ambient_title": "Ambient está en beta",
+      "ambient_body": "Esta canción tiene un fondo animado propio. Sigue en beta y puede cargar los equipos modestos: si el reproductor va a tirones, elige un modo más ligero.",
+      "settings_title": "Calidad visual",
+      "settings_body": "Elige cuánta animación tiene el reproductor a pantalla completa. Los modos ligeros ahorran batería y van más fluidos en equipos modestos.",
+      "modes": {
+        "full": {
+          "name": "Todos los efectos",
+          "hint": "Todo activado, con bordes de la letra desenfocados"
+        },
+        "balanced": {
+          "name": "Equilibrado",
+          "hint": "Fondos animados, sin desenfoque en la letra"
+        },
+        "lite": {
+          "name": "Ligero",
+          "hint": "Portada fija, letra simple"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Lista de reproducción",
@@ -742,7 +763,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Canal",
-      "support": "Soporte",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Sitio web",
       "tagline": "Moderno reproductor de música en streaming con letras sincronizadas por sílabas",
@@ -833,11 +854,6 @@
       "scope_main_app": "App principal",
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
-    },
-    "cover_glow": {
-      "title": "Brillo de portada",
-      "description": "Brillo difuminado de la portada tras las páginas. Desactívalo para un fondo liso.",
-      "disabled_for_light": "Desactivado en el tema claro."
     }
   },
   "toast": {
@@ -987,6 +1003,7 @@
   "track_sort": {
     "label": "Ordenar",
     "default": "Predeterminado",
+    "added": "Por fecha de adición",
     "title": "Por título (A–Z)",
     "duration": "Por duración",
     "popularity": "Por popularidad"

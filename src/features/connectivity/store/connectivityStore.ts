@@ -81,10 +81,11 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
   },
 }));
 
-export function recordConnectivityFailure(entry: Omit<FailureEntry, "at">): void {
+export function recordConnectivityFailure(
+  entry: Omit<FailureEntry, "at">,
+): void {
   if (isPlaybackPath(entry.path)) return;
   try {
     useConnectivityStore.getState().recordFailure(entry);
-  } catch {
-  }
+  } catch {}
 }

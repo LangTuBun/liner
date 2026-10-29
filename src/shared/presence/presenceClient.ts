@@ -32,7 +32,10 @@ export class PresenceClient {
     if (typeof window !== "undefined") {
       window.addEventListener("auth:changed", this.handleWake);
       window.addEventListener("online", this.handleWake);
-      document.addEventListener("visibilitychange", this.handleVisibilityChange);
+      document.addEventListener(
+        "visibilitychange",
+        this.handleVisibilityChange,
+      );
     }
 
     this.schedule();
@@ -49,7 +52,10 @@ export class PresenceClient {
     if (typeof window !== "undefined") {
       window.removeEventListener("auth:changed", this.handleWake);
       window.removeEventListener("online", this.handleWake);
-      document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+      document.removeEventListener(
+        "visibilitychange",
+        this.handleVisibilityChange,
+      );
     }
   }
 
@@ -79,7 +85,10 @@ export class PresenceClient {
 
       const res = await fetch(`${getApiBaseUrl()}/v1/presence/heartbeat`, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({
           // no email: the bearer token already says who this is, the address has no reason to travel every minute
           username: session.user?.username,
@@ -91,8 +100,14 @@ export class PresenceClient {
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
 
-      const suggested = Number(res.headers.get("x-liner-heartbeat-interval")) * 1000;
-      if (Number.isFinite(suggested) && suggested >= MIN_INTERVAL_MS && suggested <= MAX_INTERVAL_MS && suggested !== this.intervalMs) {
+      const suggested =
+        Number(res.headers.get("x-liner-heartbeat-interval")) * 1000;
+      if (
+        Number.isFinite(suggested) &&
+        suggested >= MIN_INTERVAL_MS &&
+        suggested <= MAX_INTERVAL_MS &&
+        suggested !== this.intervalMs
+      ) {
         this.intervalMs = suggested;
         if (this.isRunning) this.schedule();
       }

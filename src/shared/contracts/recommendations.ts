@@ -1,5 +1,5 @@
-import type { Cover } from './cover';
-import type { Track } from './track';
+import type { Cover } from "./cover";
+import type { Track } from "./track";
 
 export interface DailyMixItem {
   id: string;

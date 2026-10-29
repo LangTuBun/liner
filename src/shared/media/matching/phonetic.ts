@@ -66,5 +66,7 @@ export function normalizeWords(value: string): string {
 }
 
 export function normalizeTrackString(value: string): string {
-  return normalizeWords(value.replace(/ё/gi, "е").replace(/\.(?:mp3|wav|flac|m4a|aac|ogg)\b/gi, ""));
+  return normalizeWords(
+    value.replace(/ё/gi, "е").replace(/\.(?:mp3|wav|flac|m4a|aac|ogg)\b/gi, ""),
+  );
 }

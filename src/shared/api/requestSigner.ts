@@ -36,7 +36,10 @@ export function getAdjustedTimestamp(): number {
 }
 
 function isElectron(): boolean {
-  return typeof window !== "undefined" && typeof window.linerElectron?.signRequest === "function";
+  return (
+    typeof window !== "undefined" &&
+    typeof window.linerElectron?.signRequest === "function"
+  );
 }
 
 export async function signApiRequest(

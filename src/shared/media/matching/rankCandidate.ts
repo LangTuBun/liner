@@ -22,23 +22,44 @@ export interface RankedCandidate {
   versionMatches: boolean;
 }
 
-export function rankCandidate(profile: SourceProfile, candidate: Track): RankedCandidate {
+export function rankCandidate(
+  profile: SourceProfile,
+  candidate: Track,
+): RankedCandidate {
   const parsed = parseArtistAndTitle(candidate.title);
   const candidateBaseTitle = cleanBaseTitle(parsed.title || candidate.title);
   const candidateFullClean = cleanBaseTitle(candidate.title);
-  const versionResult = compareVersionTags(profile.versionTags, getVersionTags(candidate.title));
+  const versionResult = compareVersionTags(
+    profile.versionTags,
+    getVersionTags(candidate.title),
+  );
 
   const candidateArtists = candidate.artists.map((artist) => artist.name);
   const parsedArtist = parsed.artist;
-  if (parsedArtist && !candidateArtists.some((artist) => artistsMatch(artist, parsedArtist))) {
+  if (
+    parsedArtist &&
+    !candidateArtists.some((artist) => artistsMatch(artist, parsedArtist))
+  ) {
     candidateArtists.push(parsedArtist);
   }
   const primaryArtist = candidateArtists[0] ?? "";
 
-  let bestTitleRatio = computeTitleRatio(profile, candidateBaseTitle, candidateFullClean);
-  let { artistExact, bestArtistRatio } = computeArtistScore(profile, candidateArtists, primaryArtist);
+  let bestTitleRatio = computeTitleRatio(
+    profile,
+    candidateBaseTitle,
+    candidateFullClean,
+  );
+  let { artistExact, bestArtistRatio } = computeArtistScore(
+    profile,
+    candidateArtists,
+    primaryArtist,
+  );
 
-  const inverted = computeInvertedMatch(profile, candidateBaseTitle, candidateArtists);
+  const inverted = computeInvertedMatch(
+    profile,
+    candidateBaseTitle,
+    candidateArtists,
+  );
   if (inverted) {
     bestTitleRatio = Math.max(bestTitleRatio, inverted.titleRatio);
     bestArtistRatio = Math.max(bestArtistRatio, inverted.artistRatio);

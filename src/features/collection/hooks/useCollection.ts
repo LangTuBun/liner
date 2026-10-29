@@ -17,6 +17,124 @@ export interface CollectionPageData {
   isDailyMix?: boolean;
 }
 
+const COLLECTION_STALE_MS = 5 * 60 * 1000;
+
+async function loadCollection(
+  type: string,
+  id: string,
+): Promise<CollectionPageData> {
+  const decodedId = id ? decodeURIComponent(id) : "";
+  const isDailyMix =
+    decodedId.startsWith("daily-mix") ||
+    decodedId.startsWith("mix-") ||
+    id.startsWith("daily-mix") ||
+    id.startsWith("mix-");
+
+  if (type === "playlist" && isDailyMix) {
+    const mixesRes = await api.getDailyMixes();
+    const found = mixesRes.items?.find(
+      (m) => m.id === id || m.id === decodedId,
+    );
+    if (found) {
+      const clientTracks = (found.tracks || []).map((t) => toClientTrack(t));
+      const primaryCover = found.cover?.url
+        ? mediaUrl(found.cover.url)
+        : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "";
+      const computedArtists = getDailyMixArtists(
+        found.clusterArtists,
+        clientTracks,
+        4,
+      );
+      const formatted: CollectionPageData = {
+        type: "playlist",
+        title: found.title,
+        author:
+          computedArtists.length > 0 ? computedArtists.join(", ") : "Daily Mix",
+        description: found.description,
+        coverUrl: primaryCover,
+        tracks: clientTracks,
+        isDailyMix: true,
+      };
+      return formatted;
+    }
+  }
+
+  const collection =
+    type === "playlist" ? await api.getPlaylist(id) : await api.getAlbum(id);
+
+  if (
+    (collection as any).playlist &&
+    Array.isArray((collection as any).items)
+  ) {
+    const userPlaylist = (collection as any).playlist;
+    const userItems = (collection as any).items as any[];
+    const covers = userItems
+      .map((i) => (i.track?.cover ? mediaUrl(i.track.cover.url) : ""))
+      .filter(Boolean)
+      .filter((url, idx, arr) => arr.indexOf(url) === idx)
+      .slice(0, 4);
+    const tracks: Track[] = userItems.map((item) => toClientTrack(item.track));
+    const ownerName =
+      userPlaylist.owner?.displayName || userPlaylist.owner?.username || "";
+    const formatted: CollectionPageData = {
+      type: "playlist",
+      title: userPlaylist.title,
+      author: ownerName || undefined,
+      description: userPlaylist.description || undefined,
+      coverUrl: covers[0] || "",
+      tracks,
+    };
+    return formatted;
+  }
+
+  const collectionCoverUrl = collection.cover
+    ? mediaUrl(collection.cover.url)
+    : "";
+  const tracks = (collection.tracks || []).map((t: any) => {
+    const clientTrack = toClientTrack(t);
+    let updated = clientTrack;
+    if (collection.type === "album") {
+      const albumData = {
+        id: decodedId,
+        title: collection.title,
+      };
+      updated = {
+        ...updated,
+        album: updated.album?.id ? updated.album : albumData,
+      };
+      if (
+        collectionCoverUrl &&
+        (!updated.coverUrl || updated.coverUrl.includes(YOUTUBE_THUMBNAIL_HOST))
+      ) {
+        updated = { ...updated, coverUrl: collectionCoverUrl };
+      }
+    }
+    return updated;
+  });
+
+  const formatted: CollectionPageData = {
+    type: collection.type,
+    title: collection.title,
+    author: collection.type === "playlist" ? collection.author : undefined,
+    artists: collection.type === "album" ? collection.artists : undefined,
+    description: (collection as any).description,
+    year: collection.year,
+    coverUrl: collectionCoverUrl,
+    tracks,
+  };
+  return formatted;
+}
+
+export function prefetchCollection(type: string, id: string): void {
+  const cacheKey = `collection:${type}:${id}`;
+  if (queryCache.get(cacheKey)) return;
+  void queryCache
+    .fetchWithSwr(cacheKey, () => loadCollection(type, id), {
+      staleTimeMs: COLLECTION_STALE_MS,
+    })
+    .catch(() => undefined);
+}
+
 // the songs of a saved album or playlist, from the page cache when it is warm
 export async function fetchCollectionTracks(
   type: "album" | "playlist",
@@ -24,21 +142,7 @@ export async function fetchCollectionTracks(
 ): Promise<Track[]> {
   const cached = queryCache.get<CollectionPageData>(`collection:${type}:${id}`);
   if (cached) return cached.tracks;
-  const collection =
-    type === "playlist" ? await api.getPlaylist(id) : await api.getAlbum(id);
-  const cover = collection.cover ? mediaUrl(collection.cover.url) : "";
-  return (collection.tracks || []).map((raw: any) => {
-    const track = toClientTrack(raw);
-    if (type !== "album") return track;
-    return {
-      ...track,
-      album: track.album?.id ? track.album : { id, title: collection.title },
-      coverUrl:
-        track.coverUrl && !track.coverUrl.includes(YOUTUBE_THUMBNAIL_HOST)
-          ? track.coverUrl
-          : cover || track.coverUrl,
-    };
-  });
+  return (await loadCollection(type, id)).tracks;
 }
 
 export function useCollection(type: string | null, id: string | null) {
@@ -80,125 +184,9 @@ export function useCollection(type: string | null, id: string | null) {
     );
 
     void queryCache
-      .fetchWithSwr(
-        cacheKey,
-        async () => {
-          const decodedId = id ? decodeURIComponent(id) : "";
-          const isDailyMix =
-            decodedId.startsWith("daily-mix") ||
-            decodedId.startsWith("mix-") ||
-            id.startsWith("daily-mix") ||
-            id.startsWith("mix-");
-
-          if (type === "playlist" && isDailyMix) {
-            const mixesRes = await api.getDailyMixes();
-            const found = mixesRes.items?.find(
-              (m) => m.id === id || m.id === decodedId,
-            );
-            if (found) {
-              const clientTracks = (found.tracks || []).map((t) =>
-                toClientTrack(t),
-              );
-              const primaryCover = found.cover?.url
-                ? mediaUrl(found.cover.url)
-                : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl || "";
-              const computedArtists = getDailyMixArtists(
-                found.clusterArtists,
-                clientTracks,
-                4,
-              );
-              const formatted: CollectionPageData = {
-                type: "playlist",
-                title: found.title,
-                author:
-                  computedArtists.length > 0
-                    ? computedArtists.join(", ")
-                    : "Daily Mix",
-                description: found.description,
-                coverUrl: primaryCover,
-                tracks: clientTracks,
-                isDailyMix: true,
-              };
-              return formatted;
-            }
-          }
-
-          const collection =
-            type === "playlist"
-              ? await api.getPlaylist(id)
-              : await api.getAlbum(id);
-
-          if (
-            (collection as any).playlist &&
-            Array.isArray((collection as any).items)
-          ) {
-            const userPlaylist = (collection as any).playlist;
-            const userItems = (collection as any).items as any[];
-            const covers = userItems
-              .map((i) => (i.track?.cover ? mediaUrl(i.track.cover.url) : ""))
-              .filter(Boolean)
-              .filter((url, idx, arr) => arr.indexOf(url) === idx)
-              .slice(0, 4);
-            const tracks: Track[] = userItems.map((item) =>
-              toClientTrack(item.track),
-            );
-            const ownerName =
-              userPlaylist.owner?.displayName ||
-              userPlaylist.owner?.username ||
-              "";
-            const formatted: CollectionPageData = {
-              type: "playlist",
-              title: userPlaylist.title,
-              author: ownerName || undefined,
-              description: userPlaylist.description || undefined,
-              coverUrl: covers[0] || "",
-              tracks,
-            };
-            return formatted;
-          }
-
-          const collectionCoverUrl = collection.cover
-            ? mediaUrl(collection.cover.url)
-            : "";
-          const tracks = (collection.tracks || []).map((t: any) => {
-            const clientTrack = toClientTrack(t);
-            let updated = clientTrack;
-            if (collection.type === "album") {
-              const albumData = {
-                id: decodedId,
-                title: collection.title,
-              };
-              updated = {
-                ...updated,
-                album: updated.album?.id ? updated.album : albumData,
-              };
-              if (
-                collectionCoverUrl &&
-                (!updated.coverUrl ||
-                  updated.coverUrl.includes(YOUTUBE_THUMBNAIL_HOST))
-              ) {
-                updated = { ...updated, coverUrl: collectionCoverUrl };
-              }
-            }
-            return updated;
-          });
-
-          const formatted: CollectionPageData = {
-            type: collection.type,
-            title: collection.title,
-            author:
-              collection.type === "playlist" ? collection.author : undefined,
-            artists:
-              collection.type === "album" ? collection.artists : undefined,
-            description: (collection as any).description,
-            year: collection.year,
-            coverUrl: collectionCoverUrl,
-            tracks,
-          };
-          return formatted;
-        },
-        { staleTimeMs: 5 * 60 * 1000 },
-      )
+      .fetchWithSwr(cacheKey, () => loadCollection(type, id), {
+        staleTimeMs: COLLECTION_STALE_MS,
+      })
       .then(({ data: result }) => {
         if (active) {
           setData(result);

@@ -408,7 +408,28 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Pogłos",
     "reverb_hint": "Przestrzeń i głębia brzmienia",
-    "reverb_amount": "Pogłos"
+    "reverb_amount": "Pogłos",
+    "beta_visuals": {
+      "label": "Uwaga",
+      "ambient_title": "Ambient jest w becie",
+      "ambient_body": "Ten utwór ma własne animowane tło. Jest wciąż w wersji beta i może obciążać słabsze urządzenia, więc jeśli odtwarzacz przycina, wybierz lżejszy tryb.",
+      "settings_title": "Jakość wizualna",
+      "settings_body": "Wybierz, jak bardzo animowany ma być odtwarzacz pełnoekranowy. Lżejsze tryby oszczędzają baterię i działają płynniej na słabszych urządzeniach.",
+      "modes": {
+        "full": {
+          "name": "Wszystkie efekty",
+          "hint": "Wszystko włączone, z rozmytymi krawędziami tekstu"
+        },
+        "balanced": {
+          "name": "Zrównoważony",
+          "hint": "Ruchome tła, bez rozmycia tekstu"
+        },
+        "lite": {
+          "name": "Lekki",
+          "hint": "Nieruchoma okładka, zwykły tekst"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlista",
@@ -748,7 +769,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Kanał",
-      "support": "Pomoc techniczna",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Strona",
       "tagline": "Nowoczesny desktopowy odtwarzacz muzyki ze streamingu z tekstami zsynchronizowanymi co do sylaby",
@@ -783,11 +804,6 @@
     },
     "connection": {
       "open_folder": "Otwórz lokalizację zapisu"
-    },
-    "cover_glow": {
-      "title": "Poświata okładki",
-      "description": "Rozmyta poświata okładki za stronami. Wyłącz, aby zostawić jednolite tło.",
-      "disabled_for_light": "Wyłączone w jasnym motywie."
     }
   },
   "toast": {
@@ -936,6 +952,7 @@
   "track_sort": {
     "label": "Sortowanie",
     "default": "Domyślnie",
+    "added": "Według daty dodania",
     "title": "Według tytułu (A–Z)",
     "duration": "Według długości",
     "popularity": "Według popularności"

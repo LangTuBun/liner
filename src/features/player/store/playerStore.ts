@@ -1,7 +1,10 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { Track } from "@/shared/types";
-import { debouncedStorage } from "@/shared/utils/storage";
+import {
+  createIncrementalJSONStorage,
+  debouncedStorage,
+} from "@/shared/utils/storage";
 import {
   FLAT_EQ,
   normalizeEqCustomPresets,
@@ -135,6 +138,31 @@ export interface PlayerStore extends PlayerState {
 }
 
 const PLAYER_SESSION_STORAGE_KEY = "liner_player_session_v2";
+const PLAYER_RESUME_STORAGE_KEY = "liner_player_resume_v1";
+const RESUME_SAVE_INTERVAL_MS = 10_000;
+
+interface ResumePosition {
+  trackId: string;
+  positionMs: number;
+}
+
+function readResumePosition(): ResumePosition | null {
+  try {
+    const raw = debouncedStorage.getItem(PLAYER_RESUME_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ResumePosition> | null;
+    if (
+      typeof parsed?.trackId !== "string" ||
+      typeof parsed.positionMs !== "number" ||
+      !Number.isFinite(parsed.positionMs)
+    ) {
+      return null;
+    }
+    return { trackId: parsed.trackId, positionMs: parsed.positionMs };
+  } catch {
+    return null;
+  }
+}
 
 export const usePlayerStore = create<PlayerStore>()(
   persist(
@@ -272,7 +300,18 @@ export const usePlayerStore = create<PlayerStore>()(
     }),
     {
       name: PLAYER_SESSION_STORAGE_KEY,
-      storage: createJSONStorage(() => debouncedStorage),
+      storage: createIncrementalJSONStorage(debouncedStorage),
+      merge: (persisted, current) => {
+        const merged = {
+          ...current,
+          ...((persisted ?? {}) as Partial<PlayerStore>),
+        };
+        const resume = readResumePosition();
+        if (resume && merged.currentTrack?.id === resume.trackId) {
+          merged.positionMs = resume.positionMs;
+        }
+        return merged;
+      },
       onRehydrateStorage: () => (state) => {
         // After hydration, if a track was saved, restore as paused so the UI
         // shows the track and position without auto-playing.
@@ -344,7 +383,6 @@ export const usePlayerStore = create<PlayerStore>()(
               playbackContext: state.playbackContext,
               playbackContextCover: state.playbackContextCover,
               playbackMode: state.playbackMode,
-              positionMs: state.positionMs,
               durationMs: state.durationMs,
             }
           : {}),
@@ -371,3 +409,48 @@ export const usePlayerStore = create<PlayerStore>()(
     },
   ),
 );
+
+let lastResumeSavedAt = 0;
+let lastResumeValue: string | null = null;
+
+function saveResumePosition(state: PlayerState) {
+  lastResumeSavedAt = Date.now();
+  if (state.defaultPlaybackContext !== "resume" || !state.currentTrack) {
+    if (lastResumeValue !== "") {
+      lastResumeValue = "";
+      debouncedStorage.removeItem(PLAYER_RESUME_STORAGE_KEY);
+    }
+    return;
+  }
+  const value = JSON.stringify({
+    trackId: state.currentTrack.id,
+    positionMs: Math.max(0, Math.round(state.positionMs)),
+  });
+  if (value === lastResumeValue) return;
+  lastResumeValue = value;
+  debouncedStorage.setItem(PLAYER_RESUME_STORAGE_KEY, value);
+}
+
+usePlayerStore.subscribe((state, prev) => {
+  if (
+    state.currentTrack?.id !== prev.currentTrack?.id ||
+    state.status !== prev.status ||
+    state.defaultPlaybackContext !== prev.defaultPlaybackContext
+  ) {
+    saveResumePosition(state);
+    return;
+  }
+  if (
+    state.positionMs !== prev.positionMs &&
+    Date.now() - lastResumeSavedAt >= RESUME_SAVE_INTERVAL_MS
+  ) {
+    saveResumePosition(state);
+  }
+});
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    saveResumePosition(usePlayerStore.getState());
+    debouncedStorage.flush();
+  });
+}

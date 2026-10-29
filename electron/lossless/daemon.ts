@@ -584,13 +584,14 @@ export class LosslessDaemon {
   }
 
   private toPublic(job: InternalJob): LosslessJob {
+    // the fields only the daemon needs stay out of what the window sees
     const {
-      key,
-      ssJobId,
-      finished,
-      cleanArtist,
-      cleanTitle,
-      thumbnail,
+      key: _key,
+      ssJobId: _ssJobId,
+      finished: _finished,
+      cleanArtist: _cleanArtist,
+      cleanTitle: _cleanTitle,
+      thumbnail: _thumbnail,
       ...rest
     } = job;
     return rest;

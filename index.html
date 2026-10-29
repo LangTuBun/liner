@@ -18,6 +18,13 @@
         --font-roboto-flex: "Roboto Flex", sans-serif;
         --font-montserrat-family: "Montserrat", sans-serif;
       }
+      html.app-window #root:empty {
+        background: #e4e4e7;
+        border-radius: 12px;
+      }
+      html.app-window[data-theme="dark"] #root:empty {
+        background: #000000;
+      }
     </style>
   </head>
   <body class="h-full w-full bg-transparent overflow-hidden p-1">

@@ -14,9 +14,21 @@ import { ToggleSwitch, Tooltip } from "@/shared/ui";
 import { SettingRow, SettingSection, SegmentedControl } from "../controls";
 
 const POSITION_CONFIG = [
-  { value: "top-left" as const, key: "settings.overlay.position.top_left", fallback: "Top Left" },
-  { value: "top-center" as const, key: "settings.overlay.position.top_center", fallback: "Top Middle" },
-  { value: "top-right" as const, key: "settings.overlay.position.top_right", fallback: "Top Right" },
+  {
+    value: "top-left" as const,
+    key: "settings.overlay.position.top_left",
+    fallback: "Top Left",
+  },
+  {
+    value: "top-center" as const,
+    key: "settings.overlay.position.top_center",
+    fallback: "Top Middle",
+  },
+  {
+    value: "top-right" as const,
+    key: "settings.overlay.position.top_right",
+    fallback: "Top Right",
+  },
 ] as const;
 
 const DEFAULT_SHORTCUT = "Alt+Shift+O";
@@ -54,8 +66,12 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
   const shortcut = useOverlaySettingsStore((s) => s.shortcut);
   const setShortcut = useOverlaySettingsStore((s) => s.setShortcut);
 
-  const autoShowOnMinimize = useOverlaySettingsStore((s) => s.autoShowOnMinimize);
-  const setAutoShowOnMinimize = useOverlaySettingsStore((s) => s.setAutoShowOnMinimize);
+  const autoShowOnMinimize = useOverlaySettingsStore(
+    (s) => s.autoShowOnMinimize,
+  );
+  const setAutoShowOnMinimize = useOverlaySettingsStore(
+    (s) => s.setAutoShowOnMinimize,
+  );
 
   const alwaysOnTop = useOverlaySettingsStore((s) => s.alwaysOnTop);
   const setAlwaysOnTop = useOverlaySettingsStore((s) => s.setAlwaysOnTop);
@@ -130,7 +146,9 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
       const normalized = normalizeShortcutToEnglish(parts.join("+"));
       if (normalized) {
         setShortcut(normalized);
-        useShortcutsStore.getState().setGlobalShortcut("toggleOverlay", normalized);
+        useShortcutsStore
+          .getState()
+          .setGlobalShortcut("toggleOverlay", normalized);
         setHeldModifiers([]);
         setIsRecording(false);
       }
@@ -143,7 +161,10 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (recordButtonRef.current && !recordButtonRef.current.contains(e.target as Node)) {
+      if (
+        recordButtonRef.current &&
+        !recordButtonRef.current.contains(e.target as Node)
+      ) {
         setHeldModifiers([]);
         setIsRecording(false);
       }
@@ -179,12 +200,7 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
         titleKey="settings.overlay.enabled.title"
         descKey="settings.overlay.enabled.description"
         searchQuery={searchQuery}
-        control={
-          <ToggleSwitch
-            checked={enabled}
-            onChange={setEnabled}
-          />
-        }
+        control={<ToggleSwitch checked={enabled} onChange={setEnabled} />}
       />
 
       <div
@@ -228,7 +244,10 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
               <AnimatePresence>
                 {shortcut !== DEFAULT_SHORTCUT && enabled && (
                   <Tooltip
-                    content={t("settings.overlay.shortcut.reset") || "Reset to Alt+Shift+O"}
+                    content={
+                      t("settings.overlay.shortcut.reset") ||
+                      "Reset to Alt+Shift+O"
+                    }
                     side="top"
                     sideOffset={6}
                   >
@@ -238,12 +257,16 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.1, ease: "easeOut" }}
-                      aria-label={t("settings.overlay.shortcut.reset") || "Reset shortcut"}
+                      aria-label={
+                        t("settings.overlay.shortcut.reset") || "Reset shortcut"
+                      }
                       onClick={() => {
                         setHeldModifiers([]);
                         setIsRecording(false);
                         setShortcut(DEFAULT_SHORTCUT);
-                        useShortcutsStore.getState().setGlobalShortcut("toggleOverlay", DEFAULT_SHORTCUT);
+                        useShortcutsStore
+                          .getState()
+                          .setGlobalShortcut("toggleOverlay", DEFAULT_SHORTCUT);
                       }}
                       className="h-[28px] w-[28px] rounded-lg border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95]"
                     >
@@ -277,14 +300,24 @@ export function OverlayTab({ searchQuery }: { searchQuery?: string }) {
                 <AnimatePresence mode="wait" initial={false}>
                   {isRecording ? (
                     <motion.span
-                      key={heldModifiers.length > 0 ? heldModifiers.join("+") : "waiting"}
+                      key={
+                        heldModifiers.length > 0
+                          ? heldModifiers.join("+")
+                          : "waiting"
+                      }
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.08, ease: "easeOut" }}
-                      className={heldModifiers.length > 0 ? "leading-none" : "tracking-widest leading-none"}
+                      className={
+                        heldModifiers.length > 0
+                          ? "leading-none"
+                          : "tracking-widest leading-none"
+                      }
                     >
-                      {heldModifiers.length > 0 ? `${heldModifiers.join(" + ")} + ...` : "···"}
+                      {heldModifiers.length > 0
+                        ? `${heldModifiers.join(" + ")} + ...`
+                        : "···"}
                     </motion.span>
                   ) : (
                     <motion.span

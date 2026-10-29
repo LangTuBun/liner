@@ -6,11 +6,7 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import {
-  type Locale,
-  getStoredLocale,
-  storeLocale,
-} from "./locale";
+import { type Locale, getStoredLocale, storeLocale } from "./locale";
 import { createTranslatorSync, type TFunction } from "./translator";
 
 interface I18nContextValue {
@@ -34,7 +30,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ locale, t, setLocale, loading: false }),
-    [locale, t, setLocale]
+    [locale, t, setLocale],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

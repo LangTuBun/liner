@@ -1,6 +1,9 @@
 export const DISQUALIFY_DELTA_MS = 15_000;
 
-export function durationDelta(left?: number, right?: number): number | undefined {
+export function durationDelta(
+  left?: number,
+  right?: number,
+): number | undefined {
   return left && right ? Math.abs(left - right) : undefined;
 }
 

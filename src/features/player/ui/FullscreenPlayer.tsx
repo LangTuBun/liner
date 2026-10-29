@@ -1,7 +1,15 @@
 import { useCallback, useEffect, createElement, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { shouldReleaseTopPin, startsPinnedToTop } from "./lyricsTopPin";
-import { usePlayerState } from "../hooks/usePlayerState";
+import { usePlayerStore } from "../store/playerStore";
+import {
+  useKawarpEnabled,
+  useLyricsEdgeBlur,
+  useLyricsEdgeFade,
+} from "../store/visualModeStore";
+import { useScrollEdges } from "../hooks/useScrollEdges";
+import { cn } from "@/shared/lib";
+import { ISLAND_SURFACE } from "@/shared/ui";
 import { playerEngine } from "../engine/playerEngine";
 import {
   useLyricsStore,
@@ -21,6 +29,8 @@ import "@braccato/core/styles/variables.css";
 import "@braccato/core/styles/lyrics.css";
 import "@braccato/core/styles/instrumental.css";
 import KawarpWrapper from "./KawarpWrapper";
+import AmbientLayer from "./AmbientLayer";
+import { BetaVisualsWarning } from "./BetaVisualsWarning";
 import { useTranslation } from "@/languages";
 
 const BRACCATO_TAG = "braccato-lyrics";
@@ -31,14 +41,18 @@ interface BraccatoLyricsViewProps {
 }
 
 function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
-  const player = usePlayerState();
+  const status = usePlayerStore((s) => s.status);
+  const edgeFade = useLyricsEdgeFade();
+  const edgeBlur = useLyricsEdgeBlur();
   const elementRef = useRef<any>(null);
   const latestLyricsRef = useRef(lyrics);
   const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWheelTimeRef = useRef(0);
   const isInFreeSearchRef = useRef(false);
   const waitingForAudioAfterClickRef = useRef(false);
-  const pinnedToTopRef = useRef(startsPinnedToTop(player.status, player.positionMs));
+  const pinnedToTopRef = useRef(
+    startsPinnedToTop(status, usePlayerStore.getState().positionMs),
+  );
 
   const scrollToActiveLine = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -260,20 +274,25 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
 
   useEffect(() => {
     if (
-      (player.status === "playing" || player.status === "paused") &&
+      (status === "playing" || status === "paused") &&
       waitingForAudioAfterClickRef.current
     ) {
       waitingForAudioAfterClickRef.current = false;
       returnToFollowingMode();
     }
-  }, [player.status, returnToFollowingMode]);
+  }, [status, returnToFollowingMode]);
 
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
 
     const checkAndScroll = () => {
-      if (cancelled || waitingForAudioAfterClickRef.current || pinnedToTopRef.current) return;
+      if (
+        cancelled ||
+        waitingForAudioAfterClickRef.current ||
+        pinnedToTopRef.current
+      )
+        return;
       attempts++;
       const success = scrollToActiveLine("auto");
       if (!success && attempts < 30) {
@@ -293,9 +312,16 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     const startedAt = performance.now();
     let rafId = 0;
     const holdTop = () => {
-      const el = elementRef.current as HTMLElement & { renderer?: { noteUserScroll?: () => void; resumeAutoscroll?: () => void } };
+      const el = elementRef.current as HTMLElement & {
+        renderer?: {
+          noteUserScroll?: () => void;
+          resumeAutoscroll?: () => void;
+        };
+      };
       if (!pinnedToTopRef.current) return;
-      const audio = document.getElementById("liner-audio") as HTMLAudioElement | null;
+      const audio = document.getElementById(
+        "liner-audio",
+      ) as HTMLAudioElement | null;
       const release = shouldReleaseTopPin({
         status: playerEngine.getSnapshot().status,
         audioPaused: !audio || audio.paused,
@@ -317,12 +343,19 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
+  const { atTop, atBottom } = useScrollEdges(elementRef, lyrics);
+
   return (
     <div className="relative flex flex-col flex-1 w-full h-full min-h-0">
       {createElement(BRACCATO_TAG, {
         ref: setElement,
         source: "#liner-audio",
-        className: "block flex-1 w-full h-full px-6",
+        className: cn(
+          "block flex-1 w-full h-full px-6",
+          edgeFade && "lyrics-edge-fog",
+        ),
+        "data-at-top": atTop ? "" : undefined,
+        "data-at-bottom": atBottom ? "" : undefined,
         style: {
           overflowY: "auto",
           overflowX: "hidden",
@@ -330,6 +363,24 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
           scrollbarWidth: "none",
         },
       })}
+      {edgeBlur && (
+        <>
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-x-0 top-0 h-[18%] backdrop-blur-xs transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] [mask-image:linear-gradient(to_bottom,black,transparent)]",
+              atTop ? "opacity-0" : "opacity-100",
+            )}
+          />
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 h-[26%] backdrop-blur-xs transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] [mask-image:linear-gradient(to_top,black,transparent)]",
+              atBottom ? "opacity-0" : "opacity-100",
+            )}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -344,15 +395,18 @@ export function FullscreenPlayer({
   onClose,
 }: FullscreenPlayerProps) {
   const { t } = useTranslation();
-  const player = usePlayerState();
-  const coverUrl = player.currentTrack?.coverUrl;
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const nextCoverUrl = usePlayerStore(
+    (s) => s.queue[s.currentIndex + 1]?.coverUrl,
+  );
+  const coverUrl = currentTrack?.coverUrl;
   const kawarpSrc = useCoverSrc(coverUrl);
 
   useEffect(() => {
-    if (!player.currentTrack) {
+    if (!currentTrack) {
       onClose();
     }
-  }, [player.currentTrack, onClose]);
+  }, [currentTrack, onClose]);
 
   const {
     braccatoLyrics,
@@ -367,18 +421,23 @@ export function FullscreenPlayer({
     console.error("kawarp load error:", err);
   }, []);
 
+  const kawarpEnabled = useKawarpEnabled();
   const [kawarpShown, setKawarpShown] = useState(false);
+  const [kawarpWasEnabled, setKawarpWasEnabled] = useState(kawarpEnabled);
+  if (kawarpWasEnabled !== kawarpEnabled) {
+    setKawarpWasEnabled(kawarpEnabled);
+    setKawarpShown(false);
+  }
   const onKawarpLoad = useCallback(() => {
     setTimeout(() => setKawarpShown(true), KAWARP_FADE_IN_MS);
   }, []);
 
-  const nextCoverUrl = player.queue[player.currentIndex + 1]?.coverUrl;
   useEffect(() => {
     void preloadCoverArt(coverUrl);
     void preloadCoverArt(nextCoverUrl);
   }, [coverUrl, nextCoverUrl]);
 
-  const currentTrackId = player.currentTrack?.id;
+  const currentTrackId = currentTrack?.id;
   const isMatchingTrack = Boolean(
     currentTrackId && currentLyricsTrackId === currentTrackId,
   );
@@ -402,19 +461,27 @@ export function FullscreenPlayer({
           className="absolute inset-0"
           style={{ backgroundColor: "var(--color-bg-primary)" }}
         />
-        {(kawarpSrc || coverUrl) && !kawarpShown && (
-          <div
-            className="absolute inset-0 bg-cover bg-center pointer-events-none"
+        {(kawarpSrc || coverUrl) && (!kawarpShown || !kawarpEnabled) && (
+          <img
+            src={kawarpSrc || coverUrl}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover pointer-events-none"
             style={{
-              backgroundImage: `url(${kawarpSrc || coverUrl})`,
               filter: "blur(64px) saturate(1.3)",
               transform: "scale(1.3)",
             }}
           />
         )}
-        {effectsReady ? (
-          <KawarpWrapper src={kawarpSrc} onLoad={onKawarpLoad} onError={onError} />
+        {effectsReady && kawarpEnabled ? (
+          <KawarpWrapper
+            src={kawarpSrc}
+            onLoad={onKawarpLoad}
+            onError={onError}
+          />
         ) : null}
+        <AmbientLayer trackId={currentTrackId} />
       </div>
 
       <div className="absolute inset-0 z-[1] bg-black/40" />
@@ -425,11 +492,12 @@ export function FullscreenPlayer({
         </div>
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          {showProviderIsland && (
-            <div className="absolute top-[6px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
-              <LyricsProviderIsland />
+          <div className="absolute top-[6px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
+            <div className="relative inline-flex">
+              <BetaVisualsWarning docked={showProviderIsland} />
+              {showProviderIsland && <LyricsProviderIsland />}
             </div>
-          )}
+          </div>
 
           <div
             className="flex-1 min-h-0 relative w-full h-full"
@@ -531,7 +599,10 @@ export function FullscreenPlayer({
         aria-label={t("player.close_fullscreen")}
         onClick={onClose}
         data-no-window-drag
-        className="absolute top-[6px] left-[6px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border-none bg-black/50 backdrop-blur-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto"
+        className={cn(
+          ISLAND_SURFACE,
+          "absolute top-[6px] left-[6px] z-30 inline-flex h-[32px] w-[32px] items-center justify-center border-none text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.94] transition-all cursor-pointer select-none pointer-events-auto",
+        )}
       >
         <DownLine size={18} />
       </button>

@@ -10,8 +10,12 @@ describe("shortcutsStore", () => {
 
   it("initializes with default shortcuts across all sections", () => {
     const state = useShortcutsStore.getState();
-    expect(state.global.toggleOverlay).toBe(DEFAULT_SHORTCUTS.global.toggleOverlay);
-    expect(state.global.quickLikeSong).toBe(DEFAULT_SHORTCUTS.global.quickLikeSong);
+    expect(state.global.toggleOverlay).toBe(
+      DEFAULT_SHORTCUTS.global.toggleOverlay,
+    );
+    expect(state.global.quickLikeSong).toBe(
+      DEFAULT_SHORTCUTS.global.quickLikeSong,
+    );
     expect(state.mainApp.playPause).toBe("Space");
     expect(state.mainApp.nextTrack).toBe("Control+Right");
     expect(state.miniplayer.playPause).toBe("Space");
@@ -22,14 +26,22 @@ describe("shortcutsStore", () => {
     const updateOverlaySettings = vi.fn();
     (window as any).linerElectron = { updateOverlaySettings };
 
-    useShortcutsStore.getState().setGlobalShortcut("quickLikeSong", "Ctrl+Alt+L");
-    expect(useShortcutsStore.getState().global.quickLikeSong).toBe("Control+Alt+L");
+    useShortcutsStore
+      .getState()
+      .setGlobalShortcut("quickLikeSong", "Ctrl+Alt+L");
+    expect(useShortcutsStore.getState().global.quickLikeSong).toBe(
+      "Control+Alt+L",
+    );
     expect(updateOverlaySettings).toHaveBeenCalledWith(
-      expect.objectContaining({ likeShortcut: "Control+Alt+L" })
+      expect.objectContaining({ likeShortcut: "Control+Alt+L" }),
     );
 
-    useShortcutsStore.getState().setGlobalShortcut("toggleOverlay", "Alt+Shift+Щ");
-    expect(useShortcutsStore.getState().global.toggleOverlay).toBe("Alt+Shift+O");
+    useShortcutsStore
+      .getState()
+      .setGlobalShortcut("toggleOverlay", "Alt+Shift+Щ");
+    expect(useShortcutsStore.getState().global.toggleOverlay).toBe(
+      "Alt+Shift+O",
+    );
     expect(useOverlaySettingsStore.getState().shortcut).toBe("Alt+Shift+O");
   });
 
@@ -59,12 +71,16 @@ describe("shortcutsStore", () => {
   });
 
   it("resets all shortcuts to defaults", () => {
-    useShortcutsStore.getState().setGlobalShortcut("quickLikeSong", "Alt+Shift+K");
+    useShortcutsStore
+      .getState()
+      .setGlobalShortcut("quickLikeSong", "Alt+Shift+K");
     useShortcutsStore.getState().setMainAppShortcut("toggleMute", "X");
     useShortcutsStore.getState().setMiniplayerShortcut("likeTrack", "Y");
 
     useShortcutsStore.getState().resetAll();
-    expect(useShortcutsStore.getState().global.quickLikeSong).toBe("Alt+Shift+L");
+    expect(useShortcutsStore.getState().global.quickLikeSong).toBe(
+      "Alt+Shift+L",
+    );
     expect(useShortcutsStore.getState().mainApp.toggleMute).toBe("M");
     expect(useShortcutsStore.getState().miniplayer.likeTrack).toBe("L");
   });

@@ -95,7 +95,10 @@ export function signWithSecret(
 ): string {
   const bodySha256 = crypto.createHash("sha256").update(body).digest("hex");
   const canonical = `${method.toUpperCase().trim()}\n${path.split("?")[0].trim()}\n${timestamp}\n${nonce}\n${bodySha256}`;
-  return crypto.createHmac("sha256", secret).update(canonical).digest("base64url");
+  return crypto
+    .createHmac("sha256", secret)
+    .update(canonical)
+    .digest("base64url");
 }
 
 function getWasmExports(): WasmSignerExports {
@@ -153,7 +156,14 @@ export function signRequest(input: SignRequestInput): SignedRequestHeaders {
 
   if (devSigningSecret) {
     return {
-      signature: signWithSecret(devSigningSecret, input.method, input.path, input.body ?? "", timestamp, nonce),
+      signature: signWithSecret(
+        devSigningSecret,
+        input.method,
+        input.path,
+        input.body ?? "",
+        timestamp,
+        nonce,
+      ),
       timestamp,
       nonce,
     };
@@ -198,7 +208,9 @@ export function signRequest(input: SignRequestInput): SignedRequestHeaders {
 }
 
 // signs monitor telemetry request using server-adjusted timestamp
-export function signMonitorRequest(input: SignRequestInput): SignedRequestHeaders {
+export function signMonitorRequest(
+  input: SignRequestInput,
+): SignedRequestHeaders {
   const wasm = getWasmExports();
   const timestamp = input.timestamp ?? getAdjustedTimestamp();
   const nonce = crypto.randomBytes(8).toString("hex");
@@ -256,5 +268,3 @@ export function signRawPayload(payload: Buffer | Uint8Array): string {
     wasm.liner_dealloc(ptr, bytes.length);
   }
 }
-
-

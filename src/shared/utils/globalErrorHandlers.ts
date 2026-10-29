@@ -38,12 +38,14 @@ export function initGlobalErrorHandlers(
       errorObj ?? event,
     );
 
-    telemetry.reportError(errorObj ?? message, {
-      source: "window.onerror",
-      filename,
-      lineno,
-      colno,
-    }).catch(() => {});
+    telemetry
+      .reportError(errorObj ?? message, {
+        source: "window.onerror",
+        filename,
+        lineno,
+        colno,
+      })
+      .catch(() => {});
 
     options?.onError?.(event);
   };
@@ -64,9 +66,11 @@ export function initGlobalErrorHandlers(
       reason,
     );
 
-    telemetry.reportError(reason ?? "Unhandled Promise Rejection", {
-      source: "window.unhandledrejection",
-    }).catch(() => {});
+    telemetry
+      .reportError(reason ?? "Unhandled Promise Rejection", {
+        source: "window.unhandledrejection",
+      })
+      .catch(() => {});
 
     options?.onUnhandledRejection?.(event);
   };

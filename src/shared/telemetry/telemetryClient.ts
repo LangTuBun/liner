@@ -1,5 +1,3 @@
-import { telemetryConfig } from "./config";
-
 export interface TelemetryEventDetails {
   url?: string;
   method?: string;

@@ -4,66 +4,81 @@ import tailwindcss from "@tailwindcss/vite";
 import electron from "vite-plugin-electron/simple";
 import path from "path";
 import pkg from "./package.json" with { type: "json" };
-import { contentSecurityPolicyPlugin } from "./vite.csp";
+import { contentSecurityPolicyPlugin } from "./vite.csp.ts";
 
 export default defineConfig(({ command, mode }) => {
   if (command === "serve") {
-    const devSigningSecret = loadEnv(mode, process.cwd(), "LINER_").LINER_DEV_SIGNING_SECRET;
-    if (devSigningSecret) process.env.LINER_DEV_SIGNING_SECRET = devSigningSecret;
+    const devSigningSecret = loadEnv(
+      mode,
+      process.cwd(),
+      "LINER_",
+    ).LINER_DEV_SIGNING_SECRET;
+    if (devSigningSecret)
+      process.env.LINER_DEV_SIGNING_SECRET = devSigningSecret;
   }
 
   return {
-  define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
-  },
-  plugins: [
-    react(),
-    tailwindcss(),
-    contentSecurityPolicyPlugin(),
-    electron({
-      main: {
-        entry: "electron/main.ts",
-        vite: {
-          define: {
-            // LINER_PERSONAL_BUILD=1: a local build that must not swap in upstream ui
-            // bundles or installers, which would drop the local changes
-            __LINER_PERSONAL_BUILD__: JSON.stringify(
-              process.env.LINER_PERSONAL_BUILD === "1",
-            ),
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    },
+    plugins: [
+      react(),
+      tailwindcss(),
+      contentSecurityPolicyPlugin(),
+      electron({
+        main: {
+          entry: "electron/main.ts",
+          vite: {
+            define: {
+              // LINER_PERSONAL_BUILD=1: a local build that must not swap in upstream ui
+              // bundles or installers, which would drop the local changes
+              __LINER_PERSONAL_BUILD__: JSON.stringify(
+                process.env.LINER_PERSONAL_BUILD === "1",
+              ),
+            },
           },
         },
-      },
-      preload: {
-        input: "electron/preload.ts",
-        vite: {
-          build: {
-            rollupOptions: {
-              output: {
-                format: "cjs",
-                entryFileNames: "preload.cjs",
+        preload: {
+          input: "electron/preload.ts",
+          vite: {
+            build: {
+              rollupOptions: {
+                output: {
+                  format: "cjs",
+                  entryFileNames: "preload.cjs",
+                },
               },
             },
           },
         },
+      }),
+    ],
+    clearScreen: false,
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "./src"),
+        "next/navigation": path.resolve(
+          import.meta.dirname,
+          "./src/lib/navigation.tsx",
+        ),
+        "next/link": path.resolve(
+          import.meta.dirname,
+          "./src/lib/navigation.tsx",
+        ),
+        "next/image": path.resolve(
+          import.meta.dirname,
+          "./src/components/ui/AppImage.tsx",
+        ),
       },
-    }),
-  ],
-  clearScreen: false,
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "./src"),
-      "next/navigation": path.resolve(import.meta.dirname, "./src/lib/navigation.tsx"),
-      "next/link": path.resolve(import.meta.dirname, "./src/lib/navigation.tsx"),
-      "next/image": path.resolve(import.meta.dirname, "./src/components/ui/AppImage.tsx"),
     },
-  },
-  server: {
-    port: 5173,
-    strictPort: true,
-  },
-  build: {
-    outDir: "dist",
-    emptyOutDir: true,
-  },
+    server: {
+      port: 5173,
+      strictPort: true,
+    },
+    build: {
+      outDir: "dist",
+      emptyOutDir: true,
+      chunkSizeWarningLimit: 2048,
+    },
   };
 });

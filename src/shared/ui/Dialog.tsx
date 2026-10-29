@@ -28,7 +28,11 @@ export default function Dialog({
   zIndex,
 }: DialogProps) {
   const [mounted, setMounted] = useState(false);
-  const pointerStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
+  const pointerStartRef = useRef<{
+    x: number;
+    y: number;
+    target: EventTarget | null;
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -85,7 +89,10 @@ export default function Dialog({
       if (dist > 6) {
         return;
       }
-      if (start.target !== e.currentTarget && (start.target as HTMLElement)?.closest?.("[data-dialog-container]")) {
+      if (
+        start.target !== e.currentTarget &&
+        (start.target as HTMLElement)?.closest?.("[data-dialog-container]")
+      ) {
         return;
       }
     }

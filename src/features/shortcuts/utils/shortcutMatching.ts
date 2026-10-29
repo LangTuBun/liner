@@ -19,7 +19,16 @@ export function hasModifier(shortcut: string): boolean {
   if (!shortcut) return false;
   const parts = splitShortcutParts(shortcut).map((p) => p.toLowerCase());
   return parts.some((p) =>
-    ["control", "ctrl", "alt", "option", "shift", "command", "cmd", "meta"].includes(p)
+    [
+      "control",
+      "ctrl",
+      "alt",
+      "option",
+      "shift",
+      "command",
+      "cmd",
+      "meta",
+    ].includes(p),
   );
 }
 
@@ -52,7 +61,10 @@ export function getEventAccelerator(e: KeyboardEvent): string | null {
  * Ensures layout independence (Cyrillic to English QWERTY remapping)
  * and strict modifier matching.
  */
-export function matchesShortcut(e: KeyboardEvent, targetShortcut: string): boolean {
+export function matchesShortcut(
+  e: KeyboardEvent,
+  targetShortcut: string,
+): boolean {
   if (!targetShortcut) return false;
 
   const targetNormalized = normalizeShortcutToEnglish(targetShortcut);
@@ -86,8 +98,18 @@ export function formatAcceleratorForDisplay(accelerator: string): string {
   return splitShortcutParts(accelerator)
     .map((p) => {
       const lower = p.toLowerCase();
-      if (lower === "control" || lower === "ctrl" || lower === "commandorcontrol") return "Ctrl";
-      if (lower === "command" || lower === "cmd" || lower === "meta" || lower === "super") {
+      if (
+        lower === "control" ||
+        lower === "ctrl" ||
+        lower === "commandorcontrol"
+      )
+        return "Ctrl";
+      if (
+        lower === "command" ||
+        lower === "cmd" ||
+        lower === "meta" ||
+        lower === "super"
+      ) {
         return isMac ? "Cmd" : "Win";
       }
       if (lower === "alt" || lower === "option") return isMac ? "Opt" : "Alt";
@@ -106,8 +128,14 @@ export function getAcceleratorKeycaps(accelerator: string): string[] {
   const isMac = isMacPlatform();
   return splitShortcutParts(accelerator).map((p) => {
     const lower = p.toLowerCase();
-    if (lower === "control" || lower === "ctrl" || lower === "commandorcontrol") return "Ctrl";
-    if (lower === "command" || lower === "cmd" || lower === "meta" || lower === "super") {
+    if (lower === "control" || lower === "ctrl" || lower === "commandorcontrol")
+      return "Ctrl";
+    if (
+      lower === "command" ||
+      lower === "cmd" ||
+      lower === "meta" ||
+      lower === "super"
+    ) {
       return isMac ? "⌘" : "Win";
     }
     if (lower === "alt" || lower === "option") return isMac ? "⌥" : "Alt";
@@ -120,4 +148,3 @@ export function getAcceleratorKeycaps(accelerator: string): string[] {
     return p;
   });
 }
-

@@ -3,7 +3,10 @@ import type { AuthTokens } from "../contracts";
 
 type Listener = (session: AuthTokens | null) => void;
 
-const session = (refreshToken: string, accessToken = `access_${refreshToken}`): AuthTokens => ({
+const session = (
+  refreshToken: string,
+  accessToken = `access_${refreshToken}`,
+): AuthTokens => ({
   accessToken,
   refreshToken,
   accessTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
@@ -29,7 +32,9 @@ function installBridge(stored: AuthTokens | null) {
       for (const cb of listeners) cb(next);
     },
   };
-  (window as unknown as { linerElectron: unknown }).linerElectron = { authSession: bridge };
+  (window as unknown as { linerElectron: unknown }).linerElectron = {
+    authSession: bridge,
+  };
   return bridge;
 }
 
@@ -57,16 +62,24 @@ describe("auth-session backed by the main process", () => {
   });
 
   it("moves a legacy localStorage session into main and wipes the plain copy", async () => {
-    localStorage.setItem("liner_auth_session", JSON.stringify(session("rt_legacy")));
+    localStorage.setItem(
+      "liner_auth_session",
+      JSON.stringify(session("rt_legacy")),
+    );
     const bridge = installBridge(null);
     const auth = await loadModule();
     expect(auth.getAuthSession()?.refreshToken).toBe("rt_legacy");
-    expect(bridge.set).toHaveBeenCalledWith(expect.objectContaining({ refreshToken: "rt_legacy" }));
+    expect(bridge.set).toHaveBeenCalledWith(
+      expect.objectContaining({ refreshToken: "rt_legacy" }),
+    );
     expect(localStorage.getItem("liner_auth_session")).toBeNull();
   });
 
   it("prefers main over a stale legacy copy", async () => {
-    localStorage.setItem("liner_auth_session", JSON.stringify(session("rt_stale")));
+    localStorage.setItem(
+      "liner_auth_session",
+      JSON.stringify(session("rt_stale")),
+    );
     const bridge = installBridge(session("rt_main"));
     const auth = await loadModule();
     expect(auth.getAuthSession()?.refreshToken).toBe("rt_main");
@@ -78,17 +91,27 @@ describe("auth-session backed by the main process", () => {
     const bridge = installBridge(null);
     const auth = await loadModule();
     auth.setAuthSession(session("rt_login"));
-    expect(bridge.set).toHaveBeenCalledWith(expect.objectContaining({ refreshToken: "rt_login" }));
+    expect(bridge.set).toHaveBeenCalledWith(
+      expect.objectContaining({ refreshToken: "rt_login" }),
+    );
     expect(localStorage.getItem("liner_auth_session")).toBeNull();
   });
 
   it("delegates refresh to main and adopts the result", async () => {
     const bridge = installBridge(session("rt_1"));
-    bridge.refresh.mockResolvedValue({ outcome: "refreshed", session: session("rt_2") });
+    bridge.refresh.mockResolvedValue({
+      outcome: "refreshed",
+      session: session("rt_2"),
+    });
     const auth = await loadModule();
-    const [a, b] = await Promise.all([auth.refreshAuthSession(), auth.refreshAuthSession()]);
+    const [a, b] = await Promise.all([
+      auth.refreshAuthSession(),
+      auth.refreshAuthSession(),
+    ]);
     expect(bridge.refresh).toHaveBeenCalledTimes(1);
-    expect(bridge.refresh).toHaveBeenCalledWith(expect.objectContaining({ refreshToken: "rt_1" }));
+    expect(bridge.refresh).toHaveBeenCalledWith(
+      expect.objectContaining({ refreshToken: "rt_1" }),
+    );
     expect(a?.refreshToken).toBe("rt_2");
     expect(b?.refreshToken).toBe("rt_2");
     expect(auth.getAuthSession()?.refreshToken).toBe("rt_2");
@@ -97,7 +120,11 @@ describe("auth-session backed by the main process", () => {
   it("keeps the session when main reports a transient failure", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const bridge = installBridge(session("rt_1"));
-    bridge.refresh.mockResolvedValue({ outcome: "transient", session: session("rt_1"), reason: "503" });
+    bridge.refresh.mockResolvedValue({
+      outcome: "transient",
+      session: session("rt_1"),
+      reason: "503",
+    });
     const auth = await loadModule();
     expect(await auth.refreshAuthSession()).toBeNull();
     expect(auth.getAuthSession()?.refreshToken).toBe("rt_1");
@@ -106,7 +133,11 @@ describe("auth-session backed by the main process", () => {
   it("drops the session when main says the refresh token is dead", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const bridge = installBridge(session("rt_1"));
-    bridge.refresh.mockResolvedValue({ outcome: "signed_out", session: null, reason: "401 INVALID_REFRESH_TOKEN" });
+    bridge.refresh.mockResolvedValue({
+      outcome: "signed_out",
+      session: null,
+      reason: "401 INVALID_REFRESH_TOKEN",
+    });
     const auth = await loadModule();
     expect(await auth.refreshAuthSession()).toBeNull();
     expect(auth.getAuthSession()).toBeNull();

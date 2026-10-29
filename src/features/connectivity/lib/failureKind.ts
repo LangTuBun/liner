@@ -11,8 +11,12 @@ export function isConnectivityFailure(err: unknown): boolean {
 }
 
 // the api health check got an http 5xx back: liner's servers are down, the user's connection works
-export function isServerOutage(checks: { id: string; detail?: string }[]): boolean {
-  return checks.some((c) => c.id === "api" && /^HTTP 5\d\d$/.test(c.detail ?? ""));
+export function isServerOutage(
+  checks: { id: string; detail?: string }[],
+): boolean {
+  return checks.some(
+    (c) => c.id === "api" && /^HTTP 5\d\d$/.test(c.detail ?? ""),
+  );
 }
 
 export function stripQuery(path: string): string {

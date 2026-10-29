@@ -1,70 +1,74 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { api, mediaUrl, toMaxQualityAvatarUrl } from "@/shared/api";
+import {
+  freshFor,
+  revalidateResource,
+  useCachedResource,
+} from "@/shared/cache/useCachedResource";
+import { useSessionOwner } from "@/features/home/hooks/sessionAwareLoad";
 import type { LibraryItemViewModel } from "../types";
 
 export type EntityType = "album" | "artist" | "playlist";
 
-const cache = new Map<EntityType, LibraryItemViewModel[]>();
+const EMPTY_ITEMS: LibraryItemViewModel[] = [];
+const SAVED_ITEMS_POLICY = { isFresh: freshFor(5 * 60_000) };
+
+async function loadSavedItems(
+  type: EntityType,
+): Promise<LibraryItemViewModel[]> {
+  const collectionType =
+    type === "album" ? "albums" : type === "artist" ? "artists" : "playlists";
+  const response = await api.listSavedCollections(collectionType);
+  return response.items.map((entry: any) => {
+    const value = entry[type];
+    const rawCover = value.cover ? mediaUrl(value.cover.url) : "";
+    const cover =
+      type === "artist" ? toMaxQualityAvatarUrl(rawCover) : rawCover;
+    return {
+      id: value.id,
+      title: type === "artist" ? value.name : value.title,
+      subtitle:
+        type === "artist"
+          ? "Artist"
+          : type === "playlist"
+            ? value.author ||
+              (value.trackCount ? `${value.trackCount} tracks` : "Playlist")
+            : [
+                value.year,
+                value.trackCount ? `${value.trackCount} tracks` : undefined,
+              ]
+                .filter(Boolean)
+                .join(" • "),
+      imageUrl: cover,
+      kind: type,
+      href:
+        type === "artist"
+          ? `/artist?id=${encodeURIComponent(value.id)}`
+          : type === "playlist"
+            ? `/collection?type=playlist&id=${encodeURIComponent(value.id)}`
+            : `/collection?type=album&id=${encodeURIComponent(value.id)}`,
+      addedAt: entry.savedAt,
+      trackCount: value.trackCount,
+      isOwned: false,
+    };
+  });
+}
 
 export function useExternalItems(type: EntityType) {
-  const [data, setData] = useState<LibraryItemViewModel[]>(() => cache.get(type) ?? []);
-  const [isLoading, setIsLoading] = useState(() => !cache.has(type));
+  const owner = useSessionOwner();
+  const key = `library:saved:${type}:${owner}`;
+  const { data, isLoading } = useCachedResource(
+    key,
+    () => loadSavedItems(type),
+    SAVED_ITEMS_POLICY,
+  );
+
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      try {
-        const collectionType =
-          type === "album" ? "albums" : type === "artist" ? "artists" : "playlists";
-        const response = await api.listSavedCollections(collectionType);
-        if (!active) return;
-        const items: LibraryItemViewModel[] = response.items.map((entry: any) => {
-          const value = entry[type];
-          const rawCover = value.cover ? mediaUrl(value.cover.url) : "";
-          const cover = type === "artist" ? toMaxQualityAvatarUrl(rawCover) : rawCover;
-          return {
-            id: value.id,
-            title: type === "artist" ? value.name : value.title,
-            subtitle:
-              type === "artist"
-                ? "Artist"
-                : type === "playlist"
-                  ? (value.author || (value.trackCount ? `${value.trackCount} tracks` : "Playlist"))
-                  : [value.year, value.trackCount ? `${value.trackCount} tracks` : undefined].filter(Boolean).join(" • "),
-            imageUrl: cover,
-            kind: type,
-            href:
-              type === "artist"
-                ? `/artist?id=${encodeURIComponent(value.id)}`
-                : type === "playlist"
-                  ? `/collection?type=playlist&id=${encodeURIComponent(value.id)}`
-                  : `/collection?type=album&id=${encodeURIComponent(value.id)}`,
-            addedAt: entry.savedAt,
-            trackCount: value.trackCount,
-            isOwned: false,
-          };
-        });
-        cache.set(type, items);
-        setData(items);
-      } catch {
-        if (active && !cache.has(type)) setData([]);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-    void load();
-    const refresh = () => void load();
-    const resetForAccount = () => {
-      cache.delete(type);
-      setData([]);
-      void load();
-    };
+    const refresh = () =>
+      void revalidateResource(key, () => loadSavedItems(type), { force: true });
     window.addEventListener("library:changed", refresh);
-    window.addEventListener("auth:changed", resetForAccount);
-    return () => {
-      active = false;
-      window.removeEventListener("library:changed", refresh);
-      window.removeEventListener("auth:changed", resetForAccount);
-    };
-  }, [type]);
-  return { data, isLoading };
+    return () => window.removeEventListener("library:changed", refresh);
+  }, [key, type]);
+
+  return { data: data ?? EMPTY_ITEMS, isLoading };
 }

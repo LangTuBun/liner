@@ -100,12 +100,15 @@ export class BundleManager {
           return;
         } else {
           console.warn(
-            `\x1b[33m[BundleManager]\x1b[0m Cached bundle ${parsed.bundleVersion} is invalid or incompatible, reverting to built-in dist.`
+            `\x1b[33m[BundleManager]\x1b[0m Cached bundle ${parsed.bundleVersion} is invalid or incompatible, reverting to built-in dist.`,
           );
         }
       }
     } catch (err) {
-      console.error("\x1b[31m[BundleManager]\x1b[0m Failed to read active bundle state:", err);
+      console.error(
+        "\x1b[31m[BundleManager]\x1b[0m Failed to read active bundle state:",
+        err,
+      );
     }
 
     this.activeState = null;
@@ -117,7 +120,11 @@ export class BundleManager {
    */
   public getEffectiveIndexPath(): string {
     if (this.activeState) {
-      const activeHtml = path.join(this.activeState.bundleDir, "dist", "index.html");
+      const activeHtml = path.join(
+        this.activeState.bundleDir,
+        "dist",
+        "index.html",
+      );
       if (fs.existsSync(activeHtml)) {
         return activeHtml;
       }
@@ -136,7 +143,10 @@ export class BundleManager {
   /**
    * Compares appVersion >= minAppVersion using semver comparison
    */
-  public isVersionCompatible(appVersion: string, minAppVersion: string): boolean {
+  public isVersionCompatible(
+    appVersion: string,
+    minAppVersion: string,
+  ): boolean {
     if (!minAppVersion) return true;
     const cleanApp = appVersion.split("-")[0].split(".").map(Number);
     const cleanMin = minAppVersion.split("-")[0].split(".").map(Number);
@@ -150,7 +160,10 @@ export class BundleManager {
     return true;
   }
 
-  private matches(state: ActiveBundleState | null, manifest: BundleManifest): boolean {
+  private matches(
+    state: ActiveBundleState | null,
+    manifest: BundleManifest,
+  ): boolean {
     return (
       state?.bundleVersion === manifest.bundleVersion &&
       state?.sha256?.toLowerCase() === manifest.sha256.toLowerCase()
@@ -167,17 +180,26 @@ export class BundleManager {
     return 0;
   }
 
-  private isUpgradeOver(state: ActiveBundleState | null, manifest: BundleManifest): boolean {
-    const order = this.compareVersions(manifest.bundleVersion, state?.bundleVersion ?? app.getVersion());
+  private isUpgradeOver(
+    state: ActiveBundleState | null,
+    manifest: BundleManifest,
+  ): boolean {
+    const order = this.compareVersions(
+      manifest.bundleVersion,
+      state?.bundleVersion ?? app.getVersion(),
+    );
     if (order !== 0) return order > 0;
     return !this.matches(state, manifest);
   }
 
   private async fetchManifest(timeoutMs: number): Promise<BundleManifest> {
-    const res = await fetch(`${this.updaterUrl}/updates/manifest.json?t=${Date.now()}`, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const res = await fetch(
+      `${this.updaterUrl}/updates/manifest.json?t=${Date.now()}`,
+      {
+        cache: "no-store",
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    );
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
     return (await res.json()) as BundleManifest;
   }
@@ -189,26 +211,36 @@ export class BundleManager {
         .map((dir) => path.resolve(dir)),
     );
     try {
-      for (const entry of fs.readdirSync(this.bundlesRoot, { withFileTypes: true })) {
+      for (const entry of fs.readdirSync(this.bundlesRoot, {
+        withFileTypes: true,
+      })) {
         const full = path.resolve(this.bundlesRoot, entry.name);
         if (!entry.isDirectory() || keep.has(full)) continue;
         fs.rmSync(full, { recursive: true, force: true });
       }
     } catch (err) {
-      console.warn("\x1b[33m[BundleManager]\x1b[0m Failed to prune old bundles:", err);
+      console.warn(
+        "\x1b[33m[BundleManager]\x1b[0m Failed to prune old bundles:",
+        err,
+      );
     }
   }
 
-  public async updateBeforeLaunch(budgetMs = STARTUP_UPDATE_BUDGET_MS): Promise<void> {
+  public async updateBeforeLaunch(
+    budgetMs = STARTUP_UPDATE_BUDGET_MS,
+  ): Promise<void> {
     this.pruneBundles();
     const deadline = Date.now() + budgetMs;
     let manifest: BundleManifest;
     try {
-      manifest = await this.fetchManifest(Math.min(STARTUP_MANIFEST_TIMEOUT_MS, budgetMs));
+      manifest = await this.fetchManifest(
+        Math.min(STARTUP_MANIFEST_TIMEOUT_MS, budgetMs),
+      );
     } catch {
       return;
     }
-    if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion)) return;
+    if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion))
+      return;
     if (!this.isUpgradeOver(this.installedState, manifest)) return;
 
     const remaining = deadline - Date.now();
@@ -216,13 +248,19 @@ export class BundleManager {
       void this.downloadAndInstall(manifest);
       return;
     }
-    const result = await this.downloadAndInstall(manifest, AbortSignal.timeout(remaining));
+    const result = await this.downloadAndInstall(
+      manifest,
+      AbortSignal.timeout(remaining),
+    );
     if (result.success) {
       this.activeState = this.installedState;
-      console.log(`\x1b[32m[BundleManager]\x1b[0m Starting on the freshly installed bundle ${manifest.bundleVersion}`);
+      console.log(
+        `\x1b[32m[BundleManager]\x1b[0m Starting on the freshly installed bundle ${manifest.bundleVersion}`,
+      );
       return;
     }
-    if (result.error && /abort|timeout/i.test(result.error)) void this.downloadAndInstall(manifest);
+    if (result.error && /abort|timeout/i.test(result.error))
+      void this.downloadAndInstall(manifest);
   }
 
   public async peekUpdate(): Promise<BundleUpdateState> {
@@ -231,7 +269,9 @@ export class BundleManager {
       if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion)) {
         return { kind: "needs-app-update" };
       }
-      return this.isUpgradeOver(this.activeState, manifest) ? { kind: "available", version: manifest.bundleVersion } : { kind: "latest" };
+      return this.isUpgradeOver(this.activeState, manifest)
+        ? { kind: "available", version: manifest.bundleVersion }
+        : { kind: "latest" };
     } catch {
       return { kind: "unknown" };
     }
@@ -242,7 +282,8 @@ export class BundleManager {
     manifest?: BundleManifest;
     reason?: string;
   }> {
-    if (this.isChecking) return { available: false, reason: "Already checking" };
+    if (this.isChecking)
+      return { available: false, reason: "Already checking" };
     this.isChecking = true;
 
     try {
@@ -250,7 +291,7 @@ export class BundleManager {
 
       if (!this.isVersionCompatible(app.getVersion(), manifest.minAppVersion)) {
         console.log(
-          `\x1b[33m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} requires app >= ${manifest.minAppVersion}, but running ${app.getVersion()}`
+          `\x1b[33m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} requires app >= ${manifest.minAppVersion}, but running ${app.getVersion()}`,
         );
         return { available: false, reason: "App version too old for bundle" };
       }
@@ -258,21 +299,29 @@ export class BundleManager {
       if (!this.isUpgradeOver(this.installedState, manifest)) {
         return {
           available: false,
-          reason: this.isUpgradeOver(this.activeState, manifest) ? "Installed, applies on next launch" : "Already up to date",
+          reason: this.isUpgradeOver(this.activeState, manifest)
+            ? "Installed, applies on next launch"
+            : "Already up to date",
         };
       }
 
-      console.log(`\x1b[32m[BundleManager]\x1b[0m New OTA bundle found: ${manifest.bundleVersion} (sha: ${manifest.sha256.slice(0, 8)}). Downloading silently in background...`);
+      console.log(
+        `\x1b[32m[BundleManager]\x1b[0m New OTA bundle found: ${manifest.bundleVersion} (sha: ${manifest.sha256.slice(0, 8)}). Downloading silently in background...`,
+      );
 
       this.downloadAndInstall(manifest).then((res) => {
         if (res.success) {
-          console.log(`\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} installed silently. Will activate on next launch.`);
+          console.log(
+            `\x1b[32m[BundleManager]\x1b[0m Bundle ${manifest.bundleVersion} installed silently. Will activate on next launch.`,
+          );
         }
       });
 
       return { available: true, manifest };
     } catch (err: any) {
-      console.warn(`\x1b[33m[BundleManager]\x1b[0m Check update failed: ${err.message}`);
+      console.warn(
+        `\x1b[33m[BundleManager]\x1b[0m Check update failed: ${err.message}`,
+      );
       return { available: false, reason: err.message };
     } finally {
       this.isChecking = false;
@@ -286,21 +335,26 @@ export class BundleManager {
     manifest: BundleManifest,
     signal?: AbortSignal,
   ): Promise<{ success: boolean; error?: string }> {
-    if (this.isDownloading) return { success: false, error: "Already downloading" };
+    if (this.isDownloading)
+      return { success: false, error: "Already downloading" };
     this.isDownloading = true;
 
     const bundleDir = path.join(
       this.bundlesRoot,
-      `bundle-${manifest.bundleVersion}-${manifest.sha256.slice(0, 8)}`
+      `bundle-${manifest.bundleVersion}-${manifest.sha256.slice(0, 8)}`,
     );
-    const tempDir = path.join(this.bundlesRoot, `temp-${manifest.bundleVersion}-${Date.now()}`);
+    const tempDir = path.join(
+      this.bundlesRoot,
+      `temp-${manifest.bundleVersion}-${Date.now()}`,
+    );
 
     try {
-      console.log(`\x1b[36m[BundleManager]\x1b[0m Downloading ${manifest.downloadUrl}...`);
+      console.log(
+        `\x1b[36m[BundleManager]\x1b[0m Downloading ${manifest.downloadUrl}...`,
+      );
       const res = await fetch(manifest.downloadUrl, { signal });
       if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
 
-      const total = Number(res.headers.get("content-length")) || manifest.size || 0;
       const chunks: Buffer[] = [];
       let transferred = 0;
 
@@ -318,15 +372,25 @@ export class BundleManager {
       const archiveBuffer = Buffer.concat(chunks);
 
       // Verify SHA256
-      const hash = crypto.createHash("sha256").update(archiveBuffer).digest("hex");
+      const hash = crypto
+        .createHash("sha256")
+        .update(archiveBuffer)
+        .digest("hex");
       if (hash.toLowerCase() !== manifest.sha256.toLowerCase()) {
-        throw new Error(`SHA256 mismatch! Expected ${manifest.sha256}, got ${hash}`);
+        throw new Error(
+          `SHA256 mismatch! Expected ${manifest.sha256}, got ${hash}`,
+        );
       }
 
       // Verify Ed25519 signature
-      const isValid = this.verifySignature(Buffer.from(hash, "utf-8"), manifest.signature);
+      const isValid = this.verifySignature(
+        Buffer.from(hash, "utf-8"),
+        manifest.signature,
+      );
       if (!isValid) {
-        throw new Error("Ed25519 signature verification failed! Possible tampered bundle.");
+        throw new Error(
+          "Ed25519 signature verification failed! Possible tampered bundle.",
+        );
       }
 
       // Extract to tempDir first
@@ -343,7 +407,9 @@ export class BundleManager {
       // Verify that extracted files contain dist/index.html
       const extractedDist = path.join(tempDir, "dist");
       if (!fs.existsSync(path.join(extractedDist, "index.html"))) {
-        throw new Error("Corrupted archive: dist/index.html missing after extraction");
+        throw new Error(
+          "Corrupted archive: dist/index.html missing after extraction",
+        );
       }
 
       // Atomic replace bundleDir
@@ -361,17 +427,27 @@ export class BundleManager {
         minAppVersion: manifest.minAppVersion,
       };
 
-      fs.writeFileSync(this.stateFilePath, JSON.stringify(newState, null, 2), "utf-8");
+      fs.writeFileSync(
+        this.stateFilePath,
+        JSON.stringify(newState, null, 2),
+        "utf-8",
+      );
       this.installedState = newState;
 
-      console.log(`\x1b[32m[BundleManager]\x1b[0m Successfully installed bundle ${manifest.bundleVersion}`);
+      console.log(
+        `\x1b[32m[BundleManager]\x1b[0m Successfully installed bundle ${manifest.bundleVersion}`,
+      );
       this.mainWindow?.webContents.send("bundle:ready", newState);
 
       return { success: true };
     } catch (err: any) {
-      console.error("\x1b[31m[BundleManager]\x1b[0m Failed to install bundle:", err.message);
+      console.error(
+        "\x1b[31m[BundleManager]\x1b[0m Failed to install bundle:",
+        err.message,
+      );
       try {
-        if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+        if (fs.existsSync(tempDir))
+          fs.rmSync(tempDir, { recursive: true, force: true });
       } catch {}
       return { success: false, error: err.message };
     } finally {
@@ -386,7 +462,9 @@ export class BundleManager {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) return false;
     if (this.installedState) this.activeState = this.installedState;
     const indexPath = this.getEffectiveIndexPath();
-    console.log(`\x1b[35m[BundleManager]\x1b[0m Performing Hot Swap to: ${indexPath}`);
+    console.log(
+      `\x1b[35m[BundleManager]\x1b[0m Performing Hot Swap to: ${indexPath}`,
+    );
     this.mainWindow.loadFile(indexPath);
     return true;
   }
@@ -395,7 +473,9 @@ export class BundleManager {
    * Failsafe Rollback: Reverts to built-in dist and deletes broken bundle
    */
   public rollback(): boolean {
-    console.warn("\x1b[31m[BundleManager]\x1b[0m Triggering emergency rollback to built-in dist...");
+    console.warn(
+      "\x1b[31m[BundleManager]\x1b[0m Triggering emergency rollback to built-in dist...",
+    );
     try {
       if (this.activeState) {
         const brokenDir = this.activeState.bundleDir;
@@ -427,7 +507,12 @@ export class BundleManager {
         format: "der",
         type: "spki",
       });
-      return crypto.verify(null, data, publicKey, Buffer.from(signatureHex, "hex"));
+      return crypto.verify(
+        null,
+        data,
+        publicKey,
+        Buffer.from(signatureHex, "hex"),
+      );
     } catch {
       return false;
     }

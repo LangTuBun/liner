@@ -57,9 +57,15 @@ describe("WindowControls", () => {
       root.render(<WindowControls />);
     });
 
-    const minimizeBtn = container.querySelector("button[aria-label='Minimize']") as HTMLButtonElement;
-    const maximizeBtn = container.querySelector("button[aria-label='Maximize']") as HTMLButtonElement;
-    const closeBtn = container.querySelector("button[aria-label='Close']") as HTMLButtonElement;
+    const minimizeBtn = container.querySelector(
+      "button[aria-label='Minimize']",
+    ) as HTMLButtonElement;
+    const maximizeBtn = container.querySelector(
+      "button[aria-label='Maximize']",
+    ) as HTMLButtonElement;
+    const closeBtn = container.querySelector(
+      "button[aria-label='Close']",
+    ) as HTMLButtonElement;
 
     expect(minimizeBtn).toBeDefined();
     expect(maximizeBtn).toBeDefined();
@@ -90,8 +96,12 @@ describe("WindowControls", () => {
       root.render(<WindowControls />);
     });
 
-    const minimizeBtn = container.querySelector("button[aria-label='Minimize']") as HTMLButtonElement;
-    const maximizeBtn = container.querySelector("button[aria-label='Exit Fullscreen']") as HTMLButtonElement;
+    const minimizeBtn = container.querySelector(
+      "button[aria-label='Minimize']",
+    ) as HTMLButtonElement;
+    const maximizeBtn = container.querySelector(
+      "button[aria-label='Exit Fullscreen']",
+    ) as HTMLButtonElement;
 
     expect(minimizeBtn.disabled).toBe(true);
     expect(minimizeBtn.getAttribute("aria-disabled")).toBe("true");
@@ -108,7 +118,9 @@ describe("WindowControls", () => {
       root.render(<WindowControls />);
     });
 
-    const minimizeBtn = container.querySelector("button[aria-label='Minimize']") as HTMLButtonElement;
+    const minimizeBtn = container.querySelector(
+      "button[aria-label='Minimize']",
+    ) as HTMLButtonElement;
     expect(minimizeBtn.disabled).toBe(false);
 
     // transition to fullscreen
@@ -117,7 +129,9 @@ describe("WindowControls", () => {
     });
 
     expect(minimizeBtn.disabled).toBe(true);
-    const exitFullscreenBtn = container.querySelector("button[aria-label='Exit Fullscreen']") as HTMLButtonElement;
+    const exitFullscreenBtn = container.querySelector(
+      "button[aria-label='Exit Fullscreen']",
+    ) as HTMLButtonElement;
     expect(exitFullscreenBtn).toBeDefined();
 
     // clicking minimize in fullscreen should not trigger IPC
@@ -132,7 +146,9 @@ describe("WindowControls", () => {
     });
 
     expect(minimizeBtn.disabled).toBe(false);
-    const restoreBtn = container.querySelector("button[aria-label='Restore']") as HTMLButtonElement;
+    const restoreBtn = container.querySelector(
+      "button[aria-label='Restore']",
+    ) as HTMLButtonElement;
     expect(restoreBtn).toBeDefined();
   });
 
@@ -143,7 +159,9 @@ describe("WindowControls", () => {
       root.render(<WindowControls />);
     });
 
-    const minimizeBtn = container.querySelector("button[aria-label='Minimize']") as HTMLButtonElement;
+    const minimizeBtn = container.querySelector(
+      "button[aria-label='Minimize']",
+    ) as HTMLButtonElement;
     expect(minimizeBtn.disabled).toBe(true);
     expect(minimizeBtn.getAttribute("aria-disabled")).toBe("true");
 

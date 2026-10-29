@@ -26,15 +26,23 @@ describe("equalizer", () => {
 
   it("enhance presets stay gentle: no band moves more than 4 dB", () => {
     for (const preset of EQ_PRESETS.filter((p) => p.category === "enhance"))
-      for (const gain of preset.gains) expect(Math.abs(gain)).toBeLessThanOrEqual(4);
+      for (const gain of preset.gains)
+        expect(Math.abs(gain)).toBeLessThanOrEqual(4);
   });
 
   it("drops broken custom presets and caps the list", () => {
-    const valid = { id: "a", name: "  Mine  ", gains: [1, ...FLAT_EQ.slice(1)] };
+    const valid = {
+      id: "a",
+      name: "  Mine  ",
+      gains: [1, ...FLAT_EQ.slice(1)],
+    };
     expect(
       normalizeEqCustomPresets([valid, { id: "b", name: "" }, null, "x"]),
     ).toEqual([{ id: "a", name: "Mine", gains: valid.gains }]);
-    const many = Array.from({ length: 20 }, (_, i) => ({ ...valid, id: String(i) }));
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      ...valid,
+      id: String(i),
+    }));
     expect(normalizeEqCustomPresets(many)).toHaveLength(EQ_MAX_CUSTOM_PRESETS);
     expect(normalizeEqCustomPresets(undefined)).toEqual([]);
   });

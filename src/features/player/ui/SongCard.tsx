@@ -69,7 +69,6 @@ function SongCard({
   onNavigate,
   compact = false,
   icon,
-  showReorderHandle,
   onGrabStart,
   highlight,
   hideArtists = false,

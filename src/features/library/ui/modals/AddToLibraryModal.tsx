@@ -28,7 +28,12 @@ export default function AddToLibraryModal() {
     const cover = item.coverUrl ? { url: item.coverUrl } : undefined;
     const snapshot =
       item.type === "artist"
-        ? { id: item.id, name: item.title, title: item.title, ...(cover ? { cover } : {}) }
+        ? {
+            id: item.id,
+            name: item.title,
+            title: item.title,
+            ...(cover ? { cover } : {}),
+          }
         : {
             id: item.id,
             title: item.title,
@@ -51,12 +56,18 @@ export default function AddToLibraryModal() {
   }, [item, toast, saveExternal, t, close]);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={380}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={380}
+    >
       <div className="flex flex-col px-[20px] pb-[20px]">
         <DialogHeader
           className="mb-[16px]"
           title={t("common.add_to_library")}
-          description={t("common.add_to_library_desc") || t("common.add_to_library")}
+          description={
+            t("common.add_to_library_desc") || t("common.add_to_library")
+          }
         />
 
         {/* Target item preview */}

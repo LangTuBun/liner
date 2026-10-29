@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useStableNavigate } from "@/shared/hooks/useStableNavigate";
 import { useTranslation } from "@/languages";
 import { useLocalTracks } from "../hooks/useLocalTracks";
 import LocalFilesCover from "./LocalFilesCover";
@@ -13,7 +13,7 @@ export default function LocalFilesCard({
   viewMode = "grid",
 }: LocalFilesCardProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
   const { tracks, isLoading, isAvailable } = useLocalTracks();
 
   if (!isAvailable) return null;

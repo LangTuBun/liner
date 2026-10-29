@@ -13,6 +13,8 @@ export interface PlaylistCardProps {
   coverUrls?: string[];
   variant?: PlaylistVariant;
   href?: string;
+  linkState?: unknown;
+  onPointerDown?: () => void;
   onClick?: () => void;
   badge?: ReactNode;
   className?: string;
@@ -70,6 +72,8 @@ function PlaylistCard({
   coverUrls,
   variant = "playlist",
   href,
+  linkState,
+  onPointerDown,
   onClick,
   badge,
   className = "",
@@ -82,11 +86,7 @@ function PlaylistCard({
   } | null>(null);
 
   const effectiveUrls =
-    coverUrls && coverUrls.length > 0
-      ? coverUrls
-      : imageUrl
-        ? [imageUrl]
-        : [];
+    coverUrls && coverUrls.length > 0 ? coverUrls : imageUrl ? [imageUrl] : [];
   const hasCollage = effectiveUrls.length >= 2;
 
   const handleContextMenu = useCallback(
@@ -168,6 +168,8 @@ function PlaylistCard({
       <div onContextMenu={handleContextMenu}>
         <Link
           to={href}
+          state={linkState}
+          onPointerDown={onPointerDown}
           className={`group flex flex-col gap-[8px] no-underline ${className}`}
           draggable={false}
           onDragStart={(e) => e.preventDefault()}

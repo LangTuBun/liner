@@ -10,7 +10,11 @@ vi.mock("electron", () => ({ ipcMain: { on: vi.fn(), handle: vi.fn() } }));
 
 vi.mock("@xhayper/discord-rpc", () => {
   class Client {
-    user = { setActivity: mocks.setActivity, clearActivity: mocks.clearActivity, username: "tester" };
+    user = {
+      setActivity: mocks.setActivity,
+      clearActivity: mocks.clearActivity,
+      username: "tester",
+    };
     private handlers = new Map<string, () => void>();
     constructor({ clientId }: { clientId: string }) {
       mocks.clients.push(clientId);
@@ -26,12 +30,25 @@ vi.mock("@xhayper/discord-rpc", () => {
   return { Client, StatusDisplayType: { NAME: 0, STATE: 1, DETAILS: 2 } };
 });
 
-import { DiscordRpcManager, toDiscordImageUrl, type DiscordRpcStatePayload } from "./discord";
+import {
+  DiscordRpcManager,
+  toDiscordImageUrl,
+  type DiscordRpcStatePayload,
+} from "./discord";
 
-function playing(id: string, coverUrl = "https://i.ytimg.com/vi/x/hq.jpg"): DiscordRpcStatePayload {
+function playing(
+  id: string,
+  coverUrl = "https://i.ytimg.com/vi/x/hq.jpg",
+): DiscordRpcStatePayload {
   return {
     status: "playing",
-    track: { id, title: `Song ${id}`, artist: "Artist", coverUrl, durationMs: 200_000 },
+    track: {
+      id,
+      title: `Song ${id}`,
+      artist: "Artist",
+      coverUrl,
+      durationMs: 200_000,
+    },
     positionMs: 0,
     durationMs: 200_000,
     artistImageUrl: "https://lh3.googleusercontent.com/a.jpg",
@@ -40,11 +57,15 @@ function playing(id: string, coverUrl = "https://i.ytimg.com/vi/x/hq.jpg"): Disc
 
 describe("toDiscordImageUrl", () => {
   it("passes only https urls short enough for discord", () => {
-    expect(toDiscordImageUrl("https://i.ytimg.com/vi/x/hq.jpg")).toBe("https://i.ytimg.com/vi/x/hq.jpg");
+    expect(toDiscordImageUrl("https://i.ytimg.com/vi/x/hq.jpg")).toBe(
+      "https://i.ytimg.com/vi/x/hq.jpg",
+    );
     expect(toDiscordImageUrl("http://example.com/a.jpg")).toBeUndefined();
     expect(toDiscordImageUrl("blob:file:///abc")).toBeUndefined();
     expect(toDiscordImageUrl("data:image/png;base64,AAAA")).toBeUndefined();
-    expect(toDiscordImageUrl(`https://example.com/${"a".repeat(260)}`)).toBeUndefined();
+    expect(
+      toDiscordImageUrl(`https://example.com/${"a".repeat(260)}`),
+    ).toBeUndefined();
     expect(toDiscordImageUrl(undefined)).toBeUndefined();
   });
 });
@@ -73,7 +94,9 @@ describe("DiscordRpcManager", () => {
   it("ignores an application id sent in a settings patch", async () => {
     delete process.env.LINER_DISCORD_CLIENT_ID;
     const manager = new DiscordRpcManager();
-    const legacyPatch: Record<string, unknown> = { applicationId: "987654321098765432" };
+    const legacyPatch: Record<string, unknown> = {
+      applicationId: "987654321098765432",
+    };
     manager.updateSettings(legacyPatch);
     await vi.advanceTimersByTimeAsync(1_000);
     expect(mocks.clients).toEqual(["1561339119617974362"]);
@@ -90,7 +113,9 @@ describe("DiscordRpcManager", () => {
     }
     await vi.advanceTimersByTimeAsync(5_000);
     expect(mocks.setActivity).toHaveBeenCalledTimes(1);
-    expect(mocks.setActivity.mock.calls[0][0]).toMatchObject({ details: "Song d" });
+    expect(mocks.setActivity.mock.calls[0][0]).toMatchObject({
+      details: "Song d",
+    });
     manager.destroy();
   });
 
@@ -116,7 +141,9 @@ describe("DiscordRpcManager", () => {
     await vi.advanceTimersByTimeAsync(5_000);
     const activity = mocks.setActivity.mock.calls[0][0];
     expect(activity.largeImageKey).toBeUndefined();
-    expect(activity.smallImageKey).toBe("https://lh3.googleusercontent.com/a.jpg");
+    expect(activity.smallImageKey).toBe(
+      "https://lh3.googleusercontent.com/a.jpg",
+    );
     manager.destroy();
   });
 });

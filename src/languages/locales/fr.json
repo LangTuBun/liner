@@ -248,7 +248,32 @@
     "no_albums_desc": "Enregistrez des albums depuis la recherche ou les recommandations pour les retrouver rapidement",
     "no_artists_title": "Aucun artiste enregistré",
     "no_artists_desc": "Enregistrez des artistes pour accéder rapidement à leur discographie",
-    "search_music": "Rechercher de la musique"
+    "search_music": "Rechercher de la musique",
+    "local": {
+      "title": "Sur cet appareil",
+      "subtitle": "Vos propres fichiers audio. Ils restent sur cet ordinateur et ne sont jamais envoyés à YouTube ou aux serveurs de Liner.",
+      "add_files": "Ajouter des fichiers",
+      "importing": "Ajout en cours…",
+      "empty_title": "Aucun fichier local pour le moment",
+      "empty_subtitle": "Ajoutez des fichiers MP3, FLAC, M4A, OGG, OPUS ou WAV, ou glissez-les n'importe où dans la fenêtre.",
+      "drop_title": "Déposer pour ajouter à Liner",
+      "drop_subtitle": "Les fichiers sont copiés uniquement sur cet appareil",
+      "drop_count_one": "{count} fichier",
+      "drop_count_many": "{count} fichiers",
+      "drop_count_other": "{count} fichiers",
+      "imported_one": "{count} titre ajouté",
+      "imported_many": "{count} titres ajoutés",
+      "imported_other": "{count} titres ajoutés",
+      "skipped_duplicates_one": "{count} était déjà ajouté",
+      "skipped_duplicates_many": "{count} étaient déjà ajoutés",
+      "skipped_duplicates_other": "{count} étaient déjà ajoutés",
+      "already_added": "Ces fichiers sont déjà ajoutés",
+      "import_failed_one": "Impossible d'ajouter {count} fichier",
+      "import_failed_many": "Impossible d'ajouter {count} fichiers",
+      "import_failed_other": "Impossible d'ajouter {count} fichiers",
+      "unsupported": "Ces fichiers ne sont pas des formats audio pris en charge",
+      "remove": "Supprimer de l'appareil"
+    }
   },
   "login": {
     "welcome_back": "Bon retour",
@@ -417,7 +442,87 @@
     "previous": "Précédent",
     "open_player": "Ouvrir le lecteur",
     "next": "Suivant",
-    "repeat": "Répéter"
+    "repeat": "Répéter",
+    "equalizer": "Égaliseur",
+    "equalizer_hint": "Ajuster le son bande par bande",
+    "eq_tab_enhance": "Amélioration",
+    "eq_tab_genre": "Genres",
+    "eq_tab_accent": "Accents",
+    "eq_tab_custom": "Perso",
+    "eq_save_preset": "Enregistrer actuel",
+    "eq_presets_full": "Limite de présets atteinte",
+    "eq_custom_empty": "Ajustez les bandes et enregistrez la courbe pour la réutiliser plus tard",
+    "eq_preset_name": "Nom du préset",
+    "eq_delete_preset": "Supprimer le préset",
+    "eq_preset_hifi": "Hi-Fi",
+    "eq_preset_hifi_hint": "Basses plus riches et plus d'air, médiums préservés",
+    "eq_preset_clarity": "Clarté",
+    "eq_preset_clarity_hint": "Élimine le flou des bas-médiums, meilleure séparation des instruments",
+    "eq_preset_warmth": "Chaleur",
+    "eq_preset_warmth_hint": "Chaleur analogique, adoucit les masters trop brillants",
+    "eq_preset_spacious": "Spatial",
+    "eq_preset_spacious_hint": "Scène sonore plus large et ouverte",
+    "eq_preset_headphones": "Casque",
+    "eq_preset_headphones_hint": "Comble les creux typiques des casques dans les sous-basses et hauts-médiums",
+    "eq_preset_laptop": "Ordinateur portable",
+    "eq_preset_laptop_hint": "Pour petits haut-parleurs : pas de sous-basses inutiles, plus de corps",
+    "eq_preset_night": "Nuit",
+    "eq_preset_night_hint": "Écoute silencieuse : moins de résonance et de sifflements, voix claires",
+    "eq_preset_pop": "Pop",
+    "eq_preset_pop_hint": "Médiums mis en avant et aigus soignés",
+    "eq_preset_rock": "Rock",
+    "eq_preset_rock_hint": "Batterie percutante et guitares incisives",
+    "eq_preset_hiphop": "Hip-Hop",
+    "eq_preset_hiphop_hint": "808 puissantes avec voix maintenues au premier plan",
+    "eq_preset_electronic": "Électronique",
+    "eq_preset_electronic_hint": "Kick profond et synthés précis",
+    "eq_preset_jazz": "Jazz",
+    "eq_preset_jazz_hint": "Contrebasse chaleureuse et cymbales aérées",
+    "eq_preset_classical": "Classique",
+    "eq_preset_classical_hint": "Son naturel de salle de concert, extension douce aux deux extrémités",
+    "eq_preset_acoustic": "Acoustique",
+    "eq_preset_acoustic_hint": "Corps boisé et détails des cordes",
+    "eq_preset_lofi": "Lo-Fi",
+    "eq_preset_lofi_hint": "Aigus atténués et texturés comme une vieille cassette",
+    "eq_preset_bass": "Basses",
+    "eq_preset_bass_hint": "Plus de bas du spectre",
+    "eq_preset_deep_bass": "Sous-basses",
+    "eq_preset_deep_bass_hint": "Sous-basses maximales",
+    "eq_preset_less_bass": "Moins de basses",
+    "eq_preset_less_bass_hint": "Réduit les résonances sur les morceaux ou enceintes très chargés en basses",
+    "eq_preset_vocal": "Voix",
+    "eq_preset_vocal_hint": "Met les voix en avant",
+    "eq_preset_treble": "Aigus",
+    "eq_preset_treble_hint": "Plus d'aigus et de détails",
+    "eq_preset_loudness": "Loudness",
+    "eq_preset_loudness_hint": "Basses et aigus accentués pour écoute à faible volume",
+    "eq_preset_punch": "Punch",
+    "eq_preset_punch_hint": "Mix plus percutant avec kick serré et attaque nette",
+    "eq_preset_smooth": "Doux",
+    "eq_preset_smooth_hint": "Adoucit les aigus agressifs pour une écoute prolongée",
+    "eq_preset_rnb": "R&B",
+    "eq_preset_rnb_hint": "Voix soyeuses sur des basses rondes et chaleureuses",
+    "beta_visuals": {
+      "label": "Attention",
+      "ambient_title": "Ambient est en bêta",
+      "ambient_body": "Ce titre a son propre fond animé. Il est encore en bêta et peut solliciter les appareils modestes : choisis un mode plus léger si le lecteur saccade.",
+      "settings_title": "Qualité visuelle",
+      "settings_body": "Choisis à quel point le lecteur plein écran s’anime. Les modes légers économisent la batterie et sont plus fluides sur les appareils modestes.",
+      "modes": {
+        "full": {
+          "name": "Tous les effets",
+          "hint": "Tout activé, bords des paroles floutés compris"
+        },
+        "balanced": {
+          "name": "Équilibré",
+          "hint": "Fonds animés, sans flou sur les paroles"
+        },
+        "lite": {
+          "name": "Léger",
+          "hint": "Pochette fixe, paroles simples"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -760,7 +865,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Chaîne",
-      "support": "Assistance",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Site web",
       "tagline": "Lecteur de streaming musical moderne pour ordinateur, avec des paroles synchronisées à la syllabe",
@@ -796,11 +901,6 @@
     "connection": {
       "open_folder": "Ouvrir l'emplacement"
     },
-    "cover_glow": {
-      "title": "Halo de pochette",
-      "description": "Halo flouté de la pochette derrière les pages. Désactivez pour un fond uni.",
-      "disabled_for_light": "Désactivé en thème clair."
-    },
     "youtube": {
       "description": "Connectez-vous à votre compte YouTube pour éviter les erreurs de lecture.",
       "section_playback": "Lecture",
@@ -819,7 +919,8 @@
       "sign_out": "Se déconnecter",
       "sign_in": "Se connecter",
       "signed_out_title": "Non connecté",
-      "signed_out_description": "Connectez-vous pour maintenir le bon fonctionnement de la lecture YouTube"
+      "signed_out_description": "Connectez-vous pour maintenir le bon fonctionnement de la lecture YouTube",
+      "section_account": "Compte"
     },
     "discord": {
       "description": "Affichez ce que vous écoutez sur Discord avec la pochette de l'album, le badge de l'artiste et la barre de progression.",
@@ -1018,6 +1119,7 @@
   "track_sort": {
     "label": "Trier",
     "default": "Par défaut",
+    "added": "Par date d'ajout",
     "title": "Par titre (A–Z)",
     "duration": "Par durée",
     "popularity": "Par popularité"

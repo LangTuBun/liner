@@ -1,40 +1,17 @@
-import { useEffect, useState } from "react";
 import { api } from "@/shared/api";
 import type { PopularItem } from "./usePopularTracks";
+import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
 
-const CACHE_TTL_MS = 60_000;
-
-const cache = new Map<string, { items: PopularItem[]; timestamp: number }>();
+const EMPTY_ITEMS: PopularItem[] = [];
+const EXPLORE_POLICY = { isFresh: freshFor(10 * 60_000) };
 
 function useCachedItems(key: string, load: () => Promise<PopularItem[]>) {
-  const [items, setItems] = useState<PopularItem[]>(
-    () => cache.get(key)?.items ?? [],
+  const { data, isLoading } = useCachedResource(
+    `home:${key}`,
+    load,
+    EXPLORE_POLICY,
   );
-  const [isLoading, setIsLoading] = useState(() => !cache.has(key));
-
-  useEffect(() => {
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) return;
-
-    let active = true;
-    load()
-      .then((next) => {
-        cache.set(key, { items: next, timestamp: Date.now() });
-        if (active) setItems(next);
-      })
-      .catch(() => {
-        if (active && !cache.has(key)) setItems([]);
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [key, load]);
-
-  return { items, isLoading };
+  return { items: data ?? EMPTY_ITEMS, isLoading };
 }
 
 const MIN_TOP_ALBUM_TRACKS = 5;

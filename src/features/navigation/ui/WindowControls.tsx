@@ -1,12 +1,15 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "@/languages";
 import { cn } from "@/shared/lib";
-import { useWindowAnimationStore } from "@/shared/ui";
+import { ISLAND_SURFACE, useWindowAnimationStore } from "@/shared/ui";
 import { useWindowState } from "../hooks/useWindowState";
 import { CloseIcon, MaximizeIcon, MinimizeIcon } from "./WindowControlIcons";
 
 export const WINDOW_CONTROLS_LAYOUT_ID = "window-controls-pill";
-export const WINDOW_CONTROLS_MORPH = { duration: 0.28, ease: [0.22, 1, 0.36, 1] } as const;
+export const WINDOW_CONTROLS_MORPH = {
+  duration: 0.28,
+  ease: [0.22, 1, 0.36, 1],
+} as const;
 
 export interface WindowControlsProps {
   className?: string;
@@ -51,7 +54,8 @@ export default function WindowControls({
   isFullscreen = false,
 }: WindowControlsProps) {
   const { t } = useTranslation();
-  const { isFullScreen: isWindowFullScreen, isMaximized: isWindowMaximized } = useWindowState();
+  const { isFullScreen: isWindowFullScreen, isMaximized: isWindowMaximized } =
+    useWindowState();
 
   const isHyprland = window.linerElectron?.isHyprland ?? false;
   const isMinimizeDisabled = isWindowFullScreen || isHyprland;
@@ -75,7 +79,11 @@ export default function WindowControls({
 
   const buttonClass = cn(
     "flex items-center justify-center rounded-md border-0 bg-transparent p-0 cursor-pointer select-none pointer-events-auto transition-[background-color,color,opacity] duration-150 active:scale-95",
-    isFullscreen ? "w-[26px] h-[26px]" : bare ? "w-[30px] h-[30px]" : "w-[34px] h-[34px]",
+    isFullscreen
+      ? "w-[26px] h-[26px]"
+      : bare
+        ? "w-[30px] h-[30px]"
+        : "w-[34px] h-[34px]",
     onDarkGlass
       ? "text-white opacity-70 hover:opacity-100 hover:bg-white/12"
       : "text-text-primary opacity-55 hover:opacity-100 hover:bg-border-alpha-14",
@@ -133,7 +141,9 @@ export default function WindowControls({
 
   const capsule = (
     <motion.div
-      layoutId={isFullscreen && embedded ? WINDOW_CONTROLS_LAYOUT_ID : undefined}
+      layoutId={
+        isFullscreen && embedded ? WINDOW_CONTROLS_LAYOUT_ID : undefined
+      }
       transition={WINDOW_CONTROLS_MORPH}
       data-no-window-drag
       data-window-controls
@@ -141,7 +151,7 @@ export default function WindowControls({
       className={cn(
         "flex items-center gap-[2px] select-none pointer-events-auto",
         isFullscreen
-          ? "h-[32px] px-[3px] rounded-lg bg-black/50 backdrop-blur-xl"
+          ? cn(ISLAND_SURFACE, "h-[32px] px-[3px]")
           : "h-[46px] px-[6px] rounded-xl apple-glass-pill",
       )}
     >

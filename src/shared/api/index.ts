@@ -1,4 +1,10 @@
-export { api, mediaUrl, toMaxQualityAvatarUrl, ApiError, resolveApiErrorMessage } from "./api";
+export {
+  api,
+  mediaUrl,
+  toMaxQualityAvatarUrl,
+  ApiError,
+  resolveApiErrorMessage,
+} from "./api";
 export { DEFAULT_PRIMARY_API, getApiBaseUrl } from "./baseUrl";
 export type {
   SearchType,

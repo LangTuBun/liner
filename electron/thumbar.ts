@@ -1,10 +1,17 @@
-import { nativeImage, type BrowserWindow, type NativeImage, type ThumbarButton } from "electron";
+import {
+  nativeImage,
+  type BrowserWindow,
+  type NativeImage,
+  type ThumbarButton,
+} from "electron";
 
 export type ThumbarGlyph = "prev" | "next" | "play" | "pause";
 export type ThumbarAction = "prev" | "togglePlay" | "next";
 
 type Point = [number, number];
-type Shape = { kind: "rect"; x: number; y: number; w: number; h: number } | { kind: "tri"; a: Point; b: Point; c: Point };
+type Shape =
+  | { kind: "rect"; x: number; y: number; w: number; h: number }
+  | { kind: "tri"; a: Point; b: Point; c: Point };
 
 const GRID = 16;
 const SUPERSAMPLE = 4;
@@ -25,7 +32,12 @@ const SHAPES: Record<ThumbarGlyph, Shape[]> = {
   ],
 };
 
-function inTriangle([px, py]: Point, [ax, ay]: Point, [bx, by]: Point, [cx, cy]: Point): boolean {
+function inTriangle(
+  [px, py]: Point,
+  [ax, ay]: Point,
+  [bx, by]: Point,
+  [cx, cy]: Point,
+): boolean {
   const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
   const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
   const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
@@ -37,7 +49,10 @@ function inTriangle([px, py]: Point, [ax, ay]: Point, [bx, by]: Point, [cx, cy]:
 function covered(glyph: ThumbarGlyph, point: Point): boolean {
   return SHAPES[glyph].some((shape) =>
     shape.kind === "rect"
-      ? point[0] >= shape.x && point[0] <= shape.x + shape.w && point[1] >= shape.y && point[1] <= shape.y + shape.h
+      ? point[0] >= shape.x &&
+        point[0] <= shape.x + shape.w &&
+        point[1] >= shape.y &&
+        point[1] <= shape.y + shape.h
       : inTriangle(point, shape.a, shape.b, shape.c),
   );
 }
@@ -51,7 +66,10 @@ export function drawThumbarGlyph(glyph: ThumbarGlyph, sizePx: number): Buffer {
       let hits = 0;
       for (let sy = 0; sy < SUPERSAMPLE; sy++) {
         for (let sx = 0; sx < SUPERSAMPLE; sx++) {
-          const point: Point = [(x + (sx + 0.5) / SUPERSAMPLE) * unit, (y + (sy + 0.5) / SUPERSAMPLE) * unit];
+          const point: Point = [
+            (x + (sx + 0.5) / SUPERSAMPLE) * unit,
+            (y + (sy + 0.5) / SUPERSAMPLE) * unit,
+          ];
           if (covered(glyph, point)) hits++;
         }
       }
@@ -67,12 +85,22 @@ export function drawThumbarGlyph(glyph: ThumbarGlyph, sizePx: number): Buffer {
 }
 
 function glyphImage(glyph: ThumbarGlyph): NativeImage {
-  const image = nativeImage.createFromBitmap(drawThumbarGlyph(glyph, GRID), { width: GRID, height: GRID, scaleFactor: 1 });
-  image.addRepresentation({ scaleFactor: 2, width: GRID * 2, height: GRID * 2, buffer: drawThumbarGlyph(glyph, GRID * 2) });
+  const image = nativeImage.createFromBitmap(drawThumbarGlyph(glyph, GRID), {
+    width: GRID,
+    height: GRID,
+    scaleFactor: 1,
+  });
+  image.addRepresentation({
+    scaleFactor: 2,
+    width: GRID * 2,
+    height: GRID * 2,
+    buffer: drawThumbarGlyph(glyph, GRID * 2),
+  });
   return image;
 }
 
-export type ThumbarPlayerState = { status?: string; track?: unknown } | null | undefined;
+export type ThumbarPlayerState =
+  { status?: string; track?: unknown } | null | undefined;
 
 const PLAYING_STATUSES = new Set(["playing", "loading", "buffering"]);
 
@@ -113,15 +141,28 @@ export class ThumbarController {
   }
 
   private buttons(): ThumbarButton[] {
-    this.icons ??= { prev: glyphImage("prev"), next: glyphImage("next"), play: glyphImage("play"), pause: glyphImage("pause") };
+    this.icons ??= {
+      prev: glyphImage("prev"),
+      next: glyphImage("next"),
+      play: glyphImage("play"),
+      pause: glyphImage("pause"),
+    };
     return [
-      { tooltip: "Previous", icon: this.icons.prev, click: () => this.send("prev") },
+      {
+        tooltip: "Previous",
+        icon: this.icons.prev,
+        click: () => this.send("prev"),
+      },
       {
         tooltip: this.playing ? "Pause" : "Play",
         icon: this.playing ? this.icons.pause : this.icons.play,
         click: () => this.send("togglePlay"),
       },
-      { tooltip: "Next", icon: this.icons.next, click: () => this.send("next") },
+      {
+        tooltip: "Next",
+        icon: this.icons.next,
+        click: () => this.send("next"),
+      },
     ];
   }
 }

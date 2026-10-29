@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import LibraryControls from "./LibraryControls";
-import LibraryGrid from "./LibraryGrid";
+import LibraryGrid, { LibraryGridSkeleton } from "./LibraryGrid";
 import LibraryTabs from "./LibraryTabs";
 import type {
   LibraryItemViewModel,
@@ -50,8 +50,7 @@ const initialState: LibraryState = {
 function sortByRecent(items: LibraryItemViewModel[]) {
   const sorted = [...items];
   sorted.sort(
-    (a, b) =>
-      new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(),
+    (a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(),
   );
   return sorted;
 }
@@ -153,7 +152,6 @@ export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState<LibraryTab>("all");
   const [stateByTab, setStateByTab] = useState<LibraryState>(initialState);
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [showTopFog, setShowTopFog] = useState(false);
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("liner_library_view_mode");
@@ -182,10 +180,14 @@ export default function LibraryPage() {
     isLoading: playlistsLoading,
   } = usePlaylistsList();
 
-  const { data: albumItems = [], isLoading: albumsLoading } = useExternalItems("album");
-  const { data: artistItems = [], isLoading: artistsLoading } = useExternalItems("artist");
-  const { data: externalPlaylistItems = [], isLoading: externalPlaylistsLoading } =
-    useExternalItems("playlist");
+  const { data: albumItems = [], isLoading: albumsLoading } =
+    useExternalItems("album");
+  const { data: artistItems = [], isLoading: artistsLoading } =
+    useExternalItems("artist");
+  const {
+    data: externalPlaylistItems = [],
+    isLoading: externalPlaylistsLoading,
+  } = useExternalItems("playlist");
   const youtubeItems = useYoutubeLibraryItems();
   const youtubePlaylistItems = useMemo(
     () => youtubeItems.filter((item) => item.kind === "playlist"),
@@ -217,7 +219,10 @@ export default function LibraryPage() {
   }, [playlistsData, t]);
 
   const initialLoading =
-    playlistsLoading || albumsLoading || artistsLoading || externalPlaylistsLoading;
+    playlistsLoading ||
+    albumsLoading ||
+    artistsLoading ||
+    externalPlaylistsLoading;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -256,8 +261,7 @@ export default function LibraryPage() {
       debouncedQuery.length === 0
         ? source
         : source.filter((item) => {
-            const haystack =
-              `${item.title} ${item.subtitle}`.toLowerCase();
+            const haystack = `${item.title} ${item.subtitle}`.toLowerCase();
             return haystack.includes(debouncedQuery);
           });
 
@@ -381,14 +385,9 @@ export default function LibraryPage() {
     <div className="relative h-full w-full overflow-hidden">
       <div
         ref={scrollContainerRef}
-        onScroll={(event) => {
-          const next = event.currentTarget.scrollTop > 2;
-          setShowTopFog((prev) => (prev === next ? prev : next));
-        }}
         className="h-full w-full overflow-y-auto bg-transparent pb-(--page-inset-bottom)"
       >
         <div className="relative z-20 bg-transparent">
-
           <div className="px-[12px] pt-[36px] pb-[10px]">
             <h1
               className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
@@ -412,12 +411,13 @@ export default function LibraryPage() {
               }
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
-              onCreatePlaylist={showsPlaylists ? () => openCreatePlaylist() : undefined}
+              onCreatePlaylist={
+                showsPlaylists ? () => openCreatePlaylist() : undefined
+              }
               onSmartMix={() => navigate("/library/mix")}
             />
           </div>
         </div>
-
 
         <div className="px-[12px] pt-[4px] pb-[20px]">
           {activeTab === "playlists" && playlistsError ? (
@@ -426,17 +426,15 @@ export default function LibraryPage() {
             </div>
           ) : null}
           {initialLoading ? (
-            <div className="flex items-center justify-center min-h-[50vh]">
-              <div className="h-[24px] w-[24px] animate-spin rounded-full border-[2px] border-text-tertiary border-t-text-secondary" />
-            </div>
+            <LibraryGridSkeleton viewMode={viewMode} />
           ) : (
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={`${activeTab}:${debouncedQuery || "all"}:${viewMode}`}
-                initial={{ opacity: 0, filter: "blur(4px)", y: 6 }}
-                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                exit={{ opacity: 0, filter: "blur(4px)", y: -4 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12, ease: "easeOut" }}
               >
                 <LibraryGrid
                   items={visibleItems}
@@ -481,7 +479,6 @@ export default function LibraryPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

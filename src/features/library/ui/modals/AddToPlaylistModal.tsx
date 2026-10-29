@@ -1,5 +1,10 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { PlaylistFill, Search2Line, CloseCircleFill, AddLine } from "@mingcute/react";
+import {
+  PlaylistFill,
+  Search2Line,
+  CloseCircleFill,
+  AddLine,
+} from "@mingcute/react";
 import { useToast } from "@/shared/ui";
 import { ApiError } from "@/shared/api";
 import TextInput from "@/shared/ui/TextInput";
@@ -31,7 +36,10 @@ export default function AddToPlaylistModal() {
   const { data: playlistData } = usePlaylistsList();
   const addTrack = useAddPlaylistTracks();
 
-  const rawPlaylists = track?.playlists ?? playlistData?.playlists ?? [];
+  const rawPlaylists = useMemo(
+    () => track?.playlists ?? playlistData?.playlists ?? [],
+    [track?.playlists, playlistData?.playlists],
+  );
 
   const playlists = useMemo(() => {
     if (!searchQuery.trim()) return rawPlaylists;
@@ -102,7 +110,11 @@ export default function AddToPlaylistModal() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={400}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={400}
+    >
       {/* outer gutters live here (12px); rows bleed only 8px on hover so
           cover art sits at the same 20px inset as the header text */}
       <div className="flex flex-col gap-[12px] px-[12px] pb-[12px]">
@@ -125,16 +137,25 @@ export default function AddToPlaylistModal() {
                     className="object-cover"
                   />
                 ) : (
-                  <span className="text-[15px] font-[600] text-text-tertiary" style={font}>
+                  <span
+                    className="text-[15px] font-[600] text-text-tertiary"
+                    style={font}
+                  >
                     {track.title.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-[1px]">
-                <span className="truncate text-[13px] font-[500] text-text-primary" style={font}>
+                <span
+                  className="truncate text-[13px] font-[500] text-text-primary"
+                  style={font}
+                >
                   {track.title}
                 </span>
-                <span className="truncate text-[12px] text-text-tertiary" style={font}>
+                <span
+                  className="truncate text-[12px] text-text-tertiary"
+                  style={font}
+                >
                   {track.artists}
                 </span>
               </div>

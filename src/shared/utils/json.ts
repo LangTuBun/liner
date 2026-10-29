@@ -27,7 +27,10 @@ export function numberValue(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
 }
 
-export function recordAt(value: unknown, ...path: string[]): JsonRecord | undefined {
+export function recordAt(
+  value: unknown,
+  ...path: string[]
+): JsonRecord | undefined {
   let current = asRecord(value);
   for (const key of path) {
     current = asRecord(current?.[key]);
@@ -55,7 +58,10 @@ export function findFirst(value: unknown, key: string): JsonRecord | undefined {
   return undefined;
 }
 
-export function walkRecords(value: unknown, visit: (record: JsonRecord) => boolean): void {
+export function walkRecords(
+  value: unknown,
+  visit: (record: JsonRecord) => boolean,
+): void {
   if (Array.isArray(value)) {
     value.forEach((item) => walkRecords(item, visit));
     return;
@@ -65,7 +71,11 @@ export function walkRecords(value: unknown, visit: (record: JsonRecord) => boole
   for (const child of Object.values(record)) walkRecords(child, visit);
 }
 
-export function collectByKey(value: unknown, key: string, out: unknown[] = []): unknown[] {
+export function collectByKey(
+  value: unknown,
+  key: string,
+  out: unknown[] = [],
+): unknown[] {
   if (Array.isArray(value)) {
     for (const entry of value) collectByKey(entry, key, out);
     return out;

@@ -23,7 +23,9 @@ function renderWarning() {
 function createStorage(): Storage {
   const values = new Map<string, string>();
   return {
-    get length() { return values.size; },
+    get length() {
+      return values.size;
+    },
     clear: () => values.clear(),
     getItem: (key: string) => values.get(key) ?? null,
     key: (index: number) => [...values.keys()][index] ?? null,

@@ -70,7 +70,8 @@ export const SearchResultsList = memo(function SearchResultsList({
             isArtist && it.followers
               ? t("common.followers", { count: it.followers.toLocaleString() })
               : isAlbumOrPlaylist &&
-                  (it.totalTracks !== undefined || it.total_tracks !== undefined)
+                  (it.totalTracks !== undefined ||
+                    it.total_tracks !== undefined)
                 ? `${it.totalTracks ?? it.total_tracks} ${t("common.tracks")}`
                 : it.artists || it.artist || it.owner || "";
 

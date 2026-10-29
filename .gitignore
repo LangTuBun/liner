@@ -12,6 +12,8 @@
 !/build/icon.png
 !/build/icon.svg
 !/build/icon.ico
+!/build/icon-mac.png
+!/build/icon-mac.svg
 
 # testing
 /coverage

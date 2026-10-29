@@ -10,7 +10,11 @@
 .glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle, var(--grid-motion-gradient) 0%, transparent 100%);
+  background: radial-gradient(
+    circle,
+    var(--grid-motion-gradient) 0%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 

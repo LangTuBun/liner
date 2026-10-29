@@ -1,4 +1,9 @@
 import { Link } from "react-router-dom";
+import {
+  collectionPath,
+  collectionPreviewState,
+} from "../lib/collectionPreview";
+import { prefetchCollection } from "../hooks/useCollection";
 import { memo, useCallback, useState, type ReactNode } from "react";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { DropdownMenuItem } from "@/shared/ui/DropdownMenu";
@@ -66,7 +71,9 @@ function AlbumCard({
   return (
     <div onContextMenu={handleContextMenu}>
       <Link
-        to={`/collection?type=album&id=${encodeURIComponent(id)}`}
+        to={collectionPath("album", id)}
+        state={collectionPreviewState({ coverUrl, title, subtitle })}
+        onPointerDown={() => prefetchCollection("album", id)}
         className={`group flex flex-col gap-[8px] no-underline cursor-pointer ${className}`}
       >
         <div className="relative aspect-square w-full overflow-hidden rounded-md bg-border-alpha-14">
@@ -93,7 +100,10 @@ function AlbumCard({
               <>
                 {year && <span>{year}</span>}
                 {year && trackCount && (
-                  <span className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0" aria-hidden />
+                  <span
+                    className="w-[3px] h-[3px] rounded-full bg-text-tertiary/40 shrink-0"
+                    aria-hidden
+                  />
                 )}
                 {trackCount && <span>{trackCount} tracks</span>}
               </>

@@ -164,7 +164,9 @@ export function fallbackArtistsFromRuns(runs: JsonRecord[]): TrackArtist[] {
       .filter(Boolean)
       .map((name) => ({ id: "unknown", name }));
   });
-  return artists.length > 0 ? artists : [{ id: "unknown", name: "Unknown Artist" }];
+  return artists.length > 0
+    ? artists
+    : [{ id: "unknown", name: "Unknown Artist" }];
 }
 
 function fallbackArtistsFromColumn(renderer: JsonRecord): TrackArtist[] {

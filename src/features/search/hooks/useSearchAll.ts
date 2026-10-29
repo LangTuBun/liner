@@ -29,27 +29,24 @@ export function useSearchAll(
   const trimmed = query.trim();
   const shouldRunSearch = options.enabled && trimmed.length >= 2;
 
-  const runRequest = useCallback(
-    async (requestId: number, q: string) => {
-      setLoading(true);
-      try {
-        const res = await api.search(q, "all");
-        if (requestId !== latestRequestIdRef.current) return;
-        setItems(res.items);
-        setPartialWarning(undefined);
-        lastFetchedQueryRef.current = q;
-        setHasLoaded(true);
-      } catch {
-        if (requestId !== latestRequestIdRef.current) return;
-        setItems([]);
-        setPartialWarning(undefined);
-        setHasLoaded(true);
-      } finally {
-        if (requestId === latestRequestIdRef.current) setLoading(false);
-      }
-    },
-    [],
-  );
+  const runRequest = useCallback(async (requestId: number, q: string) => {
+    setLoading(true);
+    try {
+      const res = await api.search(q, "all");
+      if (requestId !== latestRequestIdRef.current) return;
+      setItems(res.items);
+      setPartialWarning(undefined);
+      lastFetchedQueryRef.current = q;
+      setHasLoaded(true);
+    } catch {
+      if (requestId !== latestRequestIdRef.current) return;
+      setItems([]);
+      setPartialWarning(undefined);
+      setHasLoaded(true);
+    } finally {
+      if (requestId === latestRequestIdRef.current) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (trimmed.length < 2) {

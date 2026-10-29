@@ -29,9 +29,7 @@ function FloatingDragCard({
         willChange: "transform",
       }}
     >
-      <div className="w-full h-full bg-border-alpha-14">
-        {children}
-      </div>
+      <div className="w-full h-full bg-border-alpha-14">{children}</div>
     </div>,
     document.body,
   );

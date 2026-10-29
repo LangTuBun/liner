@@ -54,7 +54,7 @@ class QueryCacheStore {
     let bytes = 0;
     for (const [key, record] of this.store.entries()) {
       try {
-        bytes += (key.length * 2) + (JSON.stringify(record?.data || {}).length * 2);
+        bytes += key.length * 2 + JSON.stringify(record?.data || {}).length * 2;
       } catch {
         bytes += key.length * 2 + 512;
       }

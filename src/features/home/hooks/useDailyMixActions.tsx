@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useStableNavigate } from "@/shared/hooks/useStableNavigate";
 import { playerEngine } from "@/features/player";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useToast } from "@/shared/ui";
@@ -11,7 +11,7 @@ import { PlayFill, AddFill } from "@mingcute/react";
 export function useDailyMixActions(mix: DailyMix) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
   const trackDoubleClickBehavior = usePlayerStore(
     (state) => state.trackDoubleClickBehavior,
   );

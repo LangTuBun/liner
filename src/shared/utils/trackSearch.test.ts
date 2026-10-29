@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { filterTracks, findHighlightRanges, normalizeForSearch } from "./trackSearch";
+import {
+  filterTracks,
+  findHighlightRanges,
+  normalizeForSearch,
+} from "./trackSearch";
 
 const tracks = [
   { title: "ДИНАСТИЯ", artists: "VILLIAN, madk1d" },

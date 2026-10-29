@@ -10,19 +10,28 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layoutId;
-            delete cleanProps.transition;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layoutId;
+                delete cleanProps.transition;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -50,7 +59,9 @@ describe("PillTabs Component", () => {
     const handleChange = vi.fn();
 
     act(() => {
-      root?.render(<PillTabs tabs={tabs} activeTab="pistol" onChange={handleChange} />);
+      root?.render(
+        <PillTabs tabs={tabs} activeTab="pistol" onChange={handleChange} />,
+      );
     });
 
     const renderedTabs = container?.querySelectorAll('[role="tab"]');
@@ -67,10 +78,14 @@ describe("PillTabs Component", () => {
     const handleChange = vi.fn();
 
     act(() => {
-      root?.render(<PillTabs tabs={tabs} activeTab="pistol" onChange={handleChange} />);
+      root?.render(
+        <PillTabs tabs={tabs} activeTab="pistol" onChange={handleChange} />,
+      );
     });
 
-    const secondTab = container?.querySelectorAll('[role="tab"]')?.[1] as HTMLElement;
+    const secondTab = container?.querySelectorAll(
+      '[role="tab"]',
+    )?.[1] as HTMLElement;
     act(() => {
       secondTab.click();
     });

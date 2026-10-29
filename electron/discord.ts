@@ -1,14 +1,14 @@
-import { Client, StatusDisplayType, type SetActivity } from "@xhayper/discord-rpc";
+import {
+  Client,
+  StatusDisplayType,
+  type SetActivity,
+} from "@xhayper/discord-rpc";
 import { ipcMain } from "electron";
 
 const ARRPC_USERNAME = "arrpc";
 
 export type DiscordStatusDisplayType =
-  | "artist"
-  | "title"
-  | "artist_title"
-  | "title_artist"
-  | "app";
+  "artist" | "title" | "artist_title" | "title_artist" | "app";
 
 export interface DiscordRpcSettings {
   enabled: boolean;
@@ -42,7 +42,9 @@ export interface DiscordRpcStatePayload {
 export const LINER_DISCORD_APPLICATION_ID = "1561339119617974362";
 
 function builtInApplicationId(): string {
-  return process.env.LINER_DISCORD_CLIENT_ID?.trim() || LINER_DISCORD_APPLICATION_ID;
+  return (
+    process.env.LINER_DISCORD_CLIENT_ID?.trim() || LINER_DISCORD_APPLICATION_ID
+  );
 }
 
 const DEFAULT_SETTINGS: DiscordRpcSettings = {
@@ -70,7 +72,10 @@ export function toDiscordImageUrl(url: string | undefined): string | undefined {
   }
 }
 
-function sanitizeText(text: string | undefined | null, maxLen = 128): string | undefined {
+function sanitizeText(
+  text: string | undefined | null,
+  maxLen = 128,
+): string | undefined {
   if (!text) return undefined;
   const trimmed = text.trim();
   if (!trimmed) return undefined;
@@ -96,13 +101,19 @@ export class DiscordRpcManager {
   }
 
   private registerIpcHandlers(): void {
-    ipcMain.on("discord:update-state", (_event, payload: DiscordRpcStatePayload) => {
-      this.updateState(payload);
-    });
+    ipcMain.on(
+      "discord:update-state",
+      (_event, payload: DiscordRpcStatePayload) => {
+        this.updateState(payload);
+      },
+    );
 
-    ipcMain.on("discord:update-settings", (_event, patch: Partial<DiscordRpcSettings>) => {
-      this.updateSettings(patch);
-    });
+    ipcMain.on(
+      "discord:update-settings",
+      (_event, patch: Partial<DiscordRpcSettings>) => {
+        this.updateSettings(patch);
+      },
+    );
 
     ipcMain.handle("discord:get-status", () => {
       const user = this.client?.user;
@@ -119,7 +130,10 @@ export class DiscordRpcManager {
 
   private scheduleSync(): void {
     if (this.syncTimer) clearTimeout(this.syncTimer);
-    const wait = Math.max(SYNC_DEBOUNCE_MS, MIN_SYNC_INTERVAL_MS - (Date.now() - this.lastSyncAt));
+    const wait = Math.max(
+      SYNC_DEBOUNCE_MS,
+      MIN_SYNC_INTERVAL_MS - (Date.now() - this.lastSyncAt),
+    );
     this.syncTimer = setTimeout(() => {
       this.syncTimer = null;
       this.lastSyncAt = Date.now();
@@ -140,7 +154,8 @@ export class DiscordRpcManager {
   }
 
   private scheduleReconnect(): void {
-    if (this.isDestroyed || !this.settings.enabled || this.reconnectTimer) return;
+    if (this.isDestroyed || !this.settings.enabled || this.reconnectTimer)
+      return;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (!this.isConnected && !this.isConnecting && this.settings.enabled) {
@@ -150,7 +165,12 @@ export class DiscordRpcManager {
   }
 
   private connect(): void {
-    if (this.isDestroyed || !this.settings.enabled || this.isConnecting || this.isConnected) {
+    if (
+      this.isDestroyed ||
+      !this.settings.enabled ||
+      this.isConnecting ||
+      this.isConnected
+    ) {
       return;
     }
 
@@ -228,7 +248,10 @@ export class DiscordRpcManager {
       "title_artist",
       "app",
     ];
-    if (patch.statusDisplayType && validStatusTypes.includes(patch.statusDisplayType)) {
+    if (
+      patch.statusDisplayType &&
+      validStatusTypes.includes(patch.statusDisplayType)
+    ) {
       validatedPatch.statusDisplayType = patch.statusDisplayType;
     }
 
@@ -284,7 +307,12 @@ export class DiscordRpcManager {
     }
 
     const payload = this.latestPayload;
-    if (!payload || !payload.track || payload.status === "idle" || payload.status === "error") {
+    if (
+      !payload ||
+      !payload.track ||
+      payload.status === "idle" ||
+      payload.status === "error"
+    ) {
       this.clearActivity();
       return;
     }
@@ -326,12 +354,16 @@ export class DiscordRpcManager {
           activityName = `${artist} - ${title}`;
           rpcStatusDisplayType = StatusDisplayType.STATE; // 1 -> "Listening to [Artist - Title]"
           detailsText = title;
-          stateText = isPaused ? `${artist} - ${title} (Paused)` : `${artist} - ${title}`;
+          stateText = isPaused
+            ? `${artist} - ${title} (Paused)`
+            : `${artist} - ${title}`;
           break;
         case "title_artist":
           activityName = `${title} - ${artist}`;
           rpcStatusDisplayType = StatusDisplayType.DETAILS; // 2 -> "Listening to [Title - Artist]"
-          detailsText = isPaused ? `${title} - ${artist} (Paused)` : `${title} - ${artist}`;
+          detailsText = isPaused
+            ? `${title} - ${artist} (Paused)`
+            : `${title} - ${artist}`;
           stateText = artist;
           break;
         case "artist":
@@ -355,8 +387,14 @@ export class DiscordRpcManager {
       // Timestamps (media timeline / live progress bar like Spotify)
       if (isPlaying && this.settings.showTime && dur > 0) {
         const now = Date.now();
-        const elapsedSincePayload = Math.max(0, now - (this.latestPayloadReceivedAt || now));
-        const currentPos = Math.min(dur, Math.max(0, (payload.positionMs || 0) + elapsedSincePayload));
+        const elapsedSincePayload = Math.max(
+          0,
+          now - (this.latestPayloadReceivedAt || now),
+        );
+        const currentPos = Math.min(
+          dur,
+          Math.max(0, (payload.positionMs || 0) + elapsedSincePayload),
+        );
         activity.startTimestamp = new Date(now - currentPos);
         activity.endTimestamp = new Date(now - currentPos + dur);
       }
@@ -365,7 +403,8 @@ export class DiscordRpcManager {
       const coverImage = toDiscordImageUrl(track.coverUrl);
       if (this.settings.showArtwork && coverImage) {
         activity.largeImageKey = coverImage;
-        activity.largeImageText = sanitizeText(track.album || track.title) || "Liner";
+        activity.largeImageText =
+          sanitizeText(track.album || track.title) || "Liner";
       }
 
       // Small artwork (Artist photo badge)

@@ -1,6 +1,21 @@
-import type { ApiTrack, ArtistAlbum, ArtistRelease, Cover } from "@/shared/contracts";
-import { asArray, asRecord, type JsonRecord, numberValue, trimmedString } from "@/shared/utils/json";
-import { soundCloudPlaylistId, soundCloudTrackId, soundCloudUserId } from "./soundcloudIds";
+import type {
+  ApiTrack,
+  ArtistAlbum,
+  ArtistRelease,
+  Cover,
+} from "@/shared/contracts";
+import {
+  asArray,
+  asRecord,
+  type JsonRecord,
+  numberValue,
+  trimmedString,
+} from "@/shared/utils/json";
+import {
+  soundCloudPlaylistId,
+  soundCloudTrackId,
+  soundCloudUserId,
+} from "./soundcloudIds";
 
 const ARTWORK_SIZE = 500;
 const ARTWORK_VARIANT = /-(?:large|t\d+x\d+|crop|original)(?=\.[a-z]+$)/i;
@@ -21,11 +36,15 @@ export function soundCloudCover(rawUrl: unknown): Cover | undefined {
   };
 }
 
-export function mapSoundCloudArtist(rawUser: unknown): SoundCloudArtistRef | undefined {
+export function mapSoundCloudArtist(
+  rawUser: unknown,
+): SoundCloudArtistRef | undefined {
   const user = asRecord(rawUser);
   const id = numberValue(user?.id);
   const name = trimmedString(user?.username);
-  return id !== undefined && name ? { id: soundCloudUserId(id), name } : undefined;
+  return id !== undefined && name
+    ? { id: soundCloudUserId(id), name }
+    : undefined;
 }
 
 export function mapSoundCloudCatalogTrack(rawTrack: unknown): ApiTrack | null {
@@ -35,7 +54,9 @@ export function mapSoundCloudCatalogTrack(rawTrack: unknown): ApiTrack | null {
   if (!track || id === undefined || !title) return null;
   const artist = mapSoundCloudArtist(track.user);
   const publisher = asRecord(track.publisher_metadata);
-  const cover = soundCloudCover(track.artwork_url) ?? soundCloudCover(asRecord(track.user)?.avatar_url);
+  const cover =
+    soundCloudCover(track.artwork_url) ??
+    soundCloudCover(asRecord(track.user)?.avatar_url);
   return {
     id: soundCloudTrackId(id),
     title,
@@ -47,11 +68,16 @@ export function mapSoundCloudCatalogTrack(rawTrack: unknown): ApiTrack | null {
 }
 
 export function mapSoundCloudTracks(rawTracks: unknown): ApiTrack[] {
-  return asArray(rawTracks).flatMap((raw) => mapSoundCloudCatalogTrack(raw) ?? []);
+  return asArray(rawTracks).flatMap(
+    (raw) => mapSoundCloudCatalogTrack(raw) ?? [],
+  );
 }
 
 export function soundCloudYear(record: JsonRecord): number | undefined {
-  const date = trimmedString(record.release_date) ?? trimmedString(record.display_date) ?? trimmedString(record.created_at);
+  const date =
+    trimmedString(record.release_date) ??
+    trimmedString(record.display_date) ??
+    trimmedString(record.created_at);
   const year = date ? Number.parseInt(date.slice(0, 4), 10) : Number.NaN;
   return Number.isFinite(year) && year > 1900 ? year : undefined;
 }
@@ -78,11 +104,15 @@ export function mapSoundCloudRelease(rawPlaylist: unknown): ArtistAlbum | null {
     title,
     ...(year ? { year } : {}),
     ...(cover ? { cover } : {}),
-    ...(trackCount !== undefined ? { trackCount, totalTracks: trackCount } : {}),
+    ...(trackCount !== undefined
+      ? { trackCount, totalTracks: trackCount }
+      : {}),
   };
 }
 
-export function soundCloudReleaseType(rawPlaylist: unknown): ArtistRelease["releaseType"] | "album" {
+export function soundCloudReleaseType(
+  rawPlaylist: unknown,
+): ArtistRelease["releaseType"] | "album" {
   const setType = trimmedString(asRecord(rawPlaylist)?.set_type)?.toLowerCase();
   if (setType === "single") return "single";
   if (setType === "ep") return "ep";

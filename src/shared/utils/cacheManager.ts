@@ -1,10 +1,12 @@
 import { linerDb } from "@/shared/storage/linerDb";
+import { isLocalTrackId } from "@/shared/media/local";
 import {
   audioCache,
   DEFAULT_AUDIO_CACHE_LIMIT_BYTES,
   MIN_AUDIO_CACHE_LIMIT_BYTES,
 } from "@/shared/storage/audioCache";
 import { queryCache } from "@/shared/cache/queryCache";
+import { clearScreenCache } from "@/shared/cache/screenCache";
 import { lyricsCache } from "@/features/lyrics";
 import { clearCoverRegistry } from "@/features/covers";
 import { useSearchHistoryStore } from "@/features/search/store/searchHistoryStore";
@@ -86,6 +88,7 @@ export async function clearMediaAndCoverCache(): Promise<void> {
  */
 export async function clearSearchAndQueryCache(): Promise<void> {
   queryCache.clear();
+  clearScreenCache();
   try {
     useSearchHistoryStore.getState().clearHistory();
     debouncedStorage.removeItem("liner_search_history");
@@ -126,10 +129,7 @@ export async function clearApplicationCacheSafely(): Promise<void> {
     debouncedStorage.flush();
   } catch {}
 
-  await Promise.all([
-    clearMediaAndCoverCache(),
-    clearSearchAndQueryCache(),
-  ]);
+  await Promise.all([clearMediaAndCoverCache(), clearSearchAndQueryCache()]);
 
   if (typeof window !== "undefined" && window.localStorage) {
     const keysToRemove: string[] = [];
@@ -227,7 +227,8 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
   // take the maximum between indexeddb object store iteration and physical disk size
   // if indexeddb store is empty, ignore residual leveldb engine overhead under 2MB
   if (electronStats && electronStats.indexedDbSize > 0) {
-    const totalIdbDisk = electronStats.indexedDbSize + (electronStats.blobStorageSize || 0);
+    const totalIdbDisk =
+      electronStats.indexedDbSize + (electronStats.blobStorageSize || 0);
     if (audioBytes > 0) {
       audioBytes = Math.max(audioBytes, totalIdbDisk);
     } else if (totalIdbDisk > 2 * 1024 * 1024) {
@@ -276,7 +277,10 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
       if (!k) continue;
       const v = localStorage.getItem(k) || "";
       const size = (k.length + v.length) * 2;
-      if (k.startsWith("liner:playlist-covers") || k.startsWith("liner:cover:")) {
+      if (
+        k.startsWith("liner:playlist-covers") ||
+        k.startsWith("liner:cover:")
+      ) {
         coversBytes += size;
       } else if (
         k.startsWith("liner:search:") ||
@@ -314,8 +318,15 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
       const estimate = await navigator.storage.estimate();
       deviceQuotaBytes = estimate.quota;
       deviceUsageBytes = estimate.usage;
-      if (estimate.quota && estimate.quota > 0 && estimate.usage !== undefined) {
-        deviceUsagePercent = Math.min(100, Math.max(0.01, (estimate.usage / estimate.quota) * 100));
+      if (
+        estimate.quota &&
+        estimate.quota > 0 &&
+        estimate.usage !== undefined
+      ) {
+        deviceUsagePercent = Math.min(
+          100,
+          Math.max(0.01, (estimate.usage / estimate.quota) * 100),
+        );
       }
     } catch {}
   }
@@ -362,10 +373,15 @@ export async function getStorageAnalytics(): Promise<StorageAnalytics> {
 }
 
 // clears chosen categories cleanly while maintaining user session
-export async function clearStorageCategories(categoryIds: StorageCategoryId[]): Promise<void> {
+export async function clearStorageCategories(
+  categoryIds: StorageCategoryId[],
+): Promise<void> {
   const set = new Set(categoryIds);
   const isAllCategories =
-    set.has("audio") && set.has("covers") && set.has("lyrics") && set.has("metadata");
+    set.has("audio") &&
+    set.has("covers") &&
+    set.has("lyrics") &&
+    set.has("metadata");
 
   if (set.has("audio")) {
     audioCache.invalidate();
@@ -374,21 +390,27 @@ export async function clearStorageCategories(categoryIds: StorageCategoryId[]): 
     if (isAllCategories) {
       await linerDb.close();
     }
-    if (typeof window !== "undefined" && window.linerElectron?.clearAudioCache) {
+    if (
+      typeof window !== "undefined" &&
+      window.linerElectron?.clearAudioCache
+    ) {
       await window.linerElectron.clearAudioCache(isAllCategories);
     }
   }
 
   if (set.has("covers")) {
     await clearMediaAndCoverCache();
-    if (typeof window !== "undefined" && window.linerElectron?.clearCoversCache) {
+    if (
+      typeof window !== "undefined" &&
+      window.linerElectron?.clearCoversCache
+    ) {
       await window.linerElectron.clearCoversCache();
     }
   }
 
   if (set.has("lyrics")) {
     lyricsCache.clear();
-    await linerDb.clearStore("lyrics");
+    await linerDb.clearCachedLyrics(isLocalTrackId);
     if (typeof window !== "undefined" && window.localStorage) {
       localStorage.removeItem("lyrics-storage");
       const toRemove: string[] = [];
@@ -521,5 +543,3 @@ export function initBackgroundStorageAnalytics(): void {
 if (typeof window !== "undefined") {
   initBackgroundStorageAnalytics();
 }
-
-

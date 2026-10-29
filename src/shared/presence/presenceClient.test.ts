@@ -6,9 +6,17 @@ describe("PresenceClient", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    fetchMock = vi.fn(async () => new Response(null, { status: 204, headers: { "x-liner-heartbeat-interval": "60" } }));
+    fetchMock = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 204,
+          headers: { "x-liner-heartbeat-interval": "60" },
+        }),
+    );
     vi.stubGlobal("fetch", fetchMock);
-    vi.spyOn(authSession, "getValidAccessToken").mockResolvedValue("test-valid-jwt-token");
+    vi.spyOn(authSession, "getValidAccessToken").mockResolvedValue(
+      "test-valid-jwt-token",
+    );
     vi.spyOn(authSession, "getAuthSession").mockReturnValue({
       accessToken: "test-valid-jwt-token",
       refreshToken: "test-refresh-token",
@@ -46,7 +54,9 @@ describe("PresenceClient", () => {
   });
 
   it("keeps beating on its own interval when the server suggests none, and stops on stop()", async () => {
-    fetchMock.mockImplementation(async () => new Response(null, { status: 204 }));
+    fetchMock.mockImplementation(
+      async () => new Response(null, { status: 204 }),
+    );
     const client = new PresenceClient(50);
     client.start();
     await new Promise((resolve) => setTimeout(resolve, 130));

@@ -11,6 +11,7 @@ import {
 } from "@/shared/api";
 import { playerEngine } from "@/features/player";
 import { queryCache } from "@/shared/cache/queryCache";
+import { clearScreenCache } from "@/shared/cache/screenCache";
 
 export type AuthStatus = "initializing" | "authenticated" | "anonymous";
 export type AuthState = {
@@ -49,9 +50,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await Promise.race([getMePromise, timeoutPromise]);
       const current = getAuthSession();
       if (current) setAuthSession({ ...current, user: user ?? current.user });
-      set({ status: "authenticated", user: user ?? current?.user ?? stored.user });
+      set({
+        status: "authenticated",
+        user: user ?? current?.user ?? stored.user,
+      });
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      if (
+        err instanceof ApiError &&
+        (err.status === 401 || err.status === 403)
+      ) {
         // Attempt refresh before clearing session in case access token expired between sessions
         const current = getAuthSession();
         if (current?.refreshToken) {
@@ -60,10 +67,12 @@ export const useAuthStore = create<AuthState>((set) => ({
             if (refreshed) {
               const retryUser = await api.getMe().catch(() => null);
               const active = getAuthSession();
-              if (active) setAuthSession({ ...active, user: retryUser ?? active.user });
+              if (active)
+                setAuthSession({ ...active, user: retryUser ?? active.user });
               set({
                 status: "authenticated",
-                user: retryUser ?? refreshed.user ?? current.user ?? stored.user,
+                user:
+                  retryUser ?? refreshed.user ?? current.user ?? stored.user,
               });
               return;
             }
@@ -123,11 +132,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       window.linerElectron?.closeOverlay?.();
       window.linerElectron?.sendOverlayAction?.({ type: "closeOverlay" });
     } catch {}
-    if (typeof window !== "undefined" && window.location.hash.includes("/player")) {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hash.includes("/player")
+    ) {
       window.location.hash = "#/";
     }
     await clearAuthSession();
     queryCache.clear();
+    clearScreenCache();
     set({ status: "anonymous", user: null });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("library:changed"));

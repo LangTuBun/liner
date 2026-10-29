@@ -8,7 +8,10 @@ const JUNK_PATTERNS: Array<[RegExp, string]> = [
     "",
   ],
   [/@[\w.-]+/gu, ""],
-  [/(?:\(|\[|\{)?\s*(?:prod(?:uced)?\s+by|beat\s+by|prod\b\.?|beat\b\.?)\s*[:/]?\s*[^)\]}]+(?:\)|\]|\})?/giu, ""],
+  [
+    /(?:\(|\[|\{)?\s*(?:prod(?:uced)?\s+by|beat\s+by|prod\b\.?|beat\b\.?)\s*[:/]?\s*[^)\]}]+(?:\)|\]|\})?/giu,
+    "",
+  ],
   [
     /(?:\(|\[|\{)\s*(?:free\s*(?:dl|download)|download(?:\s*link)?|free\s*beat|link\s+in\s+(?:bio|desc(?:ription)?)|out\s+now|stream\s+now|buy\s+now|premiere|exclusive|clip\s+officiel|official\s+video|official\s+audio|official\s+music\s+video|music\s+video|lyric\s+video|visualizer|official\s+visualizer|audio\s+visualizer|og\s+version|og\s+beat|full\s+version|hq|hd|4k)[^)\]}]*[)\]}]/giu,
     "",
@@ -26,7 +29,10 @@ const JUNK_PATTERNS: Array<[RegExp, string]> = [
 ];
 
 export function stripJunk(value: string): string {
-  return JUNK_PATTERNS.reduce((result, [pattern, replacement]) => result.replace(pattern, replacement), value)
+  return JUNK_PATTERNS.reduce(
+    (result, [pattern, replacement]) => result.replace(pattern, replacement),
+    value,
+  )
     .trim()
     .replace(/\s+/g, " ");
 }
@@ -47,7 +53,10 @@ export function cleanSearchTitle(title: string): string {
 
 export function cleanBaseTitle(value: string): string {
   let result = stripJunk(value);
-  result = result.replace(/[([{]?\s*(?:feat\.?|ft\.?|with)\s+[^)\]}]+[)\]}]?/giu, "");
+  result = result.replace(
+    /[([{]?\s*(?:feat\.?|ft\.?|with)\s+[^)\]}]+[)\]}]?/giu,
+    "",
+  );
   result = result.replace(
     /\s*[-–—]\s*(?:mono|stereo|remaster(?:ed)?(?:\s*\d{4})?|ремастеринг|live(?:\s+at[^)]+)?|acoustic|instrumental|radio\s+edit|single\s+version|original\s+mix|album\s+version)\b.*$/iu,
     "",

@@ -1,27 +1,5 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { useTheme } from "next-themes";
-import { debouncedStorage } from "@/shared/utils/storage";
 import { usePageBackdropStore } from "@/shared/lib";
-
-export interface CustomizationState {
-  coverGlow: boolean;
-  setCoverGlow: (enabled: boolean) => void;
-}
-
-export const useCustomizationStore = create<CustomizationState>()(
-  persist(
-    (set) => ({
-      coverGlow: true,
-      setCoverGlow: (enabled) => set({ coverGlow: enabled }),
-    }),
-    {
-      name: "liner_customization_v1",
-      storage: createJSONStorage(() => debouncedStorage),
-      partialize: (state) => ({ coverGlow: state.coverGlow }),
-    },
-  ),
-);
 
 function getIsDarkTheme(): boolean {
   if (typeof document === "undefined") return false;
@@ -42,9 +20,7 @@ export function useIsDarkTheme(): boolean {
 }
 
 export function useEffectiveCoverGlow(): boolean {
-  const coverGlow = useCustomizationStore((s) => s.coverGlow);
-  const isDark = useIsDarkTheme();
-  return coverGlow && isDark;
+  return useIsDarkTheme();
 }
 
 export function useHasPageBackdrop(): boolean {

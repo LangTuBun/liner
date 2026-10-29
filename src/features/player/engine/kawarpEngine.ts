@@ -1,4 +1,4 @@
-import { prepareCoverFallback } from "@/features/covers";
+import { loadCoverElement, prepareCoverFallback } from "@/features/covers";
 import {
   isWindowVisible,
   onWindowVisibilityChange,
@@ -358,51 +358,8 @@ export class KawarpEngine {
         : null;
 
     if (!bitmap) {
-      try {
-        const res = await fetch(src, { mode: "cors" });
-        if (res.ok) {
-          const blob = await res.blob();
-          bitmap = await createImageBitmap(blob);
-        }
-      } catch {}
-    }
-
-    if (!bitmap) {
-      try {
-        bitmap = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-          img.src = src;
-        });
-      } catch (err) {
-        try {
-          const fallback = await prepareCoverFallback(src);
-          if (fallback && fallback !== src) {
-            const res = await fetch(fallback, { mode: "cors" });
-            if (res.ok) {
-              const blob = await res.blob();
-              bitmap = await createImageBitmap(blob);
-            }
-            if (!bitmap) {
-              bitmap = await new Promise<HTMLImageElement>(
-                (resolve, reject) => {
-                  const img = new Image();
-                  img.crossOrigin = "anonymous";
-                  img.onload = () => resolve(img);
-                  img.onerror = () =>
-                    reject(new Error(`Failed to load image: ${fallback}`));
-                  img.src = fallback;
-                },
-              );
-            }
-          }
-        } catch {}
-        if (!bitmap) {
-          throw err;
-        }
-      }
+      bitmap = (await loadCoverElement(src)) ?? null;
+      if (!bitmap) throw new Error(`Failed to load image: ${src}`);
     }
 
     // drop out-of-order stale loads

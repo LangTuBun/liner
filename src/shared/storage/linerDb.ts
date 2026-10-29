@@ -7,6 +7,7 @@ import type { LyricsProviderOption } from "@/features/lyrics/store/lyricsStore";
 import {
   shouldCacheLyricsCandidate,
   compareLyricsCandidates,
+  mergeLyricsProvider,
 } from "@/features/lyrics";
 
 export interface CachedTrackRecord {
@@ -85,7 +86,7 @@ class LinerDb {
   private memLyrics = new Map<string, CachedLyricsRecord>();
   private memArtists = new Map<string, CachedArtistRecord>();
 
-  private handleDbError(err: unknown) {
+  private handleDbError() {
     this.dbPromise = null;
   }
 
@@ -209,8 +210,8 @@ class LinerDb {
             reject(err);
           }
         });
-      } catch (err) {
-        this.handleDbError(err);
+      } catch {
+        this.handleDbError();
         if (attempt === 0) {
           // retry once on fresh connection
           continue;
@@ -487,17 +488,11 @@ class LinerDb {
       ...record.providers,
     };
 
-    if (record.candidate && shouldCacheLyricsCandidate(record.candidate)) {
-      providers[record.candidate.provider.toLowerCase().trim()] =
-        record.candidate;
-    }
+    if (record.candidate) mergeLyricsProvider(providers, record.candidate);
 
     if (record.availableProviders) {
       for (const opt of record.availableProviders) {
-        if (opt.candidate && shouldCacheLyricsCandidate(opt.candidate)) {
-          providers[opt.candidate.provider.toLowerCase().trim()] =
-            opt.candidate;
-        }
+        if (opt.candidate) mergeLyricsProvider(providers, opt.candidate);
       }
     }
 
@@ -683,6 +678,44 @@ class LinerDb {
       return new Promise<void>((resolve) => {
         const req = store.clear();
         req.onsuccess = () => resolve();
+        req.onerror = () => resolve();
+      });
+    });
+  }
+
+  async deleteLyrics(trackIds: string[]): Promise<void> {
+    if (trackIds.length === 0) return;
+    for (const id of trackIds) this.memLyrics.delete(id);
+    await this.runTransaction("lyrics", "readwrite", (store) =>
+      Promise.all(
+        trackIds.map(
+          (id) =>
+            new Promise<void>((resolve) => {
+              const req = store.delete(id);
+              req.onsuccess = () => resolve();
+              req.onerror = () => resolve();
+            }),
+        ),
+      ).then(() => undefined),
+    );
+  }
+
+  async clearCachedLyrics(keep: (trackId: string) => boolean): Promise<void> {
+    for (const id of this.memLyrics.keys()) {
+      if (!keep(id)) this.memLyrics.delete(id);
+    }
+    await this.runTransaction("lyrics", "readwrite", (store) => {
+      return new Promise<void>((resolve) => {
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (!cursor) {
+            resolve();
+            return;
+          }
+          if (!keep(String(cursor.key))) cursor.delete();
+          cursor.continue();
+        };
         req.onerror = () => resolve();
       });
     });

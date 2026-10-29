@@ -1,5 +1,5 @@
 import { mediaUrl } from "./api";
-import type { ApiTrack } from "../contracts";
+
 import type { Track } from "../types";
 
 export function toClientTrack(source: any): Track {
@@ -35,7 +35,10 @@ export function toClientTrack(source: any): Track {
     ];
   } else if (typeof source.artists === "string" && source.artists.trim()) {
     const rawArtistId = source.artistId || source.artist_id || "";
-    const parts = source.artists.split(",").map((p: string) => p.trim()).filter(Boolean);
+    const parts = source.artists
+      .split(",")
+      .map((p: string) => p.trim())
+      .filter(Boolean);
     artistsList = parts.map((name: string, idx: number) => ({
       id: idx === 0 ? rawArtistId : "",
       name,
@@ -54,17 +57,27 @@ export function toClientTrack(source: any): Track {
       ? source.artists
       : typeof source.artist === "string"
         ? source.artist
-        : artistsList.map((artist) => artist.name).filter(Boolean).join(", ");
+        : artistsList
+            .map((artist) => artist.name)
+            .filter(Boolean)
+            .join(", ");
 
   const primaryArtistId =
-    artistsList.find((artist) => Boolean(artist.id && artist.id !== "unknown"))?.id ||
-    (source.artistId && source.artistId !== "unknown" ? source.artistId : undefined) ||
-    (source.artist_id && source.artist_id !== "unknown" ? source.artist_id : undefined) ||
-    (artistsList[0]?.id && artistsList[0].id !== "unknown" ? artistsList[0].id : undefined);
+    artistsList.find((artist) => Boolean(artist.id && artist.id !== "unknown"))
+      ?.id ||
+    (source.artistId && source.artistId !== "unknown"
+      ? source.artistId
+      : undefined) ||
+    (source.artist_id && source.artist_id !== "unknown"
+      ? source.artist_id
+      : undefined) ||
+    (artistsList[0]?.id && artistsList[0].id !== "unknown"
+      ? artistsList[0].id
+      : undefined);
 
   const coverUrl = source.cover
     ? mediaUrl(source.cover.url ?? source.cover)
-    : source.coverUrl ?? source.cover_url ?? "";
+    : (source.coverUrl ?? source.cover_url ?? "");
 
   const album =
     source.album && typeof source.album === "object"
@@ -88,4 +101,3 @@ export function toClientTrack(source: any): Track {
     album: album && (album.id || album.title) ? album : undefined,
   };
 }
-

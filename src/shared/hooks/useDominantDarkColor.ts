@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getCoverElement,
-  preloadCoverArt,
-} from "@/features/covers/lib/coverArt";
+import { loadCoverElement } from "@/features/covers/lib/coverArt";
 import {
   extractDarkDominantRgb,
   type DominantDarkColor,
@@ -49,31 +46,9 @@ export function useDominantDarkColor(
       }
     };
 
-    const existingEl = getCoverElement(imageUrl);
-    if (existingEl && existingEl.complete && existingEl.naturalWidth > 0) {
-      processImage(existingEl);
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (active) processImage(img);
-    };
-    img.onerror = () => {
-      void preloadCoverArt(imageUrl).then(() => {
-        const fallbackEl = getCoverElement(imageUrl);
-        if (
-          active &&
-          fallbackEl &&
-          fallbackEl.complete &&
-          fallbackEl.naturalWidth > 0
-        ) {
-          processImage(fallbackEl);
-        }
-      });
-    };
-    img.src = imageUrl;
+    void loadCoverElement(imageUrl).then((element) => {
+      if (active && element) processImage(element);
+    });
 
     return () => {
       active = false;

@@ -1,5 +1,5 @@
-export type LeaderboardType = 'artist' | 'global';
-export type LeaderboardPeriod = 'weekly' | 'monthly' | 'all_time';
+export type LeaderboardType = "artist" | "global";
+export type LeaderboardPeriod = "weekly" | "monthly" | "all_time";
 
 export interface LeaderboardEntryUser {
   id: string;

@@ -1,6 +1,12 @@
 import { HashRouter } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { ToastProvider, AppleEmojiProvider, RootErrorBoundary, GlobalTooltip, WindowAnimationContainer } from "@/shared/ui";
+import {
+  ToastProvider,
+  AppleEmojiProvider,
+  RootErrorBoundary,
+  GlobalTooltip,
+  WindowAnimationContainer,
+} from "@/shared/ui";
 import { useWindowDrag } from "@/shared/hooks";
 import { useAppIconSync } from "@/features/player";
 import { I18nProvider } from "@/languages";

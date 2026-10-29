@@ -3,9 +3,9 @@ import { tidyTitle, toPatch } from "./riffMigration";
 
 describe("riffMigration", () => {
   it("drops the artist prefix and youtube noise from a title", () => {
-    expect(
-      tidyTitle("Lil Peep - nuts (Official Audio)", "Lil Peep"),
-    ).toBe("nuts");
+    expect(tidyTitle("Lil Peep - nuts (Official Audio)", "Lil Peep")).toBe(
+      "nuts",
+    );
     expect(tidyTitle("Lover Girl", "Laufey")).toBe("Lover Girl");
   });
 

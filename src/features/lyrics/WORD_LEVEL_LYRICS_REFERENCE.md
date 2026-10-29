@@ -20,7 +20,7 @@ export interface GroupedWord {
 
 export function groupSyllablesIntoWords(
   rawWords: TouchBarWordData[],
-  lineText: string
+  lineText: string,
 ): GroupedWord[] {
   if (!rawWords || rawWords.length === 0) return [];
   const words: GroupedWord[] = [];
@@ -109,7 +109,7 @@ const activeWordIndex = useMemo(() => {
 const activeGroupIndex = useMemo(() => {
   if (activeWordIndex < 0 || groupedWords.length === 0) return -1;
   return groupedWords.findIndex((group) =>
-    group.syllables.some((s) => s.globalIndex === activeWordIndex)
+    group.syllables.some((s) => s.globalIndex === activeWordIndex),
   );
 }, [activeWordIndex, groupedWords]);
 ```
@@ -155,7 +155,8 @@ useLayoutEffect(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (!tickerRef.current) return;
-        tickerRef.current.style.transition = "opacity 0.22s cubic-bezier(0.16,1,0.3,1)";
+        tickerRef.current.style.transition =
+          "opacity 0.22s cubic-bezier(0.16,1,0.3,1)";
         tickerRef.current.style.opacity = "1";
       });
     });

@@ -6,7 +6,8 @@ import { buildSourceProfile } from "./sourceProfile";
 
 export type Match = { track: Track; score: number };
 
-export type MatchRejectionReason = "low_confidence_match" | "ambiguous_match" | "duration_mismatch";
+export type MatchRejectionReason =
+  "low_confidence_match" | "ambiguous_match" | "duration_mismatch";
 
 export type MatchDecision =
   | Match
@@ -16,24 +17,44 @@ export type MatchDecision =
       proposedTrack?: Track;
     };
 
-function reject(reason: MatchRejectionReason, best: RankedCandidate): MatchDecision {
+function reject(
+  reason: MatchRejectionReason,
+  best: RankedCandidate,
+): MatchDecision {
   return { reason, score: best.score, proposedTrack: best.track };
 }
 
-function isAmbiguous(best: RankedCandidate, second: RankedCandidate | undefined): boolean {
-  if (!second || second.isDisqualified || best.score - second.score >= 10) return false;
+function isAmbiguous(
+  best: RankedCandidate,
+  second: RankedCandidate | undefined,
+): boolean {
+  if (!second || second.isDisqualified || best.score - second.score >= 10)
+    return false;
   const isDuplicate =
     best.titleClean === second.titleClean &&
     artistsMatch(best.primaryArtist, second.primaryArtist) &&
-    (durationDelta(best.track.durationMs, second.track.durationMs) ?? Number.POSITIVE_INFINITY) <= 3_000;
+    (durationDelta(best.track.durationMs, second.track.durationMs) ??
+      Number.POSITIVE_INFINITY) <= 3_000;
   const isClearWinner =
-    best.score >= 75 && best.versionMatches && best.artistExact && best.delta !== undefined && best.delta <= 4_000;
-  return !isDuplicate && !isClearWinner && (!best.titleExact || !best.versionMatches);
+    best.score >= 75 &&
+    best.versionMatches &&
+    best.artistExact &&
+    best.delta !== undefined &&
+    best.delta <= 4_000;
+  return (
+    !isDuplicate && !isClearWinner && (!best.titleExact || !best.versionMatches)
+  );
 }
 
 function acceptedScore(best: RankedCandidate): number | undefined {
-  const withinDelta = (limit: number) => best.delta === undefined || best.delta <= limit;
-  if (best.bestTitleRatio >= 85 && best.artistExact && best.versionMatches && withinDelta(10_000)) {
+  const withinDelta = (limit: number) =>
+    best.delta === undefined || best.delta <= limit;
+  if (
+    best.bestTitleRatio >= 85 &&
+    best.artistExact &&
+    best.versionMatches &&
+    withinDelta(10_000)
+  ) {
     return Math.max(best.score, 95);
   }
   if (
@@ -45,7 +66,12 @@ function acceptedScore(best: RankedCandidate): number | undefined {
   ) {
     return Math.max(best.score, 88);
   }
-  if (best.artistExact && withinDelta(4_000) && best.bestTitleRatio >= 70 && best.versionMatches) {
+  if (
+    best.artistExact &&
+    withinDelta(4_000) &&
+    best.bestTitleRatio >= 70 &&
+    best.versionMatches
+  ) {
     return Math.max(best.score, 85);
   }
   if (
@@ -60,19 +86,29 @@ function acceptedScore(best: RankedCandidate): number | undefined {
   return undefined;
 }
 
-export function evaluateImportedTrack(source: ImportedTrack, candidates: readonly Track[]): MatchDecision {
+export function evaluateImportedTrack(
+  source: ImportedTrack,
+  candidates: readonly Track[],
+): MatchDecision {
   const profile = buildSourceProfile(source);
-  const ranked = candidates.map((candidate) => rankCandidate(profile, candidate)).sort((a, b) => b.score - a.score);
+  const ranked = candidates
+    .map((candidate) => rankCandidate(profile, candidate))
+    .sort((a, b) => b.score - a.score);
   const best = ranked[0];
   if (!best) return { reason: "low_confidence_match" };
   if (best.isDisqualified) return reject("duration_mismatch", best);
   if (isAmbiguous(best, ranked[1])) return reject("ambiguous_match", best);
 
   const score = acceptedScore(best);
-  return score === undefined ? reject("low_confidence_match", best) : { track: best.track, score };
+  return score === undefined
+    ? reject("low_confidence_match", best)
+    : { track: best.track, score };
 }
 
-export function matchImportedTrack(source: ImportedTrack, candidates: readonly Track[]): Match | undefined {
+export function matchImportedTrack(
+  source: ImportedTrack,
+  candidates: readonly Track[],
+): Match | undefined {
   const result = evaluateImportedTrack(source, candidates);
   return "track" in result ? result : undefined;
 }

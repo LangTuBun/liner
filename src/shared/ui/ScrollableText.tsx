@@ -1,4 +1,12 @@
-import { useRef, useState, useLayoutEffect, useCallback, useEffect, useMemo, type CSSProperties } from "react";
+import {
+  useRef,
+  useState,
+  useLayoutEffect,
+  useCallback,
+  useEffect,
+  useMemo,
+  type CSSProperties,
+} from "react";
 
 export interface ScrollableTextProps {
   text: string;
@@ -72,7 +80,10 @@ export default function ScrollableText({
         ref={innerRef}
         className="inline-block whitespace-nowrap"
         style={{
-          transform: isHovered && delta > 0 ? `translateX(-${delta + 4}px)` : "translateX(0)",
+          transform:
+            isHovered && delta > 0
+              ? `translateX(-${delta + 4}px)`
+              : "translateX(0)",
           transition: isHovered
             ? `transform ${Math.max(1000, delta * 18)}ms linear`
             : "transform 300ms ease",
@@ -85,4 +96,3 @@ export default function ScrollableText({
 }
 
 export { ScrollableText };
-

@@ -1,9 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { parseSoundCloudTrack, toSoundCloudTrackId, type SoundCloudTrackInfo } from "./soundcloudTrack";
-import { playableTranscodings, SoundCloudUnavailableError, transcodingFormat } from "./soundcloudTranscodings";
+import {
+  parseSoundCloudTrack,
+  toSoundCloudTrackId,
+  type SoundCloudTrackInfo,
+} from "./soundcloudTrack";
+import {
+  playableTranscodings,
+  SoundCloudUnavailableError,
+  transcodingFormat,
+} from "./soundcloudTranscodings";
 
-function transcoding(preset: string, protocol: string, mime: string, snipped = false) {
-  return { url: `https://api-v2.soundcloud.com/media/${preset}/${protocol}`, preset, snipped, format: { protocol, mime_type: mime } };
+function transcoding(
+  preset: string,
+  protocol: string,
+  mime: string,
+  snipped = false,
+) {
+  return {
+    url: `https://api-v2.soundcloud.com/media/${preset}/${protocol}`,
+    preset,
+    snipped,
+    format: { protocol, mime_type: mime },
+  };
 }
 
 function track(overrides: Record<string, unknown> = {}): SoundCloudTrackInfo {
@@ -33,13 +51,19 @@ function reason(run: () => unknown): string | undefined {
     run();
     return undefined;
   } catch (error) {
-    return error instanceof SoundCloudUnavailableError ? error.reason : String(error);
+    return error instanceof SoundCloudUnavailableError
+      ? error.reason
+      : String(error);
   }
 }
 
 describe("playableTranscodings", () => {
   it("prefers progressive mp3, then mpeg hls, then other hls, and skips playlists and encrypted streams", () => {
-    expect(playableTranscodings(track()).map((item) => `${item.preset}/${item.protocol}`)).toEqual([
+    expect(
+      playableTranscodings(track()).map(
+        (item) => `${item.preset}/${item.protocol}`,
+      ),
+    ).toEqual([
       "mp3_1_0/progressive",
       "mp3_1_0/hls",
       "aac_160k/hls",
@@ -48,31 +72,62 @@ describe("playableTranscodings", () => {
   });
 
   it("treats blocked tracks as unavailable", () => {
-    expect(reason(() => playableTranscodings(track({ policy: "BLOCK" })))).toBe("blocked");
+    expect(reason(() => playableTranscodings(track({ policy: "BLOCK" })))).toBe(
+      "blocked",
+    );
   });
 
   it("treats SNIP previews as unavailable instead of playing 30 seconds", () => {
-    expect(reason(() => playableTranscodings(track({ policy: "SNIP" })))).toBe("preview_only");
+    expect(reason(() => playableTranscodings(track({ policy: "SNIP" })))).toBe(
+      "preview_only",
+    );
   });
 
   it("treats snipped transcodings and preview durations as unavailable", () => {
-    const snippedOnly = { transcodings: [transcoding("mp3_1_0", "progressive", "audio/mpeg", true)] };
-    expect(reason(() => playableTranscodings(track({ media: snippedOnly })))).toBe("preview_only");
-    expect(reason(() => playableTranscodings(track({ duration: 30_000, full_duration: 200_000 })))).toBe("preview_only");
+    const snippedOnly = {
+      transcodings: [transcoding("mp3_1_0", "progressive", "audio/mpeg", true)],
+    };
+    expect(
+      reason(() => playableTranscodings(track({ media: snippedOnly }))),
+    ).toBe("preview_only");
+    expect(
+      reason(() =>
+        playableTranscodings(
+          track({ duration: 30_000, full_duration: 200_000 }),
+        ),
+      ),
+    ).toBe("preview_only");
   });
 
   it("drops individual snipped transcodings and reports when nothing playable is left", () => {
-    const media = { transcodings: [transcoding("abr_sq", "hls", "audio/mpegurl"), transcoding("mp3_1_0", "hls", "audio/mpeg", true)] };
-    expect(reason(() => playableTranscodings(track({ media })))).toBe("no_playable_transcoding");
-    expect(reason(() => playableTranscodings(track({ streamable: false })))).toBe("not_streamable");
+    const media = {
+      transcodings: [
+        transcoding("abr_sq", "hls", "audio/mpegurl"),
+        transcoding("mp3_1_0", "hls", "audio/mpeg", true),
+      ],
+    };
+    expect(reason(() => playableTranscodings(track({ media })))).toBe(
+      "no_playable_transcoding",
+    );
+    expect(
+      reason(() => playableTranscodings(track({ streamable: false }))),
+    ).toBe("not_streamable");
   });
 });
 
 describe("soundcloud track helpers", () => {
   it("maps transcodings to codec, mime type and bitrate", () => {
     const [progressive, , aac, opus] = playableTranscodings(track());
-    expect(transcodingFormat(progressive)).toEqual({ codec: "mp3", mimeType: "audio/mpeg", bitrate: 128_000 });
-    expect(transcodingFormat(aac)).toEqual({ codec: "aac", mimeType: "audio/mp4", bitrate: 160_000 });
+    expect(transcodingFormat(progressive)).toEqual({
+      codec: "mp3",
+      mimeType: "audio/mpeg",
+      bitrate: 128_000,
+    });
+    expect(transcodingFormat(aac)).toEqual({
+      codec: "aac",
+      mimeType: "audio/mp4",
+      bitrate: 160_000,
+    });
     expect(transcodingFormat(opus).codec).toBe("opus");
   });
 

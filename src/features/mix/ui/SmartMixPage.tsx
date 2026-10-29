@@ -12,6 +12,7 @@ import Button from "@/shared/ui/Button";
 import type { Track } from "@/shared/types";
 import {
   fetchPlaylistTracks,
+  useLikedTracks,
   usePlaylistsList,
 } from "@/features/library/hooks";
 import { useExternalItems } from "@/features/library/hooks/useExternalItems";
@@ -30,6 +31,7 @@ import { useVibeStore, vibesFor } from "../store/vibeStore";
 import { MixTrackList, NameField } from "./MixParts";
 
 const DOWNLOADED = "downloaded";
+const LIKED = "liked";
 // source ids: downloaded, pl: your playlists, sp: saved playlists, al: saved albums
 const MINE = "pl:";
 const SAVED_PLAYLIST = "sp:";
@@ -81,6 +83,7 @@ export default function SmartMixPage() {
   const { toast } = useToast();
   const { tracks: downloaded } = useLocalTracks();
   const { data: playlists } = usePlaylistsList();
+  const { data: liked } = useLikedTracks();
   const { data: savedPlaylists } = useExternalItems("playlist");
   const { data: savedAlbums } = useExternalItems("album");
   const savedMixes = useMixStore((state) => state.mixes);
@@ -121,13 +124,23 @@ export default function SmartMixPage() {
 
   const playlistList = playlists.playlists;
   const sourceCount = useMemo(() => {
-    const sizes = new Map<string, number>([[DOWNLOADED, downloaded.length]]);
+    const sizes = new Map<string, number>([
+      [DOWNLOADED, downloaded.length],
+      [LIKED, liked.tracks.length],
+    ]);
     for (const p of playlistList) sizes.set(MINE + p.id, p.trackCount);
     for (const p of savedPlaylists)
       sizes.set(SAVED_PLAYLIST + p.id, p.trackCount ?? 0);
     for (const a of savedAlbums) sizes.set(ALBUM + a.id, a.trackCount ?? 0);
     return [...selected].reduce((sum, id) => sum + (sizes.get(id) ?? 0), 0);
-  }, [selected, downloaded.length, playlistList, savedPlaylists, savedAlbums]);
+  }, [
+    selected,
+    downloaded.length,
+    liked.tracks.length,
+    playlistList,
+    savedPlaylists,
+    savedAlbums,
+  ]);
 
   const build = useCallback(async () => {
     setBuilding(true);
@@ -136,6 +149,11 @@ export default function SmartMixPage() {
       const sources: MixSource[] = [];
       for (const id of selected) {
         if (id === DOWNLOADED) sources.push({ id, tracks: downloaded });
+        else if (id === LIKED)
+          sources.push({
+            id,
+            tracks: liked.tracks.filter((track) => track.title),
+          });
         else if (id.startsWith(MINE))
           sources.push({
             id,
@@ -176,7 +194,7 @@ export default function SmartMixPage() {
     } finally {
       setBuilding(false);
     }
-  }, [selected, downloaded, mode]);
+  }, [selected, downloaded, liked.tracks, mode]);
 
   const save = useCallback(
     (name: string, tracks: Track[]) => {
@@ -213,6 +231,11 @@ export default function SmartMixPage() {
               onClick={() => toggle(DOWNLOADED)}
             >
               {t("mix.downloaded", { count: downloaded.length })}
+            </Chip>
+          )}
+          {liked.tracks.length > 0 && (
+            <Chip active={selected.has(LIKED)} onClick={() => toggle(LIKED)}>
+              {t("library.liked_songs")} · {liked.tracks.length}
             </Chip>
           )}
           {playlistList.map((playlist) => (

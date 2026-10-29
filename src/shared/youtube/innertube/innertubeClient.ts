@@ -1,4 +1,7 @@
-import { getClientVisitorData, resetClientVisitorData } from "../session/visitorSession";
+import {
+  getClientVisitorData,
+  resetClientVisitorData,
+} from "../session/visitorSession";
 import {
   getYoutubeAuthorization,
   getYoutubePageId,

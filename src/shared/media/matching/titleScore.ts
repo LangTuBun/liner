@@ -10,10 +10,18 @@ function bestRatio(left: string, right: string): number {
 function isNearSubstring(left: string, right: string): boolean {
   const minLength = Math.min(left.length, right.length);
   const maxLength = Math.max(left.length, right.length);
-  return minLength >= 4 && minLength / maxLength >= 0.7 && (left.includes(right) || right.includes(left));
+  return (
+    minLength >= 4 &&
+    minLength / maxLength >= 0.7 &&
+    (left.includes(right) || right.includes(left))
+  );
 }
 
-export function computeTitleRatio(profile: SourceProfile, candidateBaseTitle: string, candidateFullClean: string): number {
+export function computeTitleRatio(
+  profile: SourceProfile,
+  candidateBaseTitle: string,
+  candidateFullClean: string,
+): number {
   let titleRatio = Math.max(
     bestRatio(profile.baseTitle, candidateBaseTitle),
     bestRatio(profile.fullClean, candidateFullClean),
@@ -28,7 +36,10 @@ export function computeTitleRatio(profile: SourceProfile, candidateBaseTitle: st
     titleRatio = Math.max(titleRatio, 92);
   }
 
-  const phoneticRatio = bestRatio(toPhoneticLatin(profile.baseTitle), toPhoneticLatin(candidateBaseTitle));
+  const phoneticRatio = bestRatio(
+    toPhoneticLatin(profile.baseTitle),
+    toPhoneticLatin(candidateBaseTitle),
+  );
   return Math.max(titleRatio, phoneticRatio);
 }
 
@@ -45,8 +56,12 @@ export function computeInvertedMatch(
   if (!profile.hasTwoParts) return undefined;
   const titleRatio = bestRatio(profile.part0Clean, candidateBaseTitle);
   const artistRatio = Math.max(
-    ...candidateArtists.map((artist) => bestRatio(profile.part1Clean, cleanBaseTitle(artist))),
+    ...candidateArtists.map((artist) =>
+      bestRatio(profile.part1Clean, cleanBaseTitle(artist)),
+    ),
     0,
   );
-  return titleRatio >= 85 && artistRatio >= 85 ? { titleRatio, artistRatio } : undefined;
+  return titleRatio >= 85 && artistRatio >= 85
+    ? { titleRatio, artistRatio }
+    : undefined;
 }

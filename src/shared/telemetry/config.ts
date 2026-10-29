@@ -26,10 +26,6 @@ const DEFAULT_ERROR_URL =
 
 const STORAGE_KEY = "liner_telemetry_opt_in";
 
-function getInitialOptIn(): boolean {
-  return false;
-}
-
 let isEnabled = false;
 
 export const telemetryConfig: TelemetryConfig = {
@@ -60,4 +56,3 @@ export function setTelemetryEnabled(enabled: boolean): void {
 export function isTelemetryEnabled(): boolean {
   return telemetryConfig.enabled;
 }
-

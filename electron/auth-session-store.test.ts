@@ -2,7 +2,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthSessionStore, isTrustedApiBase, type SessionCipher, type StoredAuthSession } from "./auth-session-store";
+import {
+  AuthSessionStore,
+  isTrustedApiBase,
+  type SessionCipher,
+  type StoredAuthSession,
+} from "./auth-session-store";
 
 const API = "https://api.example.test";
 
@@ -15,18 +20,28 @@ const session = (refreshToken: string): StoredAuthSession => ({
 
 const xorCipher: SessionCipher = {
   available: () => true,
-  encrypt: (plain) => Buffer.from(Buffer.from(plain, "utf8").map((b) => b ^ 0x5a)),
+  encrypt: (plain) =>
+    Buffer.from(Buffer.from(plain, "utf8").map((b) => b ^ 0x5a)),
   decrypt: (data) => Buffer.from(data.map((b) => b ^ 0x5a)).toString("utf8"),
 };
 
-function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
+function json(
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", ...headers },
+  });
 }
 
 describe("AuthSessionStore", () => {
   let dir: string;
   let file: string;
-  let fetchMock: ReturnType<typeof vi.fn<(url: string, init: RequestInit) => Promise<Response>>>;
+  let fetchMock: ReturnType<
+    typeof vi.fn<(url: string, init: RequestInit) => Promise<Response>>
+  >;
   let syncClock: ReturnType<typeof vi.fn<(dateHeader: string) => void>>;
 
   const createStore = (cipher: SessionCipher = xorCipher) =>
@@ -87,8 +102,17 @@ describe("AuthSessionStore", () => {
   it("refreshes once for parallel callers and persists before answering", async () => {
     const store = createStore();
     store.set(session("rt_1"));
-    fetchMock.mockResolvedValue(json(200, { accessToken: "access_new", refreshToken: "rt_2" }, { date: "Tue, 21 Oct 2026 10:00:00 GMT" }));
-    const [a, b] = await Promise.all([store.refresh(API, "rt_1"), store.refresh(API, "rt_1")]);
+    fetchMock.mockResolvedValue(
+      json(
+        200,
+        { accessToken: "access_new", refreshToken: "rt_2" },
+        { date: "Tue, 21 Oct 2026 10:00:00 GMT" },
+      ),
+    );
+    const [a, b] = await Promise.all([
+      store.refresh(API, "rt_1"),
+      store.refresh(API, "rt_1"),
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(a).toEqual(b);
     expect(a.outcome).toBe("refreshed");
@@ -101,10 +125,14 @@ describe("AuthSessionStore", () => {
     const store = createStore();
     store.set(session("rt_1"));
     let respond: (res: Response) => void = () => {};
-    fetchMock.mockReturnValue(new Promise<Response>((resolve) => (respond = resolve)));
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => (respond = resolve)),
+    );
     void store.refresh(API, "rt_1");
     respond(json(200, { accessToken: "access_2", refreshToken: "rt_2" }));
-    await vi.waitFor(() => expect(createStore().get()?.refreshToken).toBe("rt_2"));
+    await vi.waitFor(() =>
+      expect(createStore().get()?.refreshToken).toBe("rt_2"),
+    );
     const afterReload = await store.refresh(API, "rt_1");
     expect(afterReload.outcome).toBe("rotated");
     expect(afterReload.session?.refreshToken).toBe("rt_2");
@@ -125,7 +153,13 @@ describe("AuthSessionStore", () => {
   it("retries a signature rejection and keeps the session if it persists", async () => {
     const store = createStore();
     store.set(session("rt_1"));
-    fetchMock.mockImplementation(async () => json(401, { code: "SIGNATURE_SKEWED" }, { date: "Tue, 21 Oct 2026 10:00:00 GMT" }));
+    fetchMock.mockImplementation(async () =>
+      json(
+        401,
+        { code: "SIGNATURE_SKEWED" },
+        { date: "Tue, 21 Oct 2026 10:00:00 GMT" },
+      ),
+    );
     const result = await store.refresh(API, "rt_1");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result.outcome).toBe("transient");
@@ -137,8 +171,12 @@ describe("AuthSessionStore", () => {
     store.set(session("rt_1"));
     fetchMock
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
-      .mockResolvedValueOnce(json(200, { accessToken: "access_2", refreshToken: "rt_2" }));
-    expect((await store.refresh(API, "rt_1")).session?.refreshToken).toBe("rt_2");
+      .mockResolvedValueOnce(
+        json(200, { accessToken: "access_2", refreshToken: "rt_2" }),
+      );
+    expect((await store.refresh(API, "rt_1")).session?.refreshToken).toBe(
+      "rt_2",
+    );
   });
 
   it("keeps the session on server errors and network failures", async () => {
@@ -156,7 +194,9 @@ describe("AuthSessionStore", () => {
     const store = createStore();
     store.set(session("rt_1"));
     let respond: (res: Response) => void = () => {};
-    fetchMock.mockReturnValue(new Promise<Response>((resolve) => (respond = resolve)));
+    fetchMock.mockReturnValue(
+      new Promise<Response>((resolve) => (respond = resolve)),
+    );
     const pending = store.refresh(API, "rt_1");
     store.set(session("rt_login"));
     respond(json(401, { code: "INVALID_REFRESH_TOKEN" }));
@@ -170,9 +210,13 @@ describe("AuthSessionStore", () => {
     const listener = vi.fn();
     store.onChange(listener);
     store.set(session("rt_1"), 7);
-    fetchMock.mockResolvedValue(json(200, { accessToken: "access_2", refreshToken: "rt_2" }));
+    fetchMock.mockResolvedValue(
+      json(200, { accessToken: "access_2", refreshToken: "rt_2" }),
+    );
     await store.refresh(API, "rt_1", 9);
-    expect(listener.mock.calls.map(([s, origin]) => [s?.refreshToken, origin])).toEqual([
+    expect(
+      listener.mock.calls.map(([s, origin]) => [s?.refreshToken, origin]),
+    ).toEqual([
       ["rt_1", 7],
       ["rt_2", 9],
     ]);
@@ -181,7 +225,9 @@ describe("AuthSessionStore", () => {
   it("refuses to send the refresh token to an untrusted host", async () => {
     const store = createStore();
     store.set(session("rt_1"));
-    expect((await store.refresh("http://evil.example", "rt_1")).outcome).toBe("transient");
+    expect((await store.refresh("http://evil.example", "rt_1")).outcome).toBe(
+      "transient",
+    );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(isTrustedApiBase("http://localhost:1337")).toBe(true);
   });

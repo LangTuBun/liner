@@ -1,18 +1,3 @@
-/**
- * Shared cover-art loader.
- *
- * Every cover is fetched exactly once, as a CORS request, and its readiness is
- * tracked in a module-level registry. All UI that renders the same cover URL
- * (mini player, fullscreen cover, blurred background, the Kawarp WebGL layer)
- * therefore hits a single browser/service-worker cache entry instead of racing
- * each other with mismatched request modes.
- *
- * Standardizing on `crossOrigin = "anonymous"` is deliberate: the WebGL
- * background needs a non-tainted texture and the mini player samples pixels for
- * its accent color, both of which require CORS. The cover CDNs all return
- * `Access-Control-Allow-Origin: *`, so this never costs us a request.
- */
-
 import { useCallback, useSyncExternalStore } from "react";
 import { prepareCoverFallback } from "./coverSigner";
 
@@ -20,24 +5,89 @@ type CoverStatus = "loading" | "loaded" | "error";
 
 interface CoverEntry {
   status: CoverStatus;
-  /**
-   * The URL that actually decoded — the direct CDN `url` when it loads, or the
-   * covers proxy when the direct URL failed and the fallback succeeded. Lets
-   * surfaces that can't self-swap on error (CSS backgrounds, the WebGL texture)
-   * read the working URL up front via `useCoverSrc`.
-   */
   effectiveUrl?: string;
-  /** Resolves once the load settles (loaded or errored); never rejects. */
+  opaque?: boolean;
   promise: Promise<void>;
-  element?: HTMLImageElement;
 }
 
+export const COVER_REGISTRY_LIMIT = 300;
+export const DECODED_COVER_LIMIT = 8;
+
 const entries = new Map<string, CoverEntry>();
+const keyByEffectiveUrl = new Map<string, string>();
+const decoded = new Map<string, HTMLImageElement>();
+const decoding = new Map<string, Promise<void>>();
 const listeners = new Map<string, Set<() => void>>();
 
-function notify(url: string): void {
-  const set = listeners.get(url);
-  if (set) for (const listener of set) listener();
+function resolveKey(url: string): string {
+  if (entries.has(url)) return url;
+  return keyByEffectiveUrl.get(url) ?? url;
+}
+
+function touch(key: string, entry: CoverEntry): void {
+  entries.delete(key);
+  entries.set(key, entry);
+}
+
+function isObserved(key: string, entry: CoverEntry): boolean {
+  return (
+    listeners.has(key) ||
+    (!!entry.effectiveUrl && listeners.has(entry.effectiveUrl))
+  );
+}
+
+function forget(key: string, entry: CoverEntry): void {
+  entries.delete(key);
+  decoded.delete(key);
+  if (entry.effectiveUrl && keyByEffectiveUrl.get(entry.effectiveUrl) === key) {
+    keyByEffectiveUrl.delete(entry.effectiveUrl);
+  }
+}
+
+function trimEntries(): void {
+  if (entries.size <= COVER_REGISTRY_LIMIT) return;
+  for (const [key, entry] of entries) {
+    if (entries.size <= COVER_REGISTRY_LIMIT) return;
+    if (entry.status === "loading" || isObserved(key, entry)) continue;
+    forget(key, entry);
+  }
+}
+
+function storeEntry(key: string, entry: CoverEntry): void {
+  touch(key, entry);
+  trimEntries();
+}
+
+function setEffectiveUrl(
+  key: string,
+  entry: CoverEntry,
+  effectiveUrl: string,
+): void {
+  if (entry.effectiveUrl === effectiveUrl) return;
+  if (entry.effectiveUrl && keyByEffectiveUrl.get(entry.effectiveUrl) === key) {
+    keyByEffectiveUrl.delete(entry.effectiveUrl);
+  }
+  entry.effectiveUrl = effectiveUrl;
+  if (effectiveUrl !== key) keyByEffectiveUrl.set(effectiveUrl, key);
+}
+
+function rememberDecoded(key: string, img: HTMLImageElement): void {
+  decoded.delete(key);
+  decoded.set(key, img);
+  while (decoded.size > DECODED_COVER_LIMIT) {
+    const oldest = decoded.keys().next().value as string;
+    decoded.delete(oldest);
+  }
+}
+
+function notify(key: string): void {
+  const effectiveUrl = entries.get(key)?.effectiveUrl;
+  for (const url of effectiveUrl && effectiveUrl !== key
+    ? [key, effectiveUrl]
+    : [key]) {
+    const set = listeners.get(url);
+    if (set) for (const listener of set) listener();
+  }
 }
 
 function subscribe(url: string, listener: () => void): () => void {
@@ -53,210 +103,247 @@ function subscribe(url: string, listener: () => void): () => void {
   };
 }
 
-/** True once the cover has successfully decoded (a strict, no-fade success). */
-export function isCoverReady(url: string | undefined): boolean {
-  return !!url && entries.get(url)?.status === "loaded";
+function createCoverImage(cors = true): HTMLImageElement {
+  const img = new window.Image();
+  if (cors) img.crossOrigin = "anonymous";
+  img.decoding = "async";
+  return img;
 }
 
-/** Clears the in-memory cover entries registry and notifies all subscribers. */
+export function isCoverReady(url: string | undefined): boolean {
+  return !!url && entries.get(resolveKey(url))?.status === "loaded";
+}
+
 export function clearCoverRegistry(): void {
   entries.clear();
+  keyByEffectiveUrl.clear();
+  decoded.clear();
+  decoding.clear();
   for (const set of listeners.values()) {
     for (const listener of set) listener();
   }
 }
 
-export function getCoverElement(url: string | undefined): HTMLImageElement | undefined {
+export function getCoverElement(
+  url: string | undefined,
+): HTMLImageElement | undefined {
   if (!url) return undefined;
-  const entry = entries.get(url);
-  if (entry?.status === "loaded" && entry.element) return entry.element;
-  for (const item of entries.values()) {
-    if (item.status === "loaded" && item.element && (item.effectiveUrl === url || item.element.src === url)) {
-      return item.element;
-    }
-  }
-  return undefined;
+  const key = resolveKey(url);
+  const entry = entries.get(key);
+  if (entry?.status !== "loaded" || entry.opaque) return undefined;
+  return decoded.get(key);
 }
 
-/**
- * True once the cover load has settled — decoded OR failed. UI uses this to
- * stop the loading placeholder: a cover that 404s or is rate-limited still
- * settles, so the placeholder never pulses forever.
- */
+export function getCoverCrossOrigin(
+  url: string | undefined,
+): "anonymous" | undefined {
+  if (!url) return "anonymous";
+  return entries.get(resolveKey(url))?.opaque ? undefined : "anonymous";
+}
+
 function isCoverSettled(url: string | undefined): boolean {
   if (!url) return true;
-  const status = entries.get(url)?.status;
+  const status = entries.get(resolveKey(url))?.status;
   return status === "loaded" || status === "error";
 }
 
-/**
- * Record a cover as ready. Call from an `<img>`'s `onLoad` so a natural render
- * populates the same registry a `preloadCoverArt` call would. `effectiveUrl` is
- * the URL that actually decoded (the proxy when a `CoverImage` swapped to it),
- * so `useCoverSrc` consumers pick up the working URL.
- */
-export function markCoverReady(url: string | undefined, effectiveUrl?: string, element?: HTMLImageElement): void {
+export function markCoverReady(
+  url: string | undefined,
+  effectiveUrl?: string,
+  opaque = false,
+): void {
   if (!url) return;
+  const key = resolveKey(url);
   const resolved = effectiveUrl ?? url;
-  const entry = entries.get(url);
+  const entry = entries.get(key);
   if (entry) {
-    const prevElement = entry.element;
-    const prevStatus = entry.status;
-    const prevEffective = entry.effectiveUrl;
-    entry.effectiveUrl = resolved;
-    if (element) entry.element = element;
-    entry.status = "loaded";
-    if (prevStatus !== "loaded" || prevEffective !== resolved || (!prevElement && element)) {
-      notify(url);
+    if (entry.status === "loaded" && !entry.opaque && opaque) return;
+    const changed =
+      entry.status !== "loaded" ||
+      entry.effectiveUrl !== resolved ||
+      Boolean(entry.opaque) !== opaque;
+    if (entry.effectiveUrl !== resolved || Boolean(entry.opaque) !== opaque) {
+      decoded.delete(key);
     }
+    setEffectiveUrl(key, entry, resolved);
+    entry.status = "loaded";
+    entry.opaque = opaque;
+    touch(key, entry);
+    if (changed) notify(key);
     return;
   }
-  entries.set(url, { status: "loaded", effectiveUrl: resolved, element, promise: Promise.resolve() });
-  notify(url);
+  const created: CoverEntry = {
+    status: "loaded",
+    opaque,
+    promise: Promise.resolve(),
+  };
+  setEffectiveUrl(key, created, resolved);
+  storeEntry(key, created);
+  notify(key);
 }
 
-/**
- * Begin loading a cover if it isn't already tracked. Idempotent: repeated calls
- * for the same URL return the original in-flight promise.
- *
- * The covers.tryliner.fun proxy fallback (derived from `url`, see
- * `coverSigner`) is tried exactly once if the direct `url` fails to load, so
- * the registry only settles as "error" when both the direct CDN and the proxy
- * are unreachable (or the host isn't proxyable). Readiness stays keyed by the
- * primary `url`, so every surface observing it agrees regardless of which URL
- * ultimately decoded.
- */
-export function preloadCoverArt(url: string | undefined): Promise<void> {
-  if (!url || typeof window === "undefined") return Promise.resolve();
-
-  const existing = entries.get(url);
-  if (existing) {
-    if (existing.status === "error") {
-      // Evict stale failure to allow fresh retry on next navigation/mount
-      entries.delete(url);
-    } else {
-      return existing.promise;
-    }
+function decodeLoadedCover(key: string, entry: CoverEntry): Promise<void> {
+  if (decoded.has(key)) {
+    rememberDecoded(key, decoded.get(key)!);
+    return Promise.resolve();
   }
-
-  const img = new window.Image();
-  img.crossOrigin = "anonymous";
-  img.decoding = "async";
-
-  // mint and sign proxy fallback in parallel with direct cdn load
-  void prepareCoverFallback(url);
-
+  const inflight = decoding.get(key);
+  if (inflight) return inflight;
+  const src = entry.effectiveUrl ?? key;
+  const img = createCoverImage(!entry.opaque);
   const promise = new Promise<void>((resolve) => {
-    let triedFallback = false;
-    const settle = (status: CoverStatus, effectiveUrl?: string) => {
-      const entry = entries.get(url);
-      if (entry) {
-        entry.status = status;
-        if (effectiveUrl) entry.effectiveUrl = effectiveUrl;
-        if (status === "loaded") entry.element = img;
+    const finish = (ok: boolean) => {
+      if (decoding.get(key) === promise) decoding.delete(key);
+      const current = entries.get(key);
+      if (
+        ok &&
+        current?.status === "loaded" &&
+        (current.effectiveUrl ?? key) === src
+      ) {
+        rememberDecoded(key, img);
+        notify(key);
       }
-      notify(url);
       resolve();
     };
-    img.onload = () => settle("loaded", img.src);
-    img.onerror = () => {
-      // Direct CDN URL failed (e.g. Google blocked by RKN). Retry once through
-      // the proxy (derived from this URL, HMAC-signed on desktop) before
-      // reporting the cover unavailable. A non-proxyable host yields no
-      // fallback, so it settles as an error immediately.
-      if (!triedFallback) {
-        triedFallback = true;
-        void prepareCoverFallback(url).then((fallback) => {
-          if (fallback) img.src = fallback;
-          else settle("error");
-        });
-        return;
-      }
-      settle("error");
-    };
+    img.onload = () => finish(true);
+    img.onerror = () => finish(false);
   });
-
-  entries.set(url, { status: "loading", promise });
-  img.src = url;
+  decoding.set(key, promise);
+  img.src = src;
   return promise;
 }
 
-/**
- * Subscribe a component to a cover's readiness. Returns `true` synchronously
- * (via useSyncExternalStore) the moment the URL is already cached, so
- * revisiting a played track shows its art with no placeholder and no fade, and
- * a mid-render URL change never leaks the previous cover's state.
- */
-export function useCoverReady(url: string | undefined): boolean {
-  const subscribeToUrl = useCallback(
+export function preloadCoverArt(url: string | undefined): Promise<void> {
+  if (!url || typeof window === "undefined") return Promise.resolve();
+
+  const key = resolveKey(url);
+  const existing = entries.get(key);
+  if (existing) {
+    if (existing.status === "loaded") {
+      touch(key, existing);
+      return decodeLoadedCover(key, existing);
+    }
+    if (existing.status === "loading") return existing.promise;
+    forget(key, existing);
+  }
+
+  const img = createCoverImage();
+
+  void prepareCoverFallback(key);
+
+  let entry: CoverEntry;
+  const promise = new Promise<void>((resolve) => {
+    let triedFallback = false;
+    const settle = (
+      status: CoverStatus,
+      loadedImg?: HTMLImageElement,
+      opaque = false,
+    ) => {
+      if (
+        entries.get(key) === entry &&
+        !(status === "error" && entry.status === "loaded")
+      ) {
+        entry.status = status;
+        entry.opaque = opaque;
+        if (loadedImg) {
+          setEffectiveUrl(key, entry, loadedImg.src);
+          rememberDecoded(key, loadedImg);
+        }
+        trimEntries();
+      }
+      notify(key);
+      resolve();
+    };
+    const loadOpaque = () => {
+      const opaqueImg = createCoverImage(false);
+      opaqueImg.onload = () => settle("loaded", opaqueImg, true);
+      opaqueImg.onerror = () => settle("error");
+      opaqueImg.src = key;
+    };
+    img.onload = () => settle("loaded", img);
+    img.onerror = () => {
+      if (!triedFallback) {
+        triedFallback = true;
+        void prepareCoverFallback(key).then((fallback) => {
+          if (fallback) img.src = fallback;
+          else loadOpaque();
+        });
+        return;
+      }
+      loadOpaque();
+    };
+  });
+
+  entry = { status: "loading", promise };
+  storeEntry(key, entry);
+  img.src = key;
+  return promise;
+}
+
+function useCoverSubscription(url: string | undefined, preload: boolean) {
+  return useCallback(
     (onChange: () => void) => {
       if (!url) return () => {};
-      // Kick off the fetch here so simply rendering a cover loads it, without
-      // callers needing a separate preload call.
-      void preloadCoverArt(url);
+      if (preload) void preloadCoverArt(url);
       return subscribe(url, onChange);
     },
-    [url],
+    [url, preload],
   );
+}
 
+export function useCoverReady(url: string | undefined): boolean {
   return useSyncExternalStore(
-    subscribeToUrl,
+    useCoverSubscription(url, true),
     () => isCoverSettled(url),
     () => false,
   );
 }
 
-/** The effective URL for a cover: the proxy once a direct load has failed over
- * to it, otherwise the direct `url` itself. */
 function effectiveCoverSrc(url: string | undefined): string | undefined {
   if (!url) return undefined;
-  return entries.get(url)?.effectiveUrl ?? url;
+  return entries.get(resolveKey(url))?.effectiveUrl ?? url;
 }
 
-/**
- * Resolve the URL a surface should actually render for `url`, following the
- * direct→proxy fallback. For consumers that can't self-swap on a load error —
- * CSS `background-image`, the Kawarp WebGL texture — this returns the direct
- * URL first, then re-renders with the covers proxy once the direct URL is known
- * to have failed. Shares the single registry/loader, so it costs no extra
- * request beyond what `CoverImage`/`useCoverReady` already issue for the cover.
- */
 export function useCoverSrc(url: string | undefined): string | undefined {
-  const subscribeToUrl = useCallback(
-    (onChange: () => void) => {
-      if (!url) return () => {};
-      void preloadCoverArt(url);
-      return subscribe(url, onChange);
-    },
-    [url],
-  );
-
   return useSyncExternalStore(
-    subscribeToUrl,
+    useCoverSubscription(url, true),
     () => effectiveCoverSrc(url),
     () => url,
   );
 }
 
-/**
- * Returns the decoded HTMLImageElement for `url` once ready, reactively
- * re-rendering surfaces (like Kawarp WebGL canvas) the moment the image settles
- * so textures can be loaded directly from in-memory pixels without extra network requests.
- */
-export function useCoverElement(url: string | undefined): HTMLImageElement | undefined {
-  const subscribeToUrl = useCallback(
-    (onChange: () => void) => {
-      if (!url) return () => {};
-      void preloadCoverArt(url);
-      return subscribe(url, onChange);
-    },
-    [url],
-  );
-
+export function useRenderedCoverSrc(
+  url: string | undefined,
+): string | undefined {
   return useSyncExternalStore(
-    subscribeToUrl,
+    useCoverSubscription(url, false),
+    () => effectiveCoverSrc(url),
+    () => url,
+  );
+}
+
+export function useCoverCrossOrigin(
+  url: string | undefined,
+): "anonymous" | undefined {
+  return useSyncExternalStore(
+    useCoverSubscription(url, false),
+    () => getCoverCrossOrigin(url),
+    () => "anonymous",
+  );
+}
+
+export function loadCoverElement(
+  url: string | undefined,
+): Promise<HTMLImageElement | undefined> {
+  return preloadCoverArt(url).then(() => getCoverElement(url));
+}
+
+export function useCoverElement(
+  url: string | undefined,
+): HTMLImageElement | undefined {
+  return useSyncExternalStore(
+    useCoverSubscription(url, true),
     () => getCoverElement(url),
     () => undefined,
   );
 }
-

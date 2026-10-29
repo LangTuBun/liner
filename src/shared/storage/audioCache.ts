@@ -43,7 +43,8 @@ class AudioCache {
   }
 
   async enforceCacheLimit(customLimit?: number): Promise<number> {
-    const limit = customLimit !== undefined ? customLimit : this.getLimitBytes();
+    const limit =
+      customLimit !== undefined ? customLimit : this.getLimitBytes();
     if (limit <= 0) return 0;
 
     const totalBytes = await linerDb.getTotalAudioBytes();
@@ -90,7 +91,8 @@ class AudioCache {
     mimeType: string = "audio/ogg",
     generation?: number,
   ): Promise<boolean> {
-    if (generation !== undefined && generation !== this.generation) return false;
+    if (generation !== undefined && generation !== this.generation)
+      return false;
     await linerDb.putAudio(trackId, blob, mimeType);
     await this.enforceCacheLimit();
     return true;

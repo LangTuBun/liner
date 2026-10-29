@@ -1,5 +1,4 @@
 import {
-  getAccessToken,
   getAuthSession,
   getSessionExpiryMs,
   getValidAccessToken,
@@ -44,7 +43,8 @@ function translate(key: string, vars?: Record<string, string | number>) {
 import { getApiBaseUrl } from "./baseUrl";
 
 const CLIENT_VERSION =
-  (import.meta.env.VITE_CLIENT_VERSION as string | undefined) || "1.0.4-desktop";
+  (import.meta.env.VITE_CLIENT_VERSION as string | undefined) ||
+  "1.0.4-desktop";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -141,10 +141,12 @@ function extractSubFromToken(token: string): string | undefined {
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
+        .join(""),
     );
     const payload = JSON.parse(json);
-    return typeof payload.sub === "string" && payload.sub.trim().length > 0 ? payload.sub.trim() : undefined;
+    return typeof payload.sub === "string" && payload.sub.trim().length > 0
+      ? payload.sub.trim()
+      : undefined;
   } catch {
     return undefined;
   }
@@ -159,7 +161,11 @@ export function mediaUrl(path: string): string {
 // upgrades youtube/google avatar artwork to maximum native resolution (=s0)
 export function toMaxQualityAvatarUrl(url: string | undefined): string {
   if (!url) return "";
-  if (!/(?:[a-zA-Z0-9_-]+\.googleusercontent\.com|[a-zA-Z0-9_-]+\.ggpht\.com)/i.test(url)) {
+  if (
+    !/(?:[a-zA-Z0-9_-]+\.googleusercontent\.com|[a-zA-Z0-9_-]+\.ggpht\.com)/i.test(
+      url,
+    )
+  ) {
     return url;
   }
   if (/=w\d+-h\d+/.test(url)) {
@@ -178,6 +184,7 @@ async function executeRequest<T>(
   init?: RequestInit,
   allowRefresh = true,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  onResponse?: (res: Response) => void,
 ): Promise<T> {
   const startTime = performance.now();
   const method = (init?.method ?? "GET").toUpperCase();
@@ -186,12 +193,21 @@ async function executeRequest<T>(
   const currentSession = getAuthSession();
   let accessToken = allowRefresh ? await getValidAccessToken() : null;
 
-  if (allowRefresh && currentSession?.accessToken && !accessToken && !path.startsWith("/v1/auth/")) {
+  if (
+    allowRefresh &&
+    currentSession?.accessToken &&
+    !accessToken &&
+    !path.startsWith("/v1/auth/")
+  ) {
     const expiryMs = getSessionExpiryMs(currentSession);
     if (expiryMs && expiryMs > Date.now()) {
       accessToken = currentSession.accessToken;
     } else {
-      throw new ApiError(0, "Network error during token refresh.", "NETWORK_ERROR");
+      throw new ApiError(
+        0,
+        "Network error during token refresh.",
+        "NETWORK_ERROR",
+      );
     }
   }
 
@@ -211,7 +227,9 @@ async function executeRequest<T>(
     "x-platform": getPlatform(),
   };
 
-  const userId = currentSession?.user?.id || (accessToken ? extractSubFromToken(accessToken) : undefined);
+  const userId =
+    currentSession?.user?.id ||
+    (accessToken ? extractSubFromToken(accessToken) : undefined);
   if (userId) {
     correlationHeaders["x-user-id"] = userId;
   }
@@ -296,17 +314,13 @@ async function executeRequest<T>(
         typeof body?.message === "string"
           ? body.message
           : typeof body?.error === "string"
-          ? body.error
-          : "Unauthorized";
+            ? body.error
+            : "Unauthorized";
       throw new ApiError(res.status, message, code, requestId);
     }
 
     // Retry request with newly signed headers (synced server clock + fresh token if available)
-    const refreshedSignedHeaders = await signApiRequest(
-      method,
-      path,
-      rawBody,
-    );
+    const refreshedSignedHeaders = await signApiRequest(method, path, rawBody);
     try {
       res = await fetchWithTimeout(
         getApiBaseUrl() + path,
@@ -343,6 +357,8 @@ async function executeRequest<T>(
 
   const durationMs = Math.round(performance.now() - startTime);
   telemetry.trackNetwork(method, path, res.status, durationMs, requestId);
+  onResponse?.(res);
+  if (res.status === 304) return undefined as unknown as T;
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as Record<
@@ -354,8 +370,8 @@ async function executeRequest<T>(
       (typeof body.reqId === "string"
         ? body.reqId
         : typeof body.requestId === "string"
-        ? body.requestId
-        : undefined);
+          ? body.requestId
+          : undefined);
 
     if (res.status >= 500) {
       showToast(translate("common.error_server_title"), "error", {
@@ -387,6 +403,18 @@ async function executeRequest<T>(
   return res.json() as Promise<T>;
 }
 
+export type UserPlaylistRead =
+  | { notModified: true }
+  | {
+      notModified: false;
+      etag?: string;
+      partial: boolean;
+      trackCount: number;
+      durationMs: number;
+      playlist: ApiUserPlaylist;
+      items: ApiUserPlaylistItem[];
+    };
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -400,7 +428,12 @@ async function request<T>(
     if (inFlight) {
       return inFlight as Promise<T>;
     }
-    const promise = executeRequest<T>(path, init, allowRefresh, timeoutMs).finally(() => {
+    const promise = executeRequest<T>(
+      path,
+      init,
+      allowRefresh,
+      timeoutMs,
+    ).finally(() => {
       inFlightGetRequests.delete(key);
     });
     inFlightGetRequests.set(key, promise);
@@ -524,6 +557,7 @@ import type {
   ApiUserPlaylist,
   ApiUserPlaylistItem,
   LyricsStreamEvent,
+  LyricsSearchResult,
   ImportJob,
   ImportReview,
   ImportReviewDecision,
@@ -584,7 +618,9 @@ export const api = {
   },
 
   getUserProfile(idOrUsername: string): Promise<UserProfile> {
-    return request<UserProfile>(`/v1/users/${encodeURIComponent(idOrUsername)}`);
+    return request<UserProfile>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}`,
+    );
   },
 
   searchUsers(query: string): Promise<UserProfile[]> {
@@ -593,48 +629,79 @@ export const api = {
   },
 
   followUser(idOrUsername: string): Promise<void> {
-    return request<void>(`/v1/users/${encodeURIComponent(idOrUsername)}/follow`, {
-      method: "POST",
-    });
+    return request<void>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/follow`,
+      {
+        method: "POST",
+      },
+    );
   },
 
   unfollowUser(idOrUsername: string): Promise<void> {
-    return request<void>(`/v1/users/${encodeURIComponent(idOrUsername)}/follow`, {
-      method: "DELETE",
-    });
+    return request<void>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/follow`,
+      {
+        method: "DELETE",
+      },
+    );
   },
 
   getUserFollowers(idOrUsername: string): Promise<UserProfile[]> {
-    return request<UserProfile[]>(`/v1/users/${encodeURIComponent(idOrUsername)}/followers`);
+    return request<UserProfile[]>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/followers`,
+    );
   },
 
   getUserFollowing(idOrUsername: string): Promise<UserProfile[]> {
-    return request<UserProfile[]>(`/v1/users/${encodeURIComponent(idOrUsername)}/following`);
+    return request<UserProfile[]>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/following`,
+    );
   },
 
-  getUserPlaylists(idOrUsername: string): Promise<{ items: ApiUserPlaylist[] }> {
-    return request<{ items: ApiUserPlaylist[] }>(`/v1/users/${encodeURIComponent(idOrUsername)}/playlists`);
+  getUserPlaylists(
+    idOrUsername: string,
+  ): Promise<{ items: ApiUserPlaylist[] }> {
+    return request<{ items: ApiUserPlaylist[] }>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/playlists`,
+    );
   },
 
-  getUserHistory(idOrUsername: string, cursor?: string, limit?: string): Promise<PlaybackHistoryResponse> {
+  getUserHistory(
+    idOrUsername: string,
+    cursor?: string,
+    limit?: string,
+  ): Promise<PlaybackHistoryResponse> {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
     if (limit) params.set("limit", limit);
-    return request<PlaybackHistoryResponse>(`/v1/users/${encodeURIComponent(idOrUsername)}/history?${params}`);
+    return request<PlaybackHistoryResponse>(
+      `/v1/users/${encodeURIComponent(idOrUsername)}/history?${params}`,
+    );
   },
 
-  getArtistLeaderboard(artistId: string, period = "monthly", limit = 10): Promise<LeaderboardResponse> {
+  getArtistLeaderboard(
+    artistId: string,
+    period = "monthly",
+    limit = 10,
+  ): Promise<LeaderboardResponse> {
     const params = new URLSearchParams({ period, limit: String(limit) });
-    return request<LeaderboardResponse>(`/v1/leaderboards/artist/${encodeURIComponent(artistId)}?${params}`);
+    return request<LeaderboardResponse>(
+      `/v1/leaderboards/artist/${encodeURIComponent(artistId)}?${params}`,
+    );
   },
 
-  getGlobalLeaderboard(period = "weekly", limit = 20): Promise<LeaderboardResponse> {
+  getGlobalLeaderboard(
+    period = "weekly",
+    limit = 20,
+  ): Promise<LeaderboardResponse> {
     const params = new URLSearchParams({ period, limit: String(limit) });
     return request<LeaderboardResponse>(`/v1/leaderboards/global?${params}`);
   },
   search(q: string, type: SearchType = "all"): Promise<SearchResponse> {
     const params = new URLSearchParams({ q, type });
-    return clientCatalog.search(q, type, () => request<SearchResponse>(`/v1/catalog/search?${params}`));
+    return clientCatalog.search(q, type, () =>
+      request<SearchResponse>(`/v1/catalog/search?${params}`),
+    );
   },
 
   getTrack(id: string): Promise<ApiTrackDetails> {
@@ -656,7 +723,9 @@ export const api = {
     const history = new Set(options?.history ?? []);
     return clientCatalog
       .getRadio(id, options?.k, () => api.getServerRadio(id, options))
-      .then((response) => ({ items: response.items.filter((item) => !history.has(item.id)) }));
+      .then((response) => ({
+        items: response.items.filter((item) => !history.has(item.id)),
+      }));
   },
 
   getServerRadio(
@@ -681,8 +750,10 @@ export const api = {
     }
     const params = new URLSearchParams();
     if (options?.k) params.set("k", String(options.k));
-    if (options?.drift_rate) params.set("drift_rate", String(options.drift_rate));
-    if (options?.temperature) params.set("temperature", String(options.temperature));
+    if (options?.drift_rate)
+      params.set("drift_rate", String(options.drift_rate));
+    if (options?.temperature)
+      params.set("temperature", String(options.temperature));
     if (options?.wave_id) params.set("wave_id", options.wave_id);
     const qs = params.toString();
     return request<RadioResponse>(
@@ -702,13 +773,17 @@ export const api = {
 
   getArtist(id: string): Promise<ApiArtistDetails> {
     return clientCatalog.getArtist(id, () =>
-      request<ApiArtistDetails>(`/v1/catalog/artists/${encodeURIComponent(id)}`),
+      request<ApiArtistDetails>(
+        `/v1/catalog/artists/${encodeURIComponent(id)}`,
+      ),
     );
   },
 
   getPlaylist(id: string): Promise<ApiCatalogPlaylistDetails> {
     return clientCatalog.getPlaylist(id, () =>
-      request<ApiCatalogPlaylistDetails>(`/v1/catalog/playlists/${encodeURIComponent(id)}`),
+      request<ApiCatalogPlaylistDetails>(
+        `/v1/catalog/playlists/${encodeURIComponent(id)}`,
+      ),
     );
   },
 
@@ -721,17 +796,18 @@ export const api = {
   async likeTrack(id: string): Promise<void> {
     if (isLocalTrackId(id)) throw new Error("Local tracks stay on this device");
     const track = await clientCatalog.resolveSnapshot(id);
-    return request<void>(
-      `/v1/me/library/tracks/${encodeURIComponent(id)}`,
-      { method: "PUT", ...(track ? { body: JSON.stringify({ track, trackSnapshot: track }) } : {}) },
-    );
+    return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      ...(track
+        ? { body: JSON.stringify({ track, trackSnapshot: track }) }
+        : {}),
+    });
   },
 
   unlikeTrack(id: string): Promise<void> {
-    return request<void>(
-      `/v1/me/library/tracks/${encodeURIComponent(id)}`,
-      { method: "DELETE" },
-    );
+    return request<void>(`/v1/me/library/tracks/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
   },
 
   listSavedCollections(
@@ -747,21 +823,67 @@ export const api = {
     id: string,
     snapshot?: Record<string, unknown>,
   ): Promise<void> {
-    return request<void>(
-      `/v1/me/library/${type}/${encodeURIComponent(id)}`,
-      { method: "PUT", ...(snapshot ? { body: JSON.stringify({ snapshot }) } : {}) },
-    );
+    return request<void>(`/v1/me/library/${type}/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      ...(snapshot ? { body: JSON.stringify({ snapshot }) } : {}),
+    });
   },
 
-  removeCollection(type: "albums" | "artists" | "playlists", id: string): Promise<void> {
-    return request<void>(
-      `/v1/me/library/${type}/${encodeURIComponent(id)}`,
-      { method: "DELETE" },
-    );
+  removeCollection(
+    type: "albums" | "artists" | "playlists",
+    id: string,
+  ): Promise<void> {
+    return request<void>(`/v1/me/library/${type}/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
   },
 
   listPlaylists(): Promise<{ items: ApiUserPlaylist[] }> {
     return request<{ items: ApiUserPlaylist[] }>("/v1/me/playlists");
+  },
+
+  async readUserPlaylist(
+    id: string,
+    options: { limit?: number; etag?: string } = {},
+  ): Promise<UserPlaylistRead> {
+    const params = new URLSearchParams({ compact: "true" });
+    if (options.limit) params.set("limit", String(options.limit));
+    let status = 200;
+    let etag: string | undefined;
+    const body = await executeRequest<
+      | {
+          playlist: ApiUserPlaylist;
+          items: ApiUserPlaylistItem[];
+          trackCount?: number;
+          durationMs?: number;
+          partial?: boolean;
+        }
+      | undefined
+    >(
+      `/v1/me/playlists/${encodeURIComponent(id)}?${params}`,
+      options.etag ? { headers: { "If-None-Match": options.etag } } : undefined,
+      true,
+      DEFAULT_TIMEOUT_MS,
+      (res) => {
+        status = res.status;
+        etag = res.headers?.get?.("etag") ?? undefined;
+      },
+    );
+    if (status === 304 || !body) return { notModified: true };
+    return {
+      notModified: false,
+      etag,
+      partial: body.partial === true,
+      trackCount: body.trackCount ?? body.items.length,
+      durationMs:
+        body.durationMs ??
+        body.items.reduce(
+          (sum, item) => sum + (item.track?.durationMs || 0),
+          0,
+        ),
+      playlist: body.playlist,
+      items: body.items,
+    };
   },
 
   getUserPlaylist(
@@ -805,19 +927,33 @@ export const api = {
     trackId: string,
     snapshot?: ApiTrackBase,
   ): Promise<ApiUserPlaylistItem> {
-    if (isLocalTrackId(trackId)) throw new Error("Local tracks stay on this device");
+    if (isLocalTrackId(trackId))
+      throw new Error("Local tracks stay on this device");
     const track = snapshot ?? (await clientCatalog.resolveSnapshot(trackId));
     return request<ApiUserPlaylistItem>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks/${encodeURIComponent(trackId)}`,
-      { method: "POST", ...(track ? { body: JSON.stringify({ track, trackSnapshot: track }) } : {}) },
+      {
+        method: "POST",
+        ...(track
+          ? { body: JSON.stringify({ track, trackSnapshot: track }) }
+          : {}),
+      },
     );
   },
 
   addPlaylistTrackSnapshots(
     playlistId: string,
     tracks: ApiTrackBase[],
-  ): Promise<{ items: ApiUserPlaylistItem[]; added: number; rejected: number }> {
-    return request<{ items: ApiUserPlaylistItem[]; added: number; rejected: number }>(
+  ): Promise<{
+    items: ApiUserPlaylistItem[];
+    added: number;
+    rejected: number;
+  }> {
+    return request<{
+      items: ApiUserPlaylistItem[];
+      added: number;
+      rejected: number;
+    }>(
       `/v1/me/playlists/${encodeURIComponent(playlistId)}/tracks`,
       { method: "POST", body: JSON.stringify({ tracks }) },
       true,
@@ -850,17 +986,19 @@ export const api = {
     );
   },
 
-  getPlaylistImport(
-    importId: string,
-  ): Promise<ImportJob> {
+  getPlaylistImport(importId: string): Promise<ImportJob> {
     const job = getLocalImportHandler().getJob(importId);
-    return job ? Promise.resolve(job) : Promise.reject(new ApiError(404, "Import was not found."));
+    return job
+      ? Promise.resolve(job)
+      : Promise.reject(new ApiError(404, "Import was not found."));
   },
 
   getPlaylistImportReview(
     importId: string,
   ): Promise<{ items: ImportReview[] }> {
-    return Promise.resolve({ items: getLocalImportHandler().getReview(importId) });
+    return Promise.resolve({
+      items: getLocalImportHandler().getReview(importId),
+    });
   },
 
   decidePlaylistImportReview(
@@ -873,8 +1011,12 @@ export const api = {
     return getLocalImportHandler()
       .finalize(importId, tracks ?? [], title, description)
       .then(({ finalized }) => ({
-        approved: decisions.filter((d) => d.decision === "approve").map((d) => d.reviewId),
-        denied: decisions.filter((d) => d.decision === "deny").map((d) => d.reviewId),
+        approved: decisions
+          .filter((d) => d.decision === "approve")
+          .map((d) => d.reviewId),
+        denied: decisions
+          .filter((d) => d.decision === "deny")
+          .map((d) => d.reviewId),
         finalized,
       }));
   },
@@ -890,6 +1032,28 @@ export const api = {
       .then(({ finalized }) => ({ denied: "all" as const, finalized }));
   },
 
+  async searchLyrics(
+    hint: { title: string; artist: string; durationMs?: number },
+    signal?: AbortSignal,
+  ): Promise<LyricsSearchResult | null> {
+    const params = new URLSearchParams({
+      title: hint.title.trim(),
+      artist: hint.artist.trim(),
+      ...(hint.durationMs && hint.durationMs > 0
+        ? { durationMs: String(Math.round(hint.durationMs)) }
+        : {}),
+    });
+    try {
+      return await request<LyricsSearchResult>(
+        `/v1/me/lyrics/search?${params.toString()}`,
+        { signal },
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+
   async *streamLyrics(
     id: string,
     signal?: AbortSignal,
@@ -900,7 +1064,9 @@ export const api = {
         ? new URLSearchParams({
             title: hint.title.trim(),
             artist: hint.artist.trim(),
-            ...(hint.durationMs && hint.durationMs > 0 ? { durationMs: String(Math.round(hint.durationMs)) } : {}),
+            ...(hint.durationMs && hint.durationMs > 0
+              ? { durationMs: String(Math.round(hint.durationMs)) }
+              : {}),
           }).toString()
         : "";
     const path = `/v1/tracks/${encodeURIComponent(id)}/lyrics${hintParams ? `?${hintParams}` : ""}`;
@@ -920,17 +1086,14 @@ export const api = {
 
     let res: Response;
     try {
-      res = await fetch(
-        `${getApiBaseUrl()}${path}`,
-        {
-          signal,
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-            ...correlationHeaders,
-            ...signedHeaders,
-          },
+      res = await fetch(`${getApiBaseUrl()}${path}`, {
+        signal,
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...correlationHeaders,
+          ...signedHeaders,
         },
-      );
+      });
     } catch (fetchErr: any) {
       if (signal?.aborted || fetchErr?.name === "AbortError") {
         throw fetchErr;
@@ -997,7 +1160,6 @@ export const api = {
     }
   },
 
-
   recordPlaybackEvent(payload: RecordPlaybackEventRequest): Promise<void> {
     return request<void>("/v1/me/playback/events", {
       method: "POST",
@@ -1029,7 +1191,10 @@ export const api = {
     );
   },
 
-  getMostSaved(type: MostSavedType = "all", limit = 20): Promise<MostSavedResponse> {
+  getMostSaved(
+    type: MostSavedType = "all",
+    limit = 20,
+  ): Promise<MostSavedResponse> {
     const params = new URLSearchParams({ type, limit: String(limit) });
     return request<MostSavedResponse>(`/v1/explore/most-saved?${params}`);
   },

@@ -1,5 +1,8 @@
 export { default as LoginPage } from "./ui/LoginPage";
-export { default as AuthLock, AuthLock as AuthLockComponent } from "./ui/AuthLock";
+export {
+  default as AuthLock,
+  AuthLock as AuthLockComponent,
+} from "./ui/AuthLock";
 export {
   useAuthStore,
   authErrorMessage,

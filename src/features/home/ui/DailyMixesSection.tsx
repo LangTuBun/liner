@@ -11,7 +11,6 @@ export interface DailyMixesSectionProps {
   accentCoverUrl?: string;
 }
 
-
 const headingStyle: React.CSSProperties = {
   fontFamily: "var(--font-roboto-flex), sans-serif",
   fontWeight: 564,

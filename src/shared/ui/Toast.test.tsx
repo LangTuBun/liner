@@ -11,25 +11,34 @@ vi.mock("framer-motion", () => {
   const cache: Record<string, any> = {};
   return {
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    motion: new Proxy({}, {
-      get: (_target, prop: string) => {
-        if (!cache[prop]) {
-          cache[prop] = React.forwardRef(({ children, className, style, ...props }: any, ref: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.layout;
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            delete cleanProps.whileHover;
-            delete cleanProps.whileTap;
-            delete cleanProps.whileDrag;
-            return React.createElement(prop, { ref, className, style, ...cleanProps }, children);
-          });
-        }
-        return cache[prop];
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, prop: string) => {
+          if (!cache[prop]) {
+            cache[prop] = React.forwardRef(
+              ({ children, className, style, ...props }: any, ref: any) => {
+                const cleanProps = { ...props };
+                delete cleanProps.layout;
+                delete cleanProps.initial;
+                delete cleanProps.animate;
+                delete cleanProps.exit;
+                delete cleanProps.transition;
+                delete cleanProps.whileHover;
+                delete cleanProps.whileTap;
+                delete cleanProps.whileDrag;
+                return React.createElement(
+                  prop,
+                  { ref, className, style, ...cleanProps },
+                  children,
+                );
+              },
+            );
+          }
+          return cache[prop];
+        },
       },
-    }),
+    ),
   };
 });
 
@@ -112,8 +121,12 @@ describe("Toast Batches & Stacking", () => {
       );
     });
 
-    const fire1 = container.querySelector('[data-testid="fire-toast-1"]') as HTMLButtonElement;
-    const fire2 = container.querySelector('[data-testid="fire-toast-2"]') as HTMLButtonElement;
+    const fire1 = container.querySelector(
+      '[data-testid="fire-toast-1"]',
+    ) as HTMLButtonElement;
+    const fire2 = container.querySelector(
+      '[data-testid="fire-toast-2"]',
+    ) as HTMLButtonElement;
 
     // Fire first toast
     await act(async () => {
@@ -269,7 +282,8 @@ describe("Toast Batches & Stacking", () => {
   });
 
   it("bridges active import jobs into the unified top-center notification deck", async () => {
-    const { useImportStore } = await import("@/features/library/store/importStore");
+    const { useImportStore } =
+      await import("@/features/library/store/importStore");
 
     await act(async () => {
       root.render(
@@ -371,7 +385,10 @@ describe("Toast Batches & Stacking", () => {
       });
 
       await act(async () => {
-        showToast("Sticky loader", "loader", { id: "sticky-bottom", duration: 999999 });
+        showToast("Sticky loader", "loader", {
+          id: "sticky-bottom",
+          duration: 999999,
+        });
       });
       await act(async () => {
         showToast("Transient 1", "info", { duration: 1000 });
@@ -466,4 +483,3 @@ describe("Toast Batches & Stacking", () => {
     }
   });
 });
-

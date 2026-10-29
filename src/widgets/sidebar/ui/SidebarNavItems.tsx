@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { sidebarNavItems } from "@/features/navigation/data/navigation";
 import { useTranslation } from "@/languages";
@@ -15,8 +16,14 @@ export function SidebarNavItems({
 }: SidebarNavItemsProps) {
   const { pathname } = useLocation();
   const { t } = useTranslation();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const isRouteActive = (href: string) => {
+    if (pendingHref) return href === pendingHref;
     if (href === "/") {
       return pathname === "/" || pathname === "/home";
     }
@@ -81,15 +88,22 @@ export function SidebarNavItems({
                 key={item.id}
                 to={item.href!}
                 aria-current={active ? "page" : undefined}
+                onPointerDown={(event) => {
+                  if (event.button === 0) setPendingHref(item.href!);
+                }}
+                onPointerLeave={(event) => {
+                  if (event.buttons & 1) setPendingHref(null);
+                }}
+                onPointerCancel={() => setPendingHref(null)}
                 className="group relative inline-flex items-center justify-center cursor-pointer active:scale-[0.96] transition-transform duration-100"
               >
                 <Icon
                   size={26}
                   className={cn(
-                    "relative z-10 text-text-primary transition-opacity duration-150 ease-out",
+                    "relative z-10 text-text-primary",
                     active
                       ? "opacity-100"
-                      : "opacity-55 group-hover:opacity-90",
+                      : "opacity-55 transition-opacity duration-150 ease-out group-hover:opacity-90",
                   )}
                 />
               </Link>

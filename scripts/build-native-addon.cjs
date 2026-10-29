@@ -10,7 +10,10 @@ const strict = Boolean(process.env.CI);
 
 // fixed command lines only (shell: pnpm is a .cmd shim on windows)
 function run(commandLine) {
-  return spawnSync(commandLine, { cwd: root, stdio: "inherit", shell: true }).status === 0;
+  return (
+    spawnSync(commandLine, { cwd: root, stdio: "inherit", shell: true })
+      .status === 0
+  );
 }
 
 if (process.platform !== "win32") {
@@ -19,7 +22,8 @@ if (process.platform !== "win32") {
 }
 
 const built =
-  run("pnpm dlx node-gyp@12 rebuild --directory native/snap-preview") && run("node scripts/verify-native-addon.cjs");
+  run("pnpm dlx node-gyp@12 rebuild --directory native/snap-preview") &&
+  run("node scripts/verify-native-addon.cjs");
 
 if (!built) {
   if (strict) {

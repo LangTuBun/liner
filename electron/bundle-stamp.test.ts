@@ -1,26 +1,40 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createBundleErrorStamp, formatBundleStamp, type BundleUpdateState } from "./bundle-stamp";
+import {
+  createBundleErrorStamp,
+  formatBundleStamp,
+  type BundleUpdateState,
+} from "./bundle-stamp";
 
 const info = { version: "0.1.36", isOta: true, sha256: "a1b2c3d4e5f6" };
 
 function setup(update: BundleUpdateState = { kind: "latest" }) {
   const emitted: string[] = [];
   const peekUpdate = vi.fn(async () => update);
-  const stamp = createBundleErrorStamp({ getVersionInfo: () => info, peekUpdate }, { emit: (line) => emitted.push(line) });
+  const stamp = createBundleErrorStamp(
+    { getVersionInfo: () => info, peekUpdate },
+    { emit: (line) => emitted.push(line) },
+  );
   return { emitted, peekUpdate, stamp };
 }
 
 describe("formatBundleStamp", () => {
   it("shows the bundle version, build and update state", () => {
-    expect(formatBundleStamp(info, { kind: "latest" })).toBe("0.1.36 ota a1b2c3d · update available: no");
-    expect(formatBundleStamp(info, { kind: "available", version: "0.1.37" })).toBe(
-      "0.1.36 ota a1b2c3d · update available: yes (0.1.37)",
+    expect(formatBundleStamp(info, { kind: "latest" })).toBe(
+      "0.1.36 ota a1b2c3d · update available: no",
     );
-    expect(formatBundleStamp({ version: "0.1.35", isOta: false, sha256: null }, { kind: "inactive" })).toBe(
-      "0.1.35 · update available: n/a (dev)",
-    );
+    expect(
+      formatBundleStamp(info, { kind: "available", version: "0.1.37" }),
+    ).toBe("0.1.36 ota a1b2c3d · update available: yes (0.1.37)");
+    expect(
+      formatBundleStamp(
+        { version: "0.1.35", isOta: false, sha256: null },
+        { kind: "inactive" },
+      ),
+    ).toBe("0.1.35 · update available: n/a (dev)");
     expect(formatBundleStamp(info, { kind: "unknown" })).toContain("unknown");
-    expect(formatBundleStamp(info, { kind: "needs-app-update" })).toContain("newer app");
+    expect(formatBundleStamp(info, { kind: "needs-app-update" })).toContain(
+      "newer app",
+    );
   });
 });
 
@@ -36,7 +50,9 @@ describe("createBundleErrorStamp", () => {
     stamp.onRendererError();
     expect(emitted).toHaveLength(0);
     await vi.advanceTimersByTimeAsync(1000);
-    expect(emitted).toEqual(["0.1.36 ota a1b2c3d · update available: yes (0.1.37)"]);
+    expect(emitted).toEqual([
+      "0.1.36 ota a1b2c3d · update available: yes (0.1.37)",
+    ]);
   });
 
   it("does not repeat the line more than once per interval", async () => {
@@ -62,7 +78,10 @@ describe("createBundleErrorStamp", () => {
   it("reports an unknown state when the update check throws", async () => {
     const emitted: string[] = [];
     const stamp = createBundleErrorStamp(
-      { getVersionInfo: () => info, peekUpdate: async () => Promise.reject(new Error("offline")) },
+      {
+        getVersionInfo: () => info,
+        peekUpdate: async () => Promise.reject(new Error("offline")),
+      },
       { emit: (line) => emitted.push(line) },
     );
     stamp.onRendererError();

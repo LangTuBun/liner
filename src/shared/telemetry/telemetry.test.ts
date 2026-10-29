@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  telemetry,
-  telemetryConfig,
-  setTelemetryEnabled,
-  isTelemetryEnabled,
-} from "./index";
+import { telemetry, setTelemetryEnabled, isTelemetryEnabled } from "./index";
 
 describe("Liner Desktop Telemetry Module", () => {
   const originalFetch = globalThis.fetch;
@@ -45,5 +40,3 @@ describe("Liner Desktop Telemetry Module", () => {
     await expect(telemetry.flush()).resolves.toBeUndefined();
   });
 });
-
-

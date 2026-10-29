@@ -33,10 +33,14 @@ describe("discordSettingsStore", () => {
     expect(useDiscordSettingsStore.getState().statusDisplayType).toBe("title");
 
     store.setStatusDisplayType("artist_title");
-    expect(useDiscordSettingsStore.getState().statusDisplayType).toBe("artist_title");
+    expect(useDiscordSettingsStore.getState().statusDisplayType).toBe(
+      "artist_title",
+    );
 
     store.setStatusDisplayType("title_artist");
-    expect(useDiscordSettingsStore.getState().statusDisplayType).toBe("title_artist");
+    expect(useDiscordSettingsStore.getState().statusDisplayType).toBe(
+      "title_artist",
+    );
 
     store.setStatusDisplayType("app");
     expect(useDiscordSettingsStore.getState().statusDisplayType).toBe("app");

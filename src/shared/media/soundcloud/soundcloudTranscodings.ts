@@ -1,4 +1,7 @@
-import type { SoundCloudTrackInfo, SoundCloudTranscoding } from "./soundcloudTrack";
+import type {
+  SoundCloudTrackInfo,
+  SoundCloudTranscoding,
+} from "./soundcloudTrack";
 
 export type SoundCloudUnavailableReason =
   | "not_found"
@@ -27,18 +30,37 @@ const PREVIEW_TOLERANCE_MS = 5_000;
 
 function isPreviewOnly(track: SoundCloudTrackInfo): boolean {
   if (track.policy === "SNIP") return true;
-  if (track.transcodings.length > 0 && track.transcodings.every((transcoding) => transcoding.snipped)) return true;
-  return Boolean(track.durationMs && track.fullDurationMs && track.durationMs < track.fullDurationMs - PREVIEW_TOLERANCE_MS);
+  if (
+    track.transcodings.length > 0 &&
+    track.transcodings.every((transcoding) => transcoding.snipped)
+  )
+    return true;
+  return Boolean(
+    track.durationMs &&
+    track.fullDurationMs &&
+    track.durationMs < track.fullDurationMs - PREVIEW_TOLERANCE_MS,
+  );
 }
 
-export function transcodingFormat(transcoding: SoundCloudTranscoding): TranscodingFormat {
+export function transcodingFormat(
+  transcoding: SoundCloudTranscoding,
+): TranscodingFormat {
   const { mimeType, preset } = transcoding;
   const kbps = Number(/(\d+)k/i.exec(preset)?.[1]);
-  const bitrate = (fallback: number) => (Number.isFinite(kbps) && kbps > 0 ? kbps * 1000 : fallback);
+  const bitrate = (fallback: number) =>
+    Number.isFinite(kbps) && kbps > 0 ? kbps * 1000 : fallback;
   if (mimeType.includes("opus") || preset.startsWith("opus")) {
-    return { codec: "opus", mimeType: 'audio/ogg; codecs="opus"', bitrate: bitrate(64_000) };
+    return {
+      codec: "opus",
+      mimeType: 'audio/ogg; codecs="opus"',
+      bitrate: bitrate(64_000),
+    };
   }
-  if (mimeType.includes("mp4") || mimeType.includes("aac") || preset.startsWith("aac")) {
+  if (
+    mimeType.includes("mp4") ||
+    mimeType.includes("aac") ||
+    preset.startsWith("aac")
+  ) {
     return { codec: "aac", mimeType: "audio/mp4", bitrate: bitrate(128_000) };
   }
   return { codec: "mp3", mimeType: "audio/mpeg", bitrate: bitrate(128_000) };
@@ -55,16 +77,22 @@ function transcodingRank(transcoding: SoundCloudTranscoding): number {
 function isClearTranscoding(transcoding: SoundCloudTranscoding): boolean {
   if (transcoding.snipped) return false;
   if (transcoding.protocol === "progressive") return true;
-  return transcoding.protocol === "hls" && !transcoding.mimeType.includes("mpegurl");
+  return (
+    transcoding.protocol === "hls" && !transcoding.mimeType.includes("mpegurl")
+  );
 }
 
-export function playableTranscodings(track: SoundCloudTrackInfo): SoundCloudTranscoding[] {
+export function playableTranscodings(
+  track: SoundCloudTrackInfo,
+): SoundCloudTranscoding[] {
   if (track.policy === "BLOCK") throw new SoundCloudUnavailableError("blocked");
-  if (isPreviewOnly(track)) throw new SoundCloudUnavailableError("preview_only");
+  if (isPreviewOnly(track))
+    throw new SoundCloudUnavailableError("preview_only");
   if (!track.streamable) throw new SoundCloudUnavailableError("not_streamable");
   const playable = track.transcodings
     .filter(isClearTranscoding)
     .sort((left, right) => transcodingRank(left) - transcodingRank(right));
-  if (playable.length === 0) throw new SoundCloudUnavailableError("no_playable_transcoding");
+  if (playable.length === 0)
+    throw new SoundCloudUnavailableError("no_playable_transcoding");
   return playable;
 }

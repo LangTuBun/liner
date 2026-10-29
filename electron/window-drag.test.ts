@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { clampResizeToArea, computeDragBounds, cubicBezier, isInTopSnapZone, lerpEdges, minimumSizeFor, restoreUnderCursor, toEdges } from "./window-drag";
+import {
+  clampResizeToArea,
+  computeDragBounds,
+  cubicBezier,
+  isInTopSnapZone,
+  lerpEdges,
+  minimumSizeFor,
+  restoreUnderCursor,
+  toEdges,
+} from "./window-drag";
 
 describe("computeDragBounds", () => {
   const start = { x: 100, y: 50, width: 1200, height: 780 };
 
   it("moves by the cursor travel", () => {
-    expect(computeDragBounds(start, { x: 10, y: 10 }, { x: 35, y: -5 })).toEqual({
+    expect(
+      computeDragBounds(start, { x: 10, y: 10 }, { x: 35, y: -5 }),
+    ).toEqual({
       x: 125,
       y: 35,
       width: 1200,
@@ -16,7 +27,10 @@ describe("computeDragBounds", () => {
   it("never changes the size, however long the drag", () => {
     let cursor = { x: 0, y: 0 };
     for (let i = 0; i < 5000; i++) {
-      cursor = { x: cursor.x + ((i % 7) - 3) * 1.25, y: cursor.y + ((i % 5) - 2) * 1.5 };
+      cursor = {
+        x: cursor.x + ((i % 7) - 3) * 1.25,
+        y: cursor.y + ((i % 5) - 2) * 1.5,
+      };
       const b = computeDragBounds(start, { x: 0, y: 0 }, cursor);
       expect(b.width).toBe(1200);
       expect(b.height).toBe(780);
@@ -64,7 +78,11 @@ describe("restoreUnderCursor", () => {
   });
 
   it("clamps the vertical offset into the restored height", () => {
-    const r = restoreUnderCursor(maximized, { width: 400, height: 300 }, { x: 960, y: 900 });
+    const r = restoreUnderCursor(
+      maximized,
+      { width: 400, height: 300 },
+      { x: 960, y: 900 },
+    );
     expect(r.y).toBe(900 - 299);
   });
 });
@@ -98,11 +116,21 @@ describe("snap preview geometry", () => {
 
 describe("minimumSizeFor", () => {
   it("keeps the normal minimum on a big screen", () => {
-    expect(minimumSizeFor({ width: 1100, height: 705 }, { x: 0, y: 0, width: 1920, height: 1032 })).toEqual({ width: 1100, height: 705 });
+    expect(
+      minimumSizeFor(
+        { width: 1100, height: 705 },
+        { x: 0, y: 0, width: 1920, height: 1032 },
+      ),
+    ).toEqual({ width: 1100, height: 705 });
   });
 
   it("shrinks to the visible area of a small scaled laptop screen", () => {
-    expect(minimumSizeFor({ width: 1100, height: 705 }, { x: 0, y: 0, width: 1093, height: 574 })).toEqual({ width: 1093, height: 574 });
+    expect(
+      minimumSizeFor(
+        { width: 1100, height: 705 },
+        { x: 0, y: 0, width: 1093, height: 574 },
+      ),
+    ).toEqual({ width: 1093, height: 574 });
   });
 });
 
@@ -110,11 +138,15 @@ describe("clampResizeToArea", () => {
   const area = { x: 0, y: 0, width: 1366, height: 720 };
 
   it("pulls a bottom edge dragged under the taskbar back up", () => {
-    expect(clampResizeToArea({ x: 100, y: 50, width: 1100, height: 760 }, area)).toEqual({ x: 100, y: 50, width: 1100, height: 670 });
+    expect(
+      clampResizeToArea({ x: 100, y: 50, width: 1100, height: 760 }, area),
+    ).toEqual({ x: 100, y: 50, width: 1100, height: 670 });
   });
 
   it("trims edges dragged past the left and top", () => {
-    expect(clampResizeToArea({ x: -40, y: -20, width: 1200, height: 700 }, area)).toEqual({ x: 0, y: 0, width: 1160, height: 680 });
+    expect(
+      clampResizeToArea({ x: -40, y: -20, width: 1200, height: 700 }, area),
+    ).toEqual({ x: 0, y: 0, width: 1160, height: 680 });
   });
 
   it("leaves a window that already fits alone", () => {

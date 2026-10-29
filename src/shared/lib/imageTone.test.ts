@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { hueRarity, pickStrikingIndex, strikingness, toneFromPixels } from "./imageTone";
+import {
+  hueRarity,
+  pickStrikingIndex,
+  strikingness,
+  toneFromPixels,
+} from "./imageTone";
 
-function pixels(...groups: [number, number, number, number][]): Uint8ClampedArray {
+function pixels(
+  ...groups: [number, number, number, number][]
+): Uint8ClampedArray {
   const total = groups.reduce((sum, [, , , count]) => sum + count, 0);
   const data = new Uint8ClampedArray(total * 4);
   let i = 0;

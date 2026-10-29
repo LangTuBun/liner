@@ -7,7 +7,10 @@ import {
   NATIVE_WINDOW_DRAG_CLASS,
 } from "./useWindowDrag";
 
-function DragTestComponent(props: { topAreaHeight?: number; dragThreshold?: number }) {
+function DragTestComponent(props: {
+  topAreaHeight?: number;
+  dragThreshold?: number;
+}) {
   useWindowDrag(props);
   return (
     <div id="root-test">
@@ -330,7 +333,12 @@ describe("useWindowDrag", () => {
         }),
       );
       emptyArea.dispatchEvent(
-        new MouseEvent("dblclick", { button: 0, clientX: 50, clientY: 10, bubbles: true }),
+        new MouseEvent("dblclick", {
+          button: 0,
+          clientX: 50,
+          clientY: 10,
+          bubbles: true,
+        }),
       );
 
       expect(mockDragMove).not.toHaveBeenCalled();
@@ -346,14 +354,18 @@ describe("useWindowDrag", () => {
       expect(strip).not.toBeNull();
       expect(strip!.style.height).toBe("40px");
       expect(document.body.firstElementChild).toBe(strip);
-      expect(document.documentElement.classList.contains(NATIVE_WINDOW_DRAG_CLASS)).toBe(true);
+      expect(
+        document.documentElement.classList.contains(NATIVE_WINDOW_DRAG_CLASS),
+      ).toBe(true);
 
       await act(async () => {
         root.unmount();
       });
 
       expect(document.getElementById("window-drag-strip")).toBeNull();
-      expect(document.documentElement.classList.contains(NATIVE_WINDOW_DRAG_CLASS)).toBe(false);
+      expect(
+        document.documentElement.classList.contains(NATIVE_WINDOW_DRAG_CLASS),
+      ).toBe(false);
     });
   });
 });

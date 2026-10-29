@@ -11,7 +11,12 @@ export default function OverlayApp() {
   }
 
   return (
-    <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+    <ThemeProvider
+      attribute="data-theme"
+      defaultTheme="dark"
+      enableSystem={false}
+      forcedTheme="dark"
+    >
       <GlobalTooltip />
       <OverlayPlayer />
     </ThemeProvider>

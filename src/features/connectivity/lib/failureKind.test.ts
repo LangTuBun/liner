@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { isConnectivityFailure, isPlaybackPath, isServerOutage, statusOf, stripQuery } from "./failureKind";
+import {
+  isConnectivityFailure,
+  isPlaybackPath,
+  isServerOutage,
+  statusOf,
+  stripQuery,
+} from "./failureKind";
 
 describe("isServerOutage", () => {
   it("is true only when the api answered with a 5xx", () => {
-    expect(isServerOutage([{ id: "device", detail: "online" }, { id: "api", detail: "HTTP 503" }])).toBe(true);
+    expect(
+      isServerOutage([
+        { id: "device", detail: "online" },
+        { id: "api", detail: "HTTP 503" },
+      ]),
+    ).toBe(true);
     expect(isServerOutage([{ id: "api", detail: "timed out" }])).toBe(false);
     expect(isServerOutage([{ id: "api", detail: "HTTP 401" }])).toBe(false);
     expect(isServerOutage([])).toBe(false);
@@ -45,7 +56,9 @@ describe("isConnectivityFailure", () => {
     expect(isPlaybackPath("/v1/tracks/123/playback/media")).toBe(true);
     expect(isPlaybackPath("/v1/tracks/123/lyrics")).toBe(true);
     expect(isPlaybackPath("/v1/playback/sess_123/media")).toBe(true);
-    expect(isPlaybackPath("/v1/tracks/123/playback?transport=proxy")).toBe(true);
+    expect(isPlaybackPath("/v1/tracks/123/playback?transport=proxy")).toBe(
+      true,
+    );
     expect(isPlaybackPath("/v1/me")).toBe(false);
     expect(isPlaybackPath("/v1/playlists/123")).toBe(false);
     expect(isPlaybackPath("/v1/auth/session")).toBe(false);

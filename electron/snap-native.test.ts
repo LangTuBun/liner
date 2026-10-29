@@ -13,8 +13,17 @@ const names = (source: string, pattern: RegExp) => {
 describe("native add-on function list", () => {
   it("CI check and app loader require the same functions", () => {
     const root = path.join(__dirname, "..");
-    const app = names(fs.readFileSync(path.join(root, "electron", "snap-native.ts"), "utf8"), /const required = \[([\s\S]*?)\] as const/);
-    const ci = names(fs.readFileSync(path.join(root, "scripts", "verify-native-addon.cjs"), "utf8"), /const REQUIRED = \[([\s\S]*?)\];/);
+    const app = names(
+      fs.readFileSync(path.join(root, "electron", "snap-native.ts"), "utf8"),
+      /const required = \[([\s\S]*?)\] as const/,
+    );
+    const ci = names(
+      fs.readFileSync(
+        path.join(root, "scripts", "verify-native-addon.cjs"),
+        "utf8",
+      ),
+      /const REQUIRED = \[([\s\S]*?)\];/,
+    );
     expect(app.length).toBeGreaterThan(0);
     expect(ci).toEqual(app);
   });

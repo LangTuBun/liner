@@ -2,18 +2,29 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
   nativeImage: {
-    createFromBitmap: vi.fn((_buffer: Buffer, options: { width: number }) => ({ width: options.width, addRepresentation: vi.fn() })),
+    createFromBitmap: vi.fn((_buffer: Buffer, options: { width: number }) => ({
+      width: options.width,
+      addRepresentation: vi.fn(),
+    })),
   },
 }));
 
-import { ThumbarController, drawThumbarGlyph, type ThumbarAction } from "./thumbar";
+import {
+  ThumbarController,
+  drawThumbarGlyph,
+  type ThumbarAction,
+} from "./thumbar";
 
-const alphaAt = (pixels: Buffer, size: number, x: number, y: number) => pixels[(y * size + x) * 4 + 3];
+const alphaAt = (pixels: Buffer, size: number, x: number, y: number) =>
+  pixels[(y * size + x) * 4 + 3];
 
 type FakeButton = { tooltip: string; click: () => void };
 
 function fakeWindow() {
-  return { isDestroyed: () => false, setThumbarButtons: vi.fn<(buttons: FakeButton[]) => boolean>(() => true) };
+  return {
+    isDestroyed: () => false,
+    setThumbarButtons: vi.fn<(buttons: FakeButton[]) => boolean>(() => true),
+  };
 }
 
 describe("drawThumbarGlyph", () => {
@@ -46,8 +57,13 @@ describe("ThumbarController", () => {
   function setup(platform: NodeJS.Platform = "win32") {
     const win = fakeWindow();
     const sent: ThumbarAction[] = [];
-    const controller = new ThumbarController(() => win as never, (action) => sent.push(action), platform);
-    const lastButtons = () => win.setThumbarButtons.mock.calls.at(-1)?.[0] ?? [];
+    const controller = new ThumbarController(
+      () => win as never,
+      (action) => sent.push(action),
+      platform,
+    );
+    const lastButtons = () =>
+      win.setThumbarButtons.mock.calls.at(-1)?.[0] ?? [];
     return { win, sent, controller, lastButtons };
   }
 
@@ -55,7 +71,11 @@ describe("ThumbarController", () => {
     const { sent, controller, lastButtons } = setup();
     controller.update({ status: "playing", track: { id: "a" } });
     const buttons = lastButtons();
-    expect(buttons.map((b) => b.tooltip)).toEqual(["Previous", "Pause", "Next"]);
+    expect(buttons.map((b) => b.tooltip)).toEqual([
+      "Previous",
+      "Pause",
+      "Next",
+    ]);
     buttons.forEach((b) => b.click());
     expect(sent).toEqual(["prev", "togglePlay", "next"]);
   });
@@ -66,7 +86,11 @@ describe("ThumbarController", () => {
     controller.update({ status: "playing", track: { id: "b" } });
     expect(win.setThumbarButtons).toHaveBeenCalledTimes(1);
     controller.update({ status: "paused", track: { id: "b" } });
-    expect(lastButtons().map((b) => b.tooltip)).toEqual(["Previous", "Play", "Next"]);
+    expect(lastButtons().map((b) => b.tooltip)).toEqual([
+      "Previous",
+      "Play",
+      "Next",
+    ]);
     expect(win.setThumbarButtons).toHaveBeenCalledTimes(2);
   });
 

@@ -3,11 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { debouncedStorage } from "@/shared/utils/storage";
 
 export type SearchHistoryItemType =
-  | "track"
-  | "artist"
-  | "album"
-  | "playlist"
-  | "query";
+  "track" | "artist" | "album" | "playlist" | "query";
 
 export interface SearchHistoryItem {
   id: string;
@@ -40,7 +36,10 @@ export const useSearchHistoryStore = create<SearchHistoryState>()(
         set((state) => {
           const filtered = state.items.filter((it) => {
             if (item.type === "query" && it.type === "query") {
-              return it.title.trim().toLowerCase() !== item.title.trim().toLowerCase();
+              return (
+                it.title.trim().toLowerCase() !==
+                item.title.trim().toLowerCase()
+              );
             }
             return it.id !== item.id;
           });

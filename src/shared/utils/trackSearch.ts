@@ -38,9 +38,7 @@ export function normalizeForSearch(text: string): string {
 }
 
 export function tokenizeQuery(query: string): string[] {
-  return normalizeForSearch(query)
-    .split(/\s+/)
-    .filter(Boolean);
+  return normalizeForSearch(query).split(/\s+/).filter(Boolean);
 }
 
 /** Tracks that match every query word, in their original order. */
@@ -63,7 +61,10 @@ export function filterTracks<T extends SearchableTrack>(
  * Character ranges [start, end) in the original `text` covered by query words,
  * merged and sorted, so the UI can wrap them in <mark>.
  */
-export function findHighlightRanges(text: string, query: string): Array<[number, number]> {
+export function findHighlightRanges(
+  text: string,
+  query: string,
+): Array<[number, number]> {
   const tokens = tokenizeQuery(query);
   if (!text || tokens.length === 0) return [];
 

@@ -30,8 +30,12 @@ export function ScrollableRow({
     controller ?? internalController;
 
   const maskStyle = useMemo(() => {
-    const leftMask = showLeftShadow ? "transparent 0px, black 32px" : "black 0px";
-    const rightMask = showRightShadow ? "black calc(100% - 32px), transparent 100%" : "black 100%";
+    const leftMask = showLeftShadow
+      ? "transparent 0px, black 32px"
+      : "black 0px";
+    const rightMask = showRightShadow
+      ? "black calc(100% - 32px), transparent 100%"
+      : "black 100%";
     return {
       maskImage: `linear-gradient(to right, ${leftMask}, ${rightMask})`,
       WebkitMaskImage: `linear-gradient(to right, ${leftMask}, ${rightMask})`,

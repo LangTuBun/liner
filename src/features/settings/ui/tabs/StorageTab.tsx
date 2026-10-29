@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import lottie, { type AnimationItem } from "lottie-web";
+import lottie, {
+  type AnimationItem,
+} from "lottie-web/build/player/lottie_light";
 import { FolderOpenLine, CheckLine } from "@mingcute/react";
 import { CheckCircle } from "@solar-icons/react";
 import Button from "@/shared/ui/Button";
@@ -20,7 +22,12 @@ import {
   type StorageCategoryId,
 } from "@/shared/utils/cacheManager";
 
-function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+function polarToCartesian(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleInDegrees: number,
+) {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
   return {
     x: centerX + radius * Math.cos(angleInRadians),
@@ -103,24 +110,37 @@ function TelegramCleaningDuck({ size = 130 }: { size?: number }) {
   );
 }
 
-export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string }) {
+export function StorageTab({
+  searchQuery: _searchQuery,
+}: {
+  searchQuery?: string;
+}) {
   const { t } = useTranslation();
   const { toast } = useToast();
 
   const initialCached = getCachedStorageAnalytics();
-  const [analytics, setAnalytics] = useState<StorageAnalytics | null>(initialCached);
+  const [analytics, setAnalytics] = useState<StorageAnalytics | null>(
+    initialCached,
+  );
   const [loading, setLoading] = useState(!initialCached);
-  const [selectedCategories, setSelectedCategories] = useState<Set<StorageCategoryId>>(() => {
+  const [selectedCategories, setSelectedCategories] = useState<
+    Set<StorageCategoryId>
+  >(() => {
     if (initialCached) {
-      return new Set(initialCached.categories.filter((c) => c.bytes > 0).map((c) => c.id));
+      return new Set(
+        initialCached.categories.filter((c) => c.bytes > 0).map((c) => c.id),
+      );
     }
     return new Set(["covers", "audio", "lyrics", "metadata"]);
   });
   const [clearing, setClearing] = useState(false);
   const [clearingProgress, setClearingProgress] = useState(0);
   const [clearedSuccess, setClearedSuccess] = useState(false);
-  const [hoveredCategoryId, setHoveredCategoryId] = useState<StorageCategoryId | null>(null);
-  const [cacheLimit, setCacheLimit] = useState<number>(() => getAudioCacheLimitBytes());
+  const [hoveredCategoryId, setHoveredCategoryId] =
+    useState<StorageCategoryId | null>(null);
+  const [cacheLimit, setCacheLimit] = useState<number>(() =>
+    getAudioCacheLimitBytes(),
+  );
 
   const steps = useMemo(
     () => [
@@ -161,7 +181,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
           setAnalytics(data);
           setSelectedCategories((prev) => {
             if (prev.size === 0) {
-              return new Set(data.categories.filter((c) => c.bytes > 0).map((c) => c.id));
+              return new Set(
+                data.categories.filter((c) => c.bytes > 0).map((c) => c.id),
+              );
             }
             return prev;
           });
@@ -243,7 +265,9 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
     endAngle: number;
   }> => {
     if (!analytics || selectedBytes <= 0) return [];
-    const active = analytics.categories.filter((c) => selectedCategories.has(c.id) && c.bytes > 0);
+    const active = analytics.categories.filter(
+      (c) => selectedCategories.has(c.id) && c.bytes > 0,
+    );
 
     if (active.length === 0) return [];
     if (active.length === 1) {
@@ -265,7 +289,10 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
       const rawSpan = sliceFraction * 360;
       const sliceGap = Math.min(baseGap, rawSpan * 0.35);
       const startAngle = currentAngle + sliceGap / 2;
-      const endAngle = Math.max(startAngle + 0.8, currentAngle + rawSpan - sliceGap / 2);
+      const endAngle = Math.max(
+        startAngle + 0.8,
+        currentAngle + rawSpan - sliceGap / 2,
+      );
       currentAngle += rawSpan;
 
       return {
@@ -343,251 +370,256 @@ export function StorageTab({ searchQuery: _searchQuery }: { searchQuery?: string
             transition={{ duration: 0.16, ease: "easeOut" }}
             className="flex-1 flex flex-col gap-[20px] pt-[8px] w-full"
           >
-      <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex-1 w-full flex flex-col gap-0.5">
-            {analytics?.categories.map((cat) => {
-              const isSelected = selectedCategories.has(cat.id);
-              const isHovered = hoveredCategoryId === cat.id;
-              const total = analytics.totalBytes || 1;
-              const pct = Math.round((cat.bytes / total) * 100);
-              const pctLabel = cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
+            <div className="bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] pl-[10px] pr-[16px] py-[10px] rounded-2xl">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex-1 w-full flex flex-col gap-0.5">
+                  {analytics?.categories.map((cat) => {
+                    const isSelected = selectedCategories.has(cat.id);
+                    const isHovered = hoveredCategoryId === cat.id;
+                    const total = analytics.totalBytes || 1;
+                    const pct = Math.round((cat.bytes / total) * 100);
+                    const pctLabel =
+                      cat.bytes === 0 ? "0%" : pct === 0 ? "<1%" : `${pct}%`;
 
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => toggleCategory(cat.id)}
-                  onMouseEnter={() => setHoveredCategoryId(cat.id)}
-                  onMouseLeave={() => setHoveredCategoryId(null)}
-                  className={`group w-full flex items-center justify-between px-[10px] py-[8px] rounded-lg transition-all border-0 cursor-pointer text-left ${
-                    isSelected
-                      ? isHovered
-                        ? "bg-border-alpha-14 opacity-100"
-                        : "bg-transparent opacity-100"
-                      : isHovered
-                      ? "bg-border-alpha-14/60 opacity-65"
-                      : "bg-transparent opacity-40"
-                  }`}
-                >
-                  <div className="flex items-center gap-[9px] min-w-0">
-                    <div
-                      className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
-                        isSelected
-                          ? "bg-text-primary border-text-primary text-bg-primary"
-                          : "border-border-secondary bg-border-alpha-14 group-hover:border-text-secondary"
-                      }`}
-                    >
-                      {isSelected && (
-                        <motion.div
-                          initial={{ scale: 0.5, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.5, opacity: 0 }}
-                          transition={{ duration: 0.12 }}
-                          className="flex items-center justify-center"
-                        >
-                          <CheckLine size={11} className="stroke-[1.5]" />
-                        </motion.div>
-                      )}
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => toggleCategory(cat.id)}
+                        onMouseEnter={() => setHoveredCategoryId(cat.id)}
+                        onMouseLeave={() => setHoveredCategoryId(null)}
+                        className={`group w-full flex items-center justify-between px-[10px] py-[8px] rounded-lg transition-all border-0 cursor-pointer text-left ${
+                          isSelected
+                            ? isHovered
+                              ? "bg-border-alpha-14 opacity-100"
+                              : "bg-transparent opacity-100"
+                            : isHovered
+                              ? "bg-border-alpha-14/60 opacity-65"
+                              : "bg-transparent opacity-40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-[9px] min-w-0">
+                          <div
+                            className={`w-[15px] h-[15px] rounded-[4px] flex items-center justify-center transition-all shrink-0 border ${
+                              isSelected
+                                ? "bg-text-primary border-text-primary text-bg-primary"
+                                : "border-border-secondary bg-border-alpha-14 group-hover:border-text-secondary"
+                            }`}
+                          >
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0.5, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.5, opacity: 0 }}
+                                transition={{ duration: 0.12 }}
+                                className="flex items-center justify-center"
+                              >
+                                <CheckLine size={11} className="stroke-[1.5]" />
+                              </motion.div>
+                            )}
+                          </div>
+
+                          <div
+                            className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
+                            style={{ backgroundColor: cat.color }}
+                          />
+
+                          <span className="text-text-primary text-[12.5px] font-[500] truncate">
+                            {t(cat.labelKey)}
+                          </span>
+
+                          <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-border-alpha-14 text-text-tertiary">
+                            {pctLabel}
+                          </span>
+                        </div>
+
+                        <span className="text-text-secondary text-[12px] font-[500] shrink-0">
+                          {formatStorageBytes(cat.bytes)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-col items-center justify-center shrink-0 px-6">
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-[136px] h-[136px] flex items-center justify-center">
+                      <svg
+                        width="136"
+                        height="136"
+                        viewBox="0 0 200 200"
+                        className="overflow-visible"
+                      >
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="70"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="24"
+                          className="text-border-alpha-14"
+                        />
+
+                        <AnimatePresence>
+                          {donutSlices.map((slice) => {
+                            const isHovered = hoveredCategoryId === slice.id;
+                            const pathData = describeDonutSegment(
+                              100,
+                              100,
+                              isHovered ? 57.5 : 58,
+                              isHovered ? 83.5 : 82,
+                              slice.startAngle,
+                              slice.endAngle,
+                            );
+
+                            return (
+                              <motion.path
+                                key={slice.id}
+                                d={pathData}
+                                fill={slice.color}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15, ease: "easeOut" }}
+                                className="cursor-pointer transition-opacity origin-center"
+                                onMouseEnter={() =>
+                                  setHoveredCategoryId(slice.id)
+                                }
+                                onMouseLeave={() => setHoveredCategoryId(null)}
+                              />
+                            );
+                          })}
+                        </AnimatePresence>
+                      </svg>
+
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                        <div className="relative flex items-center justify-center">
+                          <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
+                            {formattedCenter.val}
+                          </span>
+                          {formattedCenter.unit ? (
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
+                              {formattedCenter.unit}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
 
-                    <div
-                      className="w-[8px] h-[8px] rounded-full shrink-0 transition-opacity"
-                      style={{ backgroundColor: cat.color }}
-                    />
-
-                    <span className="text-text-primary text-[12.5px] font-[500] truncate">
-                      {t(cat.labelKey)}
+                    <span className="text-[11.5px] font-[500] text-text-tertiary -mt-1 text-center select-none tracking-tight">
+                      {t("settings.storage.usage_title")}
                     </span>
-
-                    <span className="text-[10px] font-[600] px-[5px] py-[0.5px] rounded bg-border-alpha-14 text-text-tertiary">
-                      {pctLabel}
-                    </span>
-                  </div>
-
-                  <span className="text-text-secondary text-[12px] font-[500] shrink-0">
-                    {formatStorageBytes(cat.bytes)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col items-center justify-center shrink-0 px-6">
-            <div className="flex flex-col items-center">
-              <div className="relative w-[136px] h-[136px] flex items-center justify-center">
-                <svg
-                  width="136"
-                  height="136"
-                  viewBox="0 0 200 200"
-                  className="overflow-visible"
-                >
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r="70"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="24"
-                    className="text-border-alpha-14"
-                  />
-
-                  <AnimatePresence>
-                    {donutSlices.map((slice) => {
-                      const isHovered = hoveredCategoryId === slice.id;
-                      const pathData = describeDonutSegment(
-                        100,
-                        100,
-                        isHovered ? 57.5 : 58,
-                        isHovered ? 83.5 : 82,
-                        slice.startAngle,
-                        slice.endAngle
-                      );
-
-                      return (
-                        <motion.path
-                          key={slice.id}
-                          d={pathData}
-                          fill={slice.color}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15, ease: "easeOut" }}
-                          className="cursor-pointer transition-opacity origin-center"
-                          onMouseEnter={() => setHoveredCategoryId(slice.id)}
-                          onMouseLeave={() => setHoveredCategoryId(null)}
-                        />
-                      );
-                    })}
-                  </AnimatePresence>
-                </svg>
-
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <div className="relative flex items-center justify-center">
-                    <span className="text-[19px] font-[700] text-text-primary tracking-tight leading-none">
-                      {formattedCenter.val}
-                    </span>
-                    {formattedCenter.unit ? (
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-0.5 text-[10px] font-[600] text-text-tertiary uppercase leading-none whitespace-nowrap">
-                        {formattedCenter.unit}
-                      </span>
-                    ) : null}
                   </div>
                 </div>
               </div>
-
-              <span className="text-[11.5px] font-[500] text-text-tertiary -mt-1 text-center select-none tracking-tight">
-                {t("settings.storage.usage_title")}
-              </span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl">
-        <div className="pl-[6px]">
-          <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
-            {t("settings.storage.cache_limit")}
-          </h5>
-          <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
-            {t("settings.storage.cache_limit_desc")}
-          </p>
-        </div>
+            <div className="flex flex-col gap-[14px] bg-bg-panel border border-border-primary/60 dark:border-transparent dark:bg-white/[0.035] p-[16px] rounded-2xl">
+              <div className="pl-[6px]">
+                <h5 className="text-text-primary text-[13.5px] font-[600] m-0">
+                  {t("settings.storage.cache_limit")}
+                </h5>
+                <p className="text-text-tertiary text-[11.5px] m-0 mt-0.5">
+                  {t("settings.storage.cache_limit_desc")}
+                </p>
+              </div>
 
-        <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
-          <div className="relative w-full h-[18px] flex items-center select-none group">
-            <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-33 dark:bg-white/15 pointer-events-none" />
-            <div
-              className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150 pointer-events-none"
-              style={{ width: `${pct}%` }}
-            />
+              <div className="flex flex-col gap-2 pt-2 pb-1 px-6">
+                <div className="relative w-full h-[18px] flex items-center select-none group">
+                  <div className="absolute left-0 right-0 h-[2px] rounded-full bg-border-alpha-33 dark:bg-white/15 pointer-events-none" />
+                  <div
+                    className="absolute left-0 h-[2px] rounded-full bg-text-primary transition-all duration-150 pointer-events-none"
+                    style={{ width: `${pct}%` }}
+                  />
 
-            {steps.map((s, i) => {
-              const tickPct = (i / (steps.length - 1)) * 100;
-              const isPassed = i <= activeIdx;
-              return (
-                <div
-                  key={s.bytes}
-                  className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
-                    isPassed ? "bg-text-primary opacity-80" : "bg-border-alpha-33 dark:bg-white/35"
-                  }`}
-                  style={{ left: `${tickPct}%` }}
-                />
-              );
-            })}
+                  {steps.map((s, i) => {
+                    const tickPct = (i / (steps.length - 1)) * 100;
+                    const isPassed = i <= activeIdx;
+                    return (
+                      <div
+                        key={s.bytes}
+                        className={`absolute w-[2px] h-[6px] rounded-full -translate-x-1/2 transition-colors pointer-events-none ${
+                          isPassed
+                            ? "bg-text-primary opacity-80"
+                            : "bg-border-alpha-33 dark:bg-white/35"
+                        }`}
+                        style={{ left: `${tickPct}%` }}
+                      />
+                    );
+                  })}
 
-            <div
-              className="absolute w-[12px] h-[12px] rounded-full bg-text-primary -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
-              style={{ left: `${pct}%` }}
-            />
+                  <div
+                    className="absolute w-[12px] h-[12px] rounded-full bg-text-primary -translate-x-1/2 transition-all duration-150 pointer-events-none group-hover:scale-125"
+                    style={{ left: `${pct}%` }}
+                  />
 
-            <input
-              type="range"
-              min={0}
-              max={steps.length - 1}
-              step={1}
-              value={activeIdx}
-              onChange={(e) => {
-                const idx = Number(e.target.value);
-                if (steps[idx]) {
-                  void handleLimitChange(steps[idx].bytes);
-                }
-              }}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0 p-0"
-            />
-          </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={steps.length - 1}
+                    step={1}
+                    value={activeIdx}
+                    onChange={(e) => {
+                      const idx = Number(e.target.value);
+                      if (steps[idx]) {
+                        void handleLimitChange(steps[idx].bytes);
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0 p-0"
+                  />
+                </div>
 
-          <div className="relative w-full h-[16px] select-none text-[11px]">
-            {steps.map((s, i) => {
-              const tickPct = (i / (steps.length - 1)) * 100;
-              const isActive = i === activeIdx;
-              return (
-                <span
-                  key={s.bytes}
-                  onClick={() => void handleLimitChange(s.bytes)}
-                  style={{ left: `${tickPct}%` }}
-                  className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
-                    isActive
-                      ? "text-text-primary font-[600]"
-                      : "text-text-tertiary hover:text-text-secondary font-[500]"
-                  }`}
-                >
-                  {s.label}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+                <div className="relative w-full h-[16px] select-none text-[11px]">
+                  {steps.map((s, i) => {
+                    const tickPct = (i / (steps.length - 1)) * 100;
+                    const isActive = i === activeIdx;
+                    return (
+                      <span
+                        key={s.bytes}
+                        onClick={() => void handleLimitChange(s.bytes)}
+                        style={{ left: `${tickPct}%` }}
+                        className={`absolute -translate-x-1/2 whitespace-nowrap cursor-pointer transition-colors ${
+                          isActive
+                            ? "text-text-primary font-[600]"
+                            : "text-text-tertiary hover:text-text-secondary font-[500]"
+                        }`}
+                      >
+                        {s.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-      <div className="mt-auto flex items-center gap-[8px] pt-4">
-        <Button
-          variant="primary"
-          size="default"
-          type="button"
-          disabled={selectedBytes === 0 || loading}
-          onClick={handleClearSelected}
-          className="flex-1 justify-center !h-[40px] !text-[13.5px] font-[500] rounded-xl"
-        >
-          {selectedBytes > 0
-            ? t("settings.storage.clear_button", {
-                size: formatStorageBytes(selectedBytes),
-              })
-            : t("settings.storage.clear_selected")}
-        </Button>
+            <div className="mt-auto flex items-center gap-[8px] pt-4">
+              <Button
+                variant="primary"
+                size="default"
+                type="button"
+                disabled={selectedBytes === 0 || loading}
+                onClick={handleClearSelected}
+                className="flex-1 justify-center !h-[40px] !text-[13.5px] font-[500] rounded-xl"
+              >
+                {selectedBytes > 0
+                  ? t("settings.storage.clear_button", {
+                      size: formatStorageBytes(selectedBytes),
+                    })
+                  : t("settings.storage.clear_selected")}
+              </Button>
 
-        <Button
-          variant="secondary"
-          size="default"
-          type="button"
-          onClick={handleOpenFolder}
-          title={t("settings.storage.open_folder")}
-          className="flex items-center gap-[6px] !h-[40px] px-[14px] font-[500] text-[13px] rounded-xl shrink-0"
-        >
-          <FolderOpenLine size={16} />
-          <span>{t("settings.storage.open_folder")}</span>
-        </Button>
-      </div>
+              <Button
+                variant="secondary"
+                size="default"
+                type="button"
+                onClick={handleOpenFolder}
+                title={t("settings.storage.open_folder")}
+                className="flex items-center gap-[6px] !h-[40px] px-[14px] font-[500] text-[13px] rounded-xl shrink-0"
+              >
+                <FolderOpenLine size={16} />
+                <span>{t("settings.storage.open_folder")}</span>
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

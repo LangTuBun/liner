@@ -2,7 +2,10 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react";
-import { useGlobalShortcuts, type GlobalShortcutsOptions } from "./useGlobalShortcuts";
+import {
+  useGlobalShortcuts,
+  type GlobalShortcutsOptions,
+} from "./useGlobalShortcuts";
 
 const playerState: {
   volume: number;
@@ -35,7 +38,9 @@ vi.mock("@/features/player", () => ({
 
 import { playerEngine } from "@/features/player";
 
-function baseOptions(overrides: Partial<GlobalShortcutsOptions> = {}): GlobalShortcutsOptions {
+function baseOptions(
+  overrides: Partial<GlobalShortcutsOptions> = {},
+): GlobalShortcutsOptions {
   return {
     searchOpen: false,
     openSearch: vi.fn(),
@@ -55,7 +60,10 @@ function Harness({ options }: { options: GlobalShortcutsOptions }) {
   return null;
 }
 
-function mount(options: GlobalShortcutsOptions): { container: HTMLDivElement; root: Root } {
+function mount(options: GlobalShortcutsOptions): {
+  container: HTMLDivElement;
+  root: Root;
+} {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -344,7 +352,12 @@ describe("useGlobalShortcuts", () => {
     it("closes Fullscreen Player next", () => {
       const closeFullscreen = vi.fn();
       mounted = mount(
-        baseOptions({ searchOpen: false, rightPanelOpen: false, fullscreenOpen: true, closeFullscreen }),
+        baseOptions({
+          searchOpen: false,
+          rightPanelOpen: false,
+          fullscreenOpen: true,
+          closeFullscreen,
+        }),
       );
       press("Escape");
       expect(closeFullscreen).toHaveBeenCalledTimes(1);

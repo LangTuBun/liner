@@ -415,7 +415,28 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Reverb",
     "reverb_hint": "Espaço atmosférico e profundidade ambiente",
-    "reverb_amount": "Reverb"
+    "reverb_amount": "Reverb",
+    "beta_visuals": {
+      "label": "Aviso",
+      "ambient_title": "Ambient está em beta",
+      "ambient_body": "Esta faixa tem um fundo animado próprio. Ainda está em beta e pode pesar em aparelhos mais fracos: se o player travar, escolha um modo mais leve.",
+      "settings_title": "Qualidade visual",
+      "settings_body": "Escolha o quanto o player em tela cheia se anima. Modos leves economizam bateria e rodam mais suave em aparelhos mais fracos.",
+      "modes": {
+        "full": {
+          "name": "Todos os efeitos",
+          "hint": "Tudo ligado, com bordas da letra desfocadas"
+        },
+        "balanced": {
+          "name": "Equilibrado",
+          "hint": "Fundos animados, sem desfoque na letra"
+        },
+        "lite": {
+          "name": "Leve",
+          "hint": "Capa parada, letra simples"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -807,7 +828,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Canal",
-      "support": "Suporte",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Site",
       "tagline": "Player de música moderno para desktop com letras sincronizadas por sílaba",
@@ -842,11 +863,6 @@
     },
     "connection": {
       "open_folder": "Abrir local salvo"
-    },
-    "cover_glow": {
-      "title": "Brilho da capa",
-      "description": "Brilho desfocado da capa atrás das páginas. Desative para um fundo simples.",
-      "disabled_for_light": "Desativado no tema claro."
     }
   },
   "toast": {
@@ -997,6 +1013,7 @@
   "track_sort": {
     "label": "Ordenar",
     "default": "Padrão",
+    "added": "Por data de adição",
     "title": "Por título (A–Z)",
     "duration": "Por duração",
     "popularity": "Por popularidade"

@@ -4,7 +4,6 @@ import {
   hasModifier,
   formatAcceleratorForDisplay,
   getAcceleratorKeycaps,
-  getEventAccelerator,
 } from "./shortcutMatching";
 
 function mockKeyEvent(init: {
@@ -46,7 +45,10 @@ describe("shortcutMatching", () => {
       const leftEvent = mockKeyEvent({ code: "ArrowLeft", key: "ArrowLeft" });
       expect(matchesShortcut(leftEvent, "Left")).toBe(true);
 
-      const rightEvent = mockKeyEvent({ code: "ArrowRight", key: "ArrowRight" });
+      const rightEvent = mockKeyEvent({
+        code: "ArrowRight",
+        key: "ArrowRight",
+      });
       expect(matchesShortcut(rightEvent, "Right")).toBe(true);
     });
 
@@ -66,7 +68,11 @@ describe("shortcutMatching", () => {
 
   describe("matchesShortcut with 2-button shortcuts", () => {
     it("matches Control+Right", () => {
-      const event = mockKeyEvent({ code: "ArrowRight", key: "ArrowRight", ctrlKey: true });
+      const event = mockKeyEvent({
+        code: "ArrowRight",
+        key: "ArrowRight",
+        ctrlKey: true,
+      });
       expect(matchesShortcut(event, "Control+Right")).toBe(true);
       expect(matchesShortcut(event, "Ctrl+Right")).toBe(true);
     });
@@ -149,7 +155,9 @@ describe("shortcutMatching", () => {
   describe("formatAcceleratorForDisplay", () => {
     it("formats accelerators cleanly", () => {
       expect(formatAcceleratorForDisplay("Control+Right")).toBe("Ctrl + Right");
-      expect(formatAcceleratorForDisplay("Alt+Shift+O")).toBe("Alt + Shift + O");
+      expect(formatAcceleratorForDisplay("Alt+Shift+O")).toBe(
+        "Alt + Shift + O",
+      );
       expect(formatAcceleratorForDisplay("Space")).toBe("Space");
       expect(formatAcceleratorForDisplay("")).toBe("None");
     });
@@ -164,7 +172,11 @@ describe("shortcutMatching", () => {
     });
 
     it("formats modifiers and special keys", () => {
-      expect(getAcceleratorKeycaps("Alt+Shift+L")).toEqual(["Alt", "Shift", "L"]);
+      expect(getAcceleratorKeycaps("Alt+Shift+L")).toEqual([
+        "Alt",
+        "Shift",
+        "L",
+      ]);
       expect(getAcceleratorKeycaps("Space")).toEqual(["Space"]);
       expect(getAcceleratorKeycaps("")).toEqual(["None"]);
     });

@@ -1,7 +1,4 @@
-export {
-  useSearchAll,
-  type UseSearchAllOptions,
-} from "./hooks/useSearchAll";
+export { useSearchAll, type UseSearchAllOptions } from "./hooks/useSearchAll";
 export {
   useSearchTracks,
   type UseSearchTracksOptions,

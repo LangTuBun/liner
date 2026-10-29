@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { flatten, t, formatTemplate, createTranslatorSync, type TranslationDict } from "./translator";
+import {
+  flatten,
+  t,
+  formatTemplate,
+  createTranslatorSync,
+  type TranslationDict,
+} from "./translator";
 
 const mockDict: TranslationDict = {
   "common.loading": "Loading...",
@@ -12,7 +18,10 @@ const mockDict: TranslationDict = {
 describe("flatten", () => {
   it("flattens nested object with prefix", () => {
     const result = flatten({ name: "Liner", nested: { key: "val" } }, "common");
-    expect(result).toEqual({ "common.name": "Liner", "common.nested.key": "val" });
+    expect(result).toEqual({
+      "common.name": "Liner",
+      "common.nested.key": "val",
+    });
   });
 
   it("handles empty objects", () => {
@@ -44,11 +53,15 @@ describe("t", () => {
   });
 
   it("interpolates template variables", () => {
-    expect(t(mockDict, "common.signed_in", { user: "Alice" })).toBe("Signed in as Alice");
+    expect(t(mockDict, "common.signed_in", { user: "Alice" })).toBe(
+      "Signed in as Alice",
+    );
   });
 
   it("interpolates multiple variables", () => {
-    expect(t(mockDict, "common.added_to_library", { type: "playlist" })).toBe("Added playlist to library");
+    expect(t(mockDict, "common.added_to_library", { type: "playlist" })).toBe(
+      "Added playlist to library",
+    );
   });
 
   it("returns key when dict is undefined", () => {
@@ -58,7 +71,9 @@ describe("t", () => {
 
 describe("formatTemplate", () => {
   it("replaces all {var} placeholders with replaceAll", () => {
-    expect(formatTemplate("Hello {name}, welcome {name}!", { name: "World" })).toBe("Hello World, welcome World!");
+    expect(
+      formatTemplate("Hello {name}, welcome {name}!", { name: "World" }),
+    ).toBe("Hello World, welcome World!");
   });
 
   it("leaves text unchanged when no placeholders", () => {

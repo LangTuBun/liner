@@ -38,7 +38,6 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
 
   return (
     <SettingSection>
-
       <SettingRow
         title={t("settings.autoplay_similar.title")}
         description={t("settings.autoplay_similar.description")}

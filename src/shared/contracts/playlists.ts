@@ -1,5 +1,5 @@
-import type { Cover } from './cover';
-import type { Track, ApiTrack } from './track';
+import type { Cover } from "./cover";
+import type { Track, ApiTrack } from "./track";
 
 export interface PlaylistSummary {
   id: string;
@@ -29,6 +29,8 @@ export interface UserPlaylist {
   createdAt: string;
   updatedAt: string;
   revision: number;
+  trackCount?: number;
+  coverUrls?: string[];
   ownerId?: string;
   owner?: {
     id: string;

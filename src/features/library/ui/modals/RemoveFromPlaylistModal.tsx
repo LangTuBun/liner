@@ -38,7 +38,11 @@ export default function RemoveFromPlaylistModal() {
   }, [detail, toast, removeTracks, t, close]);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={380}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={380}
+    >
       <div className="flex flex-col px-[20px] pb-[20px]">
         <DialogHeader
           className="mb-[16px]"
@@ -82,7 +86,9 @@ export default function RemoveFromPlaylistModal() {
             loading={removeTracks.isPending}
             disabled={!detail?.playlistId || !detail?.playlistItemId}
           >
-            {removeTracks.isPending ? t("common.removing") : t("common.confirm")}
+            {removeTracks.isPending
+              ? t("common.removing")
+              : t("common.confirm")}
           </DialogButton>
         </DialogActions>
       </div>

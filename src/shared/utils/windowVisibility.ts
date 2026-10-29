@@ -23,7 +23,9 @@ export function isWindowVisible(): boolean {
   return visible;
 }
 
-export function onWindowVisibilityChange(listener: VisibilityListener): () => void {
+export function onWindowVisibilityChange(
+  listener: VisibilityListener,
+): () => void {
   ensureSubscribed();
   listeners.add(listener);
   return () => {

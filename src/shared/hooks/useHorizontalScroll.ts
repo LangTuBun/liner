@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { MouseEvent, MouseEventHandler, RefObject } from "react";
 
 export interface HorizontalScrollOptions {
@@ -44,7 +50,9 @@ export function useHorizontalScroll(
     if (!el) return;
     const { scrollLeft: currentScroll, scrollWidth, clientWidth } = el;
     setShowLeftShadow(currentScroll > 1);
-    setShowRightShadow(Math.ceil(currentScroll + clientWidth) < scrollWidth - 1);
+    setShowRightShadow(
+      Math.ceil(currentScroll + clientWidth) < scrollWidth - 1,
+    );
   }, []);
 
   const scrollPrev = useCallback(() => {
@@ -161,7 +169,10 @@ export function useHorizontalScroll(
               if (dt > 10) {
                 let velocity = dx / dt;
                 const maxVelocity = 3.0;
-                velocity = Math.max(-maxVelocity, Math.min(maxVelocity, velocity));
+                velocity = Math.max(
+                  -maxVelocity,
+                  Math.min(maxVelocity, velocity),
+                );
                 if (Math.abs(velocity) > 0.15) {
                   let lastTime = performance.now();
                   const friction = 0.94;

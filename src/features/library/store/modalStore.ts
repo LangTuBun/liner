@@ -64,7 +64,10 @@ interface ModalState {
   createPlaylistOpen: boolean;
   createPlaylistInitialUrl: string;
   createPlaylistPendingTrack: TrackDetail | null;
-  openCreatePlaylist: (initialUrl?: string, pendingTrack?: TrackDetail | null) => void;
+  openCreatePlaylist: (
+    initialUrl?: string,
+    pendingTrack?: TrackDetail | null,
+  ) => void;
   closeCreatePlaylist: () => void;
 
   // Remove from library
@@ -90,7 +93,11 @@ interface ModalState {
   importReviewJobId: string | null;
   importReviewPrefetched: ImportReview[] | null;
   importReviewApprovedTracks: any[] | null;
-  openImportReview: (jobId: string, prefetchedItems?: ImportReview[], approvedTracks?: any[]) => void;
+  openImportReview: (
+    jobId: string,
+    prefetchedItems?: ImportReview[],
+    approvedTracks?: any[],
+  ) => void;
   closeImportReview: () => void;
 
   // Search modal / panel

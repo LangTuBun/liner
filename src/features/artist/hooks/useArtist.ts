@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { api, mediaUrl, toMaxQualityAvatarUrl, toClientTrack } from "@/shared/api";
+import {
+  api,
+  mediaUrl,
+  toMaxQualityAvatarUrl,
+  toClientTrack,
+} from "@/shared/api";
 import type { Track } from "@/shared/types";
 
 export interface ArtistAlbumViewModel {
@@ -61,8 +66,12 @@ export function useArtist(id: string | null) {
           monthlyListeners: artist.monthlyListeners,
           verified: Boolean(artist.verified),
           description: artist.bio?.trim() || "",
-          coverUrl: artist.cover ? toMaxQualityAvatarUrl(mediaUrl(artist.cover.url)) : "",
-          geniusImageUrl: artist.geniusImageUrl ? mediaUrl(artist.geniusImageUrl) : undefined,
+          coverUrl: artist.cover
+            ? toMaxQualityAvatarUrl(mediaUrl(artist.cover.url))
+            : "",
+          geniusImageUrl: artist.geniusImageUrl
+            ? mediaUrl(artist.geniusImageUrl)
+            : undefined,
           geniusAka: artist.geniusAka,
           geniusUsername: artist.geniusUsername,
           totalTracks: tracks.length,

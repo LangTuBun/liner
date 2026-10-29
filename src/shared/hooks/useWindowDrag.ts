@@ -105,7 +105,10 @@ export function useWindowDrag({
       return Boolean(target.closest(ignoreSelector));
     };
 
-    const isInDraggableRegion = (target: HTMLElement | null, clientY: number): boolean => {
+    const isInDraggableRegion = (
+      target: HTMLElement | null,
+      clientY: number,
+    ): boolean => {
       if (clientY <= topAreaHeight) return true;
       if (target?.closest("[data-window-drag]")) return true;
       return false;
@@ -143,9 +146,15 @@ export function useWindowDrag({
         lastWindowDragTime = Date.now();
         window.linerElectron?.dragEnd?.();
       }
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
 
       isMouseDown = false;
       isDragging = false;
@@ -168,9 +177,13 @@ export function useWindowDrag({
       lastScreenY = e.screenY;
       lastWindowDragTime = Date.now();
 
-      window.addEventListener("pointermove", handlePointerMove, { capture: true });
+      window.addEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
       window.addEventListener("pointerup", handlePointerUp, { capture: true });
-      window.addEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.addEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
     };
 
     const handleDoubleClick = (e: MouseEvent) => {
@@ -185,15 +198,27 @@ export function useWindowDrag({
       window.linerElectron?.toggleMaximize();
     };
 
-    window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+    window.addEventListener("pointerdown", handlePointerDown, {
+      capture: true,
+    });
     window.addEventListener("dblclick", handleDoubleClick, { capture: true });
 
     return () => {
-      window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
-      window.removeEventListener("dblclick", handleDoubleClick, { capture: true });
-      window.removeEventListener("pointermove", handlePointerMove, { capture: true });
-      window.removeEventListener("pointerup", handlePointerUp, { capture: true });
-      window.removeEventListener("pointercancel", handlePointerUp, { capture: true });
+      window.removeEventListener("pointerdown", handlePointerDown, {
+        capture: true,
+      });
+      window.removeEventListener("dblclick", handleDoubleClick, {
+        capture: true,
+      });
+      window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", handlePointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("pointercancel", handlePointerUp, {
+        capture: true,
+      });
     };
   }, [topAreaHeight, dragThreshold, ignoreSelector, enableDoubleClickMaximize]);
 }

@@ -11,6 +11,7 @@ import {
   MaximizeSquare,
 } from "@solar-icons/react";
 import {
+  VoiceLine,
   Search2Line,
   CloseLine,
   HeartFill,
@@ -19,7 +20,6 @@ import {
   FastForwardLine,
   FastRewindLine,
   ExternalLinkLine,
-  VoiceLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { Dialog, Button, Tooltip, useToast } from "@/shared/ui";
@@ -92,152 +92,165 @@ export function ShortcutsTab({
   const globalLabels: Record<
     keyof GlobalShortcutsSettings,
     { title: string; desc: string }
-  > = {
-    toggleOverlay: {
-      title:
-        t("settings.shortcuts.toggle_overlay") || "Toggle miniplayer overlay",
-      desc:
-        t("settings.shortcuts.toggle_overlay_desc") ||
-        "Show or hide the floating desktop overlay from anywhere in the OS.",
-    },
-    quickLikeSong: {
-      title:
-        t("settings.shortcuts.quick_like_song") || "Quick like current song",
-      desc:
-        t("settings.shortcuts.quick_like_song_desc") ||
-        "Like or unlike current playing track system-wide without focusing the player.",
-    },
-  };
+  > = useMemo(
+    () => ({
+      toggleOverlay: {
+        title:
+          t("settings.shortcuts.toggle_overlay") || "Toggle miniplayer overlay",
+        desc:
+          t("settings.shortcuts.toggle_overlay_desc") ||
+          "Show or hide the floating desktop overlay from anywhere in the OS.",
+      },
+      quickLikeSong: {
+        title:
+          t("settings.shortcuts.quick_like_song") || "Quick like current song",
+        desc:
+          t("settings.shortcuts.quick_like_song_desc") ||
+          "Like or unlike current playing track system-wide without focusing the player.",
+      },
+    }),
+    [t],
+  );
 
   // Labels for Main App Actions
   const mainAppLabels: Record<
     keyof MainAppShortcutsSettings,
     { title: string; desc: string }
-  > = {
-    playPause: {
-      title: t("settings.shortcuts.play_pause") || "Play / Pause",
-      desc: t("settings.shortcuts.play_pause_desc") || "Toggle audio playback.",
-    },
-    nextTrack: {
-      title: t("settings.shortcuts.next_track") || "Next track",
-      desc:
-        t("settings.shortcuts.next_track_desc") ||
-        "Skip to the next song in the queue.",
-    },
-    prevTrack: {
-      title: t("settings.shortcuts.prev_track") || "Previous track",
-      desc:
-        t("settings.shortcuts.prev_track_desc") ||
-        "Return to previous track or track start.",
-    },
-    seekForward: {
-      title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
-      desc:
-        t("settings.shortcuts.seek_forward_desc") ||
-        "Fast forward playback position by 5 seconds.",
-    },
-    seekBackward: {
-      title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
-      desc:
-        t("settings.shortcuts.seek_backward_desc") ||
-        "Rewind playback position by 5 seconds.",
-    },
-    volumeUp: {
-      title: t("settings.shortcuts.volume_up") || "Volume up",
-      desc:
-        t("settings.shortcuts.volume_up_desc") ||
-        "Increase playback volume by 5%.",
-    },
-    volumeDown: {
-      title: t("settings.shortcuts.volume_down") || "Volume down",
-      desc:
-        t("settings.shortcuts.volume_down_desc") ||
-        "Decrease playback volume by 5%.",
-    },
-    toggleMute: {
-      title: t("settings.shortcuts.toggle_mute") || "Mute / Unmute",
-      desc:
-        t("settings.shortcuts.toggle_mute_desc") || "Toggle audio mute state.",
-    },
-    search: {
-      title: t("settings.shortcuts.search") || "Search music",
-      desc:
-        t("settings.shortcuts.search_desc") ||
-        "Quickly open the search dialog.",
-    },
-    toggleQueue: {
-      title: t("settings.shortcuts.toggle_queue") || "Queue",
-      desc:
-        t("settings.shortcuts.toggle_queue_desc") ||
-        "Open or close the playback queue panel.",
-    },
-    audioQuality: {
-      title: t("settings.shortcuts.audio_quality"),
-      desc: t("settings.shortcuts.audio_quality_desc"),
-    },
-    toggleFullscreen: {
-      title:
-        t("settings.shortcuts.toggle_fullscreen") || "Fullscreen / Player view",
-      desc:
-        t("settings.shortcuts.toggle_fullscreen_desc") ||
-        "Toggle immersive fullscreen player view.",
-    },
-  };
+  > = useMemo(
+    () => ({
+      playPause: {
+        title: t("settings.shortcuts.play_pause") || "Play / Pause",
+        desc:
+          t("settings.shortcuts.play_pause_desc") || "Toggle audio playback.",
+      },
+      nextTrack: {
+        title: t("settings.shortcuts.next_track") || "Next track",
+        desc:
+          t("settings.shortcuts.next_track_desc") ||
+          "Skip to the next song in the queue.",
+      },
+      prevTrack: {
+        title: t("settings.shortcuts.prev_track") || "Previous track",
+        desc:
+          t("settings.shortcuts.prev_track_desc") ||
+          "Return to previous track or track start.",
+      },
+      seekForward: {
+        title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
+        desc:
+          t("settings.shortcuts.seek_forward_desc") ||
+          "Fast forward playback position by 5 seconds.",
+      },
+      seekBackward: {
+        title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
+        desc:
+          t("settings.shortcuts.seek_backward_desc") ||
+          "Rewind playback position by 5 seconds.",
+      },
+      volumeUp: {
+        title: t("settings.shortcuts.volume_up") || "Volume up",
+        desc:
+          t("settings.shortcuts.volume_up_desc") ||
+          "Increase playback volume by 5%.",
+      },
+      volumeDown: {
+        title: t("settings.shortcuts.volume_down") || "Volume down",
+        desc:
+          t("settings.shortcuts.volume_down_desc") ||
+          "Decrease playback volume by 5%.",
+      },
+      toggleMute: {
+        title: t("settings.shortcuts.toggle_mute") || "Mute / Unmute",
+        desc:
+          t("settings.shortcuts.toggle_mute_desc") ||
+          "Toggle audio mute state.",
+      },
+      search: {
+        title: t("settings.shortcuts.search") || "Search music",
+        desc:
+          t("settings.shortcuts.search_desc") ||
+          "Quickly open the search dialog.",
+      },
+      toggleQueue: {
+        title: t("settings.shortcuts.toggle_queue") || "Queue",
+        desc:
+          t("settings.shortcuts.toggle_queue_desc") ||
+          "Open or close the playback queue panel.",
+      },
+      audioQuality: {
+        title: t("settings.shortcuts.audio_quality"),
+        desc: t("settings.shortcuts.audio_quality_desc"),
+      },
+      toggleFullscreen: {
+        title:
+          t("settings.shortcuts.toggle_fullscreen") ||
+          "Fullscreen / Player view",
+        desc:
+          t("settings.shortcuts.toggle_fullscreen_desc") ||
+          "Toggle immersive fullscreen player view.",
+      },
+    }),
+    [t],
+  );
 
   // Labels for Miniplayer Actions
   const miniplayerLabels: Record<
     keyof MiniplayerShortcutsSettings,
     { title: string; desc: string }
-  > = {
-    playPause: {
-      title: t("settings.shortcuts.play_pause") || "Play / Pause",
-      desc:
-        t("settings.shortcuts.play_pause_desc") ||
-        "Toggle audio playback in miniplayer.",
-    },
-    nextTrack: {
-      title: t("settings.shortcuts.next_track") || "Next track",
-      desc: t("settings.shortcuts.next_track_desc") || "Skip to next song.",
-    },
-    prevTrack: {
-      title: t("settings.shortcuts.prev_track") || "Previous track",
-      desc:
-        t("settings.shortcuts.prev_track_desc") || "Return to previous song.",
-    },
-    likeTrack: {
-      title: t("settings.shortcuts.like_track") || "Like / Unlike",
-      desc:
-        t("settings.shortcuts.like_track_desc") ||
-        "Add or remove track from favorite tracks.",
-    },
-    seekForward: {
-      title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
-      desc:
-        t("settings.shortcuts.seek_forward_desc") ||
-        "Fast forward by 5 seconds.",
-    },
-    seekBackward: {
-      title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
-      desc:
-        t("settings.shortcuts.seek_backward_desc") || "Rewind by 5 seconds.",
-    },
-    volumeUp: {
-      title: t("settings.shortcuts.volume_up") || "Volume up",
-      desc: t("settings.shortcuts.volume_up_desc") || "Increase volume by 5%.",
-    },
-    volumeDown: {
-      title: t("settings.shortcuts.volume_down") || "Volume down",
-      desc:
-        t("settings.shortcuts.volume_down_desc") || "Decrease volume by 5%.",
-    },
-    focusMainWindow: {
-      title:
-        t("settings.shortcuts.focus_main_window") || "Switch to main window",
-      desc:
-        t("settings.shortcuts.focus_main_window_desc") ||
-        "Focus and bring the main application window to front.",
-    },
-  };
+  > = useMemo(
+    () => ({
+      playPause: {
+        title: t("settings.shortcuts.play_pause") || "Play / Pause",
+        desc:
+          t("settings.shortcuts.play_pause_desc") ||
+          "Toggle audio playback in miniplayer.",
+      },
+      nextTrack: {
+        title: t("settings.shortcuts.next_track") || "Next track",
+        desc: t("settings.shortcuts.next_track_desc") || "Skip to next song.",
+      },
+      prevTrack: {
+        title: t("settings.shortcuts.prev_track") || "Previous track",
+        desc:
+          t("settings.shortcuts.prev_track_desc") || "Return to previous song.",
+      },
+      likeTrack: {
+        title: t("settings.shortcuts.like_track") || "Like / Unlike",
+        desc:
+          t("settings.shortcuts.like_track_desc") ||
+          "Add or remove track from favorite tracks.",
+      },
+      seekForward: {
+        title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
+        desc:
+          t("settings.shortcuts.seek_forward_desc") ||
+          "Fast forward by 5 seconds.",
+      },
+      seekBackward: {
+        title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
+        desc:
+          t("settings.shortcuts.seek_backward_desc") || "Rewind by 5 seconds.",
+      },
+      volumeUp: {
+        title: t("settings.shortcuts.volume_up") || "Volume up",
+        desc:
+          t("settings.shortcuts.volume_up_desc") || "Increase volume by 5%.",
+      },
+      volumeDown: {
+        title: t("settings.shortcuts.volume_down") || "Volume down",
+        desc:
+          t("settings.shortcuts.volume_down_desc") || "Decrease volume by 5%.",
+      },
+      focusMainWindow: {
+        title:
+          t("settings.shortcuts.focus_main_window") || "Switch to main window",
+        desc:
+          t("settings.shortcuts.focus_main_window_desc") ||
+          "Focus and bring the main application window to front.",
+      },
+    }),
+    [t],
+  );
 
   // Conflict validation callback factories
   const validateGlobalCandidate = useCallback(
@@ -297,11 +310,15 @@ export function ShortcutsTab({
     [miniplayer, miniplayerLabels],
   );
 
-  const scopeTagLabels: Record<"global" | "mainApp" | "miniplayer", string> = {
-    global: t("settings.shortcuts.scope_global") || "Global",
-    mainApp: t("settings.shortcuts.scope_main_app") || "Main App",
-    miniplayer: t("settings.shortcuts.scope_overlay") || "Overlay",
-  };
+  const scopeTagLabels: Record<"global" | "mainApp" | "miniplayer", string> =
+    useMemo(
+      () => ({
+        global: t("settings.shortcuts.scope_global") || "Global",
+        mainApp: t("settings.shortcuts.scope_main_app") || "Main App",
+        miniplayer: t("settings.shortcuts.scope_overlay") || "Overlay",
+      }),
+      [t],
+    );
 
   const scopeTagStyles: Record<"global" | "mainApp" | "miniplayer", string> = {
     global: "text-amber-300",

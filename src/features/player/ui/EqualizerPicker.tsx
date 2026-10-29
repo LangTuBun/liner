@@ -225,7 +225,6 @@ export const EqualizerPicker = memo(function EqualizerPicker({
                   <button
                     key={preset.id}
                     type="button"
-                    title={t(`player.eq_preset_${preset.id}_hint`)}
                     onClick={() => applyGains(preset.gains)}
                     className={cn(
                       chipClass,
@@ -261,7 +260,6 @@ export const EqualizerPicker = memo(function EqualizerPicker({
                     <div key={preset.id} className="group relative min-w-0">
                       <button
                         type="button"
-                        title={preset.name}
                         onClick={() => applyGains(preset.gains)}
                         className={cn(
                           chipClass,

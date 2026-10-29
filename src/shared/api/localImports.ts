@@ -5,7 +5,12 @@ export const LOCAL_IMPORT_PREFIX = "local_";
 export interface LocalImportHandler {
   getJob(jobId: string): ImportJob | undefined;
   getReview(jobId: string): ImportReview[];
-  finalize(jobId: string, tracks: Track[], title?: string, description?: string): Promise<{ finalized: boolean }>;
+  finalize(
+    jobId: string,
+    tracks: Track[],
+    title?: string,
+    description?: string,
+  ): Promise<{ finalized: boolean }>;
 }
 
 let activeHandler: LocalImportHandler | null = null;

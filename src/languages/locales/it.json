@@ -404,7 +404,28 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Riverbero",
     "reverb_hint": "Spazio atmosferico e profondità ambientale",
-    "reverb_amount": "Riverbero"
+    "reverb_amount": "Riverbero",
+    "beta_visuals": {
+      "label": "Attenzione",
+      "ambient_title": "Ambient è in beta",
+      "ambient_body": "Questo brano ha uno sfondo animato tutto suo. È ancora in beta e può appesantire i dispositivi meno potenti: se il player scatta, scegli una modalità più leggera.",
+      "settings_title": "Qualità visiva",
+      "settings_body": "Scegli quanto si anima il player a schermo intero. Le modalità leggere risparmiano batteria e sono più fluide sui dispositivi meno potenti.",
+      "modes": {
+        "full": {
+          "name": "Tutti gli effetti",
+          "hint": "Tutto attivo, bordi del testo sfocati inclusi"
+        },
+        "balanced": {
+          "name": "Bilanciato",
+          "hint": "Sfondi animati, senza sfocatura del testo"
+        },
+        "lite": {
+          "name": "Leggero",
+          "hint": "Copertina fissa, testo semplice"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -744,7 +765,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Canale",
-      "support": "Supporto",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Sito web",
       "tagline": "Player desktop moderno per lo streaming musicale con testi sincronizzati per sillaba",
@@ -779,11 +800,6 @@
     },
     "connection": {
       "open_folder": "Apri la posizione di salvataggio"
-    },
-    "cover_glow": {
-      "title": "Bagliore copertina",
-      "description": "Bagliore sfocato della copertina dietro le pagine. Disattiva per uno sfondo semplice.",
-      "disabled_for_light": "Disattivato nel tema chiaro."
     }
   },
   "toast": {
@@ -932,6 +948,7 @@
   "track_sort": {
     "label": "Ordina",
     "default": "Predefinito",
+    "added": "Per data di aggiunta",
     "title": "Per titolo (A–Z)",
     "duration": "Per durata",
     "popularity": "Per popolarità"

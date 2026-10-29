@@ -16,7 +16,9 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
   const setEnabled = useDiscordSettingsStore((s) => s.setEnabled);
 
   const statusDisplayType = useDiscordSettingsStore((s) => s.statusDisplayType);
-  const setStatusDisplayType = useDiscordSettingsStore((s) => s.setStatusDisplayType);
+  const setStatusDisplayType = useDiscordSettingsStore(
+    (s) => s.setStatusDisplayType,
+  );
 
   const showTime = useDiscordSettingsStore((s) => s.showTime);
   const setShowTime = useDiscordSettingsStore((s) => s.setShowTime);
@@ -24,8 +26,12 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
   const showArtwork = useDiscordSettingsStore((s) => s.showArtwork);
   const setShowArtwork = useDiscordSettingsStore((s) => s.setShowArtwork);
 
-  const showArtistSmallImage = useDiscordSettingsStore((s) => s.showArtistSmallImage);
-  const setShowArtistSmallImage = useDiscordSettingsStore((s) => s.setShowArtistSmallImage);
+  const showArtistSmallImage = useDiscordSettingsStore(
+    (s) => s.showArtistSmallImage,
+  );
+  const setShowArtistSmallImage = useDiscordSettingsStore(
+    (s) => s.setShowArtistSmallImage,
+  );
 
   const showPaused = useDiscordSettingsStore((s) => s.showPaused);
   const setShowPaused = useDiscordSettingsStore((s) => s.setShowPaused);
@@ -33,8 +39,12 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
   const showButton = useDiscordSettingsStore((s) => s.showButton);
   const setShowButton = useDiscordSettingsStore((s) => s.setShowButton);
 
-  const showDownloadButton = useDiscordSettingsStore((s) => s.showDownloadButton);
-  const setShowDownloadButton = useDiscordSettingsStore((s) => s.setShowDownloadButton);
+  const showDownloadButton = useDiscordSettingsStore(
+    (s) => s.showDownloadButton,
+  );
+  const setShowDownloadButton = useDiscordSettingsStore(
+    (s) => s.setShowDownloadButton,
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -55,17 +65,14 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
           titleKey="settings.discord.enable.title"
           descKey="settings.discord.enable.description"
           searchQuery={searchQuery}
-          control={
-            <ToggleSwitch
-              checked={enabled}
-              onChange={setEnabled}
-            />
-          }
+          control={<ToggleSwitch checked={enabled} onChange={setEnabled} />}
         />
       </SettingSection>
 
       {/* Display Options */}
-      <SettingSection label={t("settings.discord.section_display") || "Display Options"}>
+      <SettingSection
+        label={t("settings.discord.section_display") || "Display Options"}
+      >
         {/* Status Line Format */}
         <SettingRow
           title={t("settings.discord.status_display.title") || "Status Format"}
@@ -80,7 +87,9 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
           control={
             mounted ? (
               <MenuSelect<DiscordStatusDisplayType>
-                aria-label={t("settings.discord.status_display.title") || "Status Format"}
+                aria-label={
+                  t("settings.discord.status_display.title") || "Status Format"
+                }
                 className="w-[210px]"
                 value={statusDisplayType}
                 onChange={setStatusDisplayType}
@@ -88,23 +97,32 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
                 options={[
                   {
                     value: "artist",
-                    label: t("settings.discord.status_display.artist") || "Artist (Default)",
+                    label:
+                      t("settings.discord.status_display.artist") ||
+                      "Artist (Default)",
                   },
                   {
                     value: "title",
-                    label: t("settings.discord.status_display.song") || "Song Title",
+                    label:
+                      t("settings.discord.status_display.song") || "Song Title",
                   },
                   {
                     value: "artist_title",
-                    label: t("settings.discord.status_display.artist_song") || "Artist - Song",
+                    label:
+                      t("settings.discord.status_display.artist_song") ||
+                      "Artist - Song",
                   },
                   {
                     value: "title_artist",
-                    label: t("settings.discord.status_display.song_artist") || "Song - Artist",
+                    label:
+                      t("settings.discord.status_display.song_artist") ||
+                      "Song - Artist",
                   },
                   {
                     value: "app",
-                    label: t("settings.discord.status_display.app") || "Liner (App name)",
+                    label:
+                      t("settings.discord.status_display.app") ||
+                      "Liner (App name)",
                   },
                 ]}
               />
@@ -116,7 +134,9 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
 
         {/* Timeline progress bar */}
         <SettingRow
-          title={t("settings.discord.show_timeline.title") || "Playback Timeline"}
+          title={
+            t("settings.discord.show_timeline.title") || "Playback Timeline"
+          }
           description={
             t("settings.discord.show_timeline.description") ||
             "Display interactive progress bar with elapsed and remaining track time."
@@ -155,7 +175,10 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
 
         {/* Artist small image */}
         <SettingRow
-          title={t("settings.discord.show_artist_image.title") || "Artist Photo Badge"}
+          title={
+            t("settings.discord.show_artist_image.title") ||
+            "Artist Photo Badge"
+          }
           description={
             t("settings.discord.show_artist_image.description") ||
             "Display the artist photo in a small circular badge on the bottom corner."
@@ -195,10 +218,15 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
       </SettingSection>
 
       {/* Profile Buttons */}
-      <SettingSection label={t("settings.discord.section_buttons") || "Profile Buttons"}>
+      <SettingSection
+        label={t("settings.discord.section_buttons") || "Profile Buttons"}
+      >
         {/* Listen on Liner button */}
         <SettingRow
-          title={t("settings.discord.show_button.title") || "'Listen on Liner' Button"}
+          title={
+            t("settings.discord.show_button.title") ||
+            "'Listen on Liner' Button"
+          }
           description={
             t("settings.discord.show_button.description") ||
             "Add an interactive button linking to the song on Liner."
@@ -217,7 +245,10 @@ export function DiscordTab({ searchQuery }: { searchQuery?: string }) {
 
         {/* Download Liner button */}
         <SettingRow
-          title={t("settings.discord.show_download_button.title") || "'Download Liner' Button"}
+          title={
+            t("settings.discord.show_download_button.title") ||
+            "'Download Liner' Button"
+          }
           description={
             t("settings.discord.show_download_button.description") ||
             "Add an interactive button linking to tryliner.fun to download the app."

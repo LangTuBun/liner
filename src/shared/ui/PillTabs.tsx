@@ -43,14 +43,15 @@ export function PillTabs<T extends string = string>({
     lg: "h-[42px] px-[20px] text-[14px] gap-[10px] rounded-2xl",
   }[size];
 
-  const containerPadding = size === "sm" ? "p-[3px] gap-[2px]" : "p-[4px] gap-[4px]";
+  const containerPadding =
+    size === "sm" ? "p-[3px] gap-[2px]" : "p-[4px] gap-[4px]";
 
   const containerStyles =
     variant === "glass"
       ? "bg-black/20 dark:bg-white/[0.06] backdrop-blur-xl border border-white/[0.08]"
       : variant === "expressive"
-      ? "bg-black/10 dark:bg-black/30 backdrop-blur-lg border border-white/[0.05]"
-      : "bg-bg-elevated";
+        ? "bg-black/10 dark:bg-black/30 backdrop-blur-lg border border-white/[0.05]"
+        : "bg-bg-elevated";
 
   return (
     <div
@@ -71,7 +72,9 @@ export function PillTabs<T extends string = string>({
             type="button"
             onClick={() => !isDisabled && onChange(tab.id)}
             className={`relative inline-flex items-center justify-center font-[500] leading-none transition-colors duration-200 border-0 bg-transparent outline-none cursor-pointer ${
-              isDisabled ? "opacity-40 cursor-not-allowed" : "active:scale-[0.97]"
+              isDisabled
+                ? "opacity-40 cursor-not-allowed"
+                : "active:scale-[0.97]"
             } ${sizeStyles} ${
               isActive
                 ? "text-black dark:text-[#0b101b] font-[600]"

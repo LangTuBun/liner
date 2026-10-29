@@ -1,19 +1,25 @@
-import type { Cover } from './cover';
-import type { Track, ApiTrack } from './track';
+import type { Cover } from "./cover";
+import type { Track, ApiTrack } from "./track";
 
-export type SearchType = 'all' | 'track' | 'artist' | 'album' | 'playlist';
+export type SearchType = "all" | "track" | "artist" | "album" | "playlist";
 
-export const SEARCH_TYPES: readonly SearchType[] = ['all', 'track', 'artist', 'album', 'playlist'];
+export const SEARCH_TYPES: readonly SearchType[] = [
+  "all",
+  "track",
+  "artist",
+  "album",
+  "playlist",
+];
 
 export interface SearchArtistItem {
-  type: 'artist';
+  type: "artist";
   id: string;
   name: string;
   cover?: Cover;
 }
 
 export interface SearchAlbumItem {
-  type: 'album';
+  type: "album";
   id: string;
   title: string;
   artists: { id: string; name: string }[];
@@ -22,7 +28,7 @@ export interface SearchAlbumItem {
 }
 
 export interface SearchPlaylistItem {
-  type: 'playlist';
+  type: "playlist";
   id: string;
   title: string;
   author?: string;
@@ -30,7 +36,7 @@ export interface SearchPlaylistItem {
 }
 
 export type SearchResult =
-  | (Track & { type: 'track'; viewer?: { liked: boolean } })
+  | (Track & { type: "track"; viewer?: { liked: boolean } })
   | SearchArtistItem
   | SearchAlbumItem
   | SearchPlaylistItem;
@@ -54,13 +60,13 @@ export interface ArtistAlbum {
 export type ApiArtistAlbum = ArtistAlbum;
 
 export interface ArtistRelease extends ArtistAlbum {
-  releaseType: 'single' | 'ep';
+  releaseType: "single" | "ep";
 }
 
 export type ApiArtistRelease = ArtistRelease;
 
 export interface ArtistDetails {
-  type: 'artist';
+  type: "artist";
   id: string;
   name: string;
   bio?: string;
@@ -78,7 +84,7 @@ export interface ArtistDetails {
 export type ApiArtistDetails = ArtistDetails;
 
 export interface AlbumDetails {
-  type: 'album';
+  type: "album";
   id: string;
   title: string;
   artists: { id: string; name: string }[];
@@ -92,7 +98,7 @@ export interface AlbumDetails {
 export type ApiAlbumDetails = AlbumDetails;
 
 export interface CatalogPlaylistDetails {
-  type: 'playlist';
+  type: "playlist";
   id: string;
   title: string;
   author?: string;

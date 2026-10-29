@@ -22,12 +22,12 @@ tokens instead of raw hex, shared primitives from `@/shared/ui`.
 
 Use the theme tokens from `src/app/globals.css`. They switch with the theme.
 
-| Use | Token |
-|---|---|
-| Text | `text-text-primary`, `text-text-secondary`, `text-text-tertiary` |
-| Raised surfaces (toasts, popovers) | `bg-bg-elevated`, `bg-bg-panel` |
-| Hairlines and quiet fills | `border-alpha-14`, `border-alpha-33` (as `bg-`, `text-` or `border-`) |
-| Accent | `accent-primary` (liked heart, active state) |
+| Use                                | Token                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| Text                               | `text-text-primary`, `text-text-secondary`, `text-text-tertiary`      |
+| Raised surfaces (toasts, popovers) | `bg-bg-elevated`, `bg-bg-panel`                                       |
+| Hairlines and quiet fills          | `border-alpha-14`, `border-alpha-33` (as `bg-`, `text-` or `border-`) |
+| Accent                             | `accent-primary` (liked heart, active state)                          |
 
 Glass tints (the same everywhere, so chips and buttons read as one surface):
 

@@ -1,8 +1,14 @@
 import { forwardRef } from "react";
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "ghost" | "secondary" | "outline" | "glass" | "glass-primary" | "glass-action";
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?:
+    | "primary"
+    | "ghost"
+    | "secondary"
+    | "outline"
+    | "glass"
+    | "glass-primary"
+    | "glass-action";
   size?: "default" | "sm" | "lg" | "icon";
 }
 

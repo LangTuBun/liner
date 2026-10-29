@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   useCallback,
   useEffect,
@@ -15,8 +15,6 @@ import {
   FolderCheckFill,
   ShareForwardLine,
   PlaylistFill,
-  PlaylistLine,
-  DiscLine,
   MusicLine,
   CheckLine,
   More1Fill,
@@ -25,6 +23,7 @@ import { LuShuffle } from "react-icons/lu";
 import Button from "@/shared/ui/Button";
 import SongCardWithMenu from "@/features/player/ui/SongCardWithMenu";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import { preloadCoverArt } from "@/features/covers/lib/coverArt";
 import { DailyMixCover } from "@/features/home";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
@@ -47,6 +46,7 @@ import { useModalStore } from "@/features/library";
 import { buildShareUrl } from "@/shared/utils/share";
 import { useExternalItems } from "@/features/library/hooks";
 import { useCollection } from "../hooks/useCollection";
+import { readCollectionPreview } from "../lib/collectionPreview";
 import {
   useTrackSearch,
   TrackSearchField,
@@ -64,9 +64,14 @@ function CollectionContent() {
   const id = searchParams.get("id");
   const { t } = useTranslation();
 
+  const location = useLocation();
+  const preview = readCollectionPreview(location.state);
   const { data, loading } = useCollection(type, id);
   const classicSurfaces = useClassicSurfaces();
-  usePageBackdrop(data?.coverUrl, type === "playlist" ? { dim: 0.05 } : undefined);
+  usePageBackdrop(
+    preview?.coverUrl || data?.coverUrl,
+    type === "playlist" ? { dim: 0.05 } : undefined,
+  );
   const isSingleArtistAlbum = useMemo(() => {
     if (type === "playlist" || !data || data.tracks.length === 0) return false;
     const first = data.tracks[0].artists;
@@ -123,19 +128,7 @@ function CollectionContent() {
       }
     }, 150);
 
-    const promises = urlsToPreload.map(
-      (url) =>
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = url;
-          if (img.complete) {
-            resolve();
-            return;
-          }
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }),
-    );
+    const promises = urlsToPreload.map((url) => preloadCoverArt(url));
 
     Promise.all(promises).then(() => {
       if (active && !settled) {
@@ -288,7 +281,10 @@ function CollectionContent() {
               className="relative z-10 flex flex-col h-full w-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain box-border pt-(--page-inset-top) pb-(--page-inset-bottom)"
               style={{ willChange: "scroll-position" }}
             >
-              <div className="shrink-0 pl-[16px] pr-[12px] pt-[8px]" data-no-window-drag>
+              <div
+                className="shrink-0 pl-[16px] pr-[12px] pt-[8px]"
+                data-no-window-drag
+              >
                 <EntityHero
                   cover={
                     data.coverUrl ? (
@@ -354,16 +350,12 @@ function CollectionContent() {
                   meta={
                     <div className="flex items-center flex-wrap gap-[6px]">
                       {data.year && (
-                        <div
-                          className={HERO_CHIP_CLASS}
-                        >
+                        <div className={HERO_CHIP_CLASS}>
                           <span>{data.year}</span>
                         </div>
                       )}
 
-                      <div
-                        className={HERO_CHIP_CLASS}
-                      >
+                      <div className={HERO_CHIP_CLASS}>
                         <MusicLine
                           size={13}
                           className="text-text-secondary shrink-0"
@@ -487,29 +479,29 @@ function CollectionContent() {
                             ...(isDailyMix
                               ? []
                               : [
-                            {
-                              id: "library",
-                              icon: inLibrary ? (
-                                <FolderCheckFill size={16} />
-                              ) : (
-                                <NewFolderLine size={16} />
-                              ),
-                              label: inLibrary
-                                ? t("common.remove_from_library")
-                                : t("common.save_to_library"),
-                              onClick: handleSaveToLibrary,
-                            },
+                                  {
+                                    id: "library",
+                                    icon: inLibrary ? (
+                                      <FolderCheckFill size={16} />
+                                    ) : (
+                                      <NewFolderLine size={16} />
+                                    ),
+                                    label: inLibrary
+                                      ? t("common.remove_from_library")
+                                      : t("common.save_to_library"),
+                                    onClick: handleSaveToLibrary,
+                                  },
                                 ]),
                             ...(losslessItem ? [losslessItem] : []),
                             ...(isDailyMix
                               ? []
                               : [
-                            {
-                              id: "share",
-                              icon: <ShareForwardLine size={16} />,
-                              label: t("common.share"),
-                              onClick: handleShare,
-                            },
+                                  {
+                                    id: "share",
+                                    icon: <ShareForwardLine size={16} />,
+                                    label: t("common.share"),
+                                    onClick: handleShare,
+                                  },
                                 ]),
                           ]}
                         />
@@ -589,7 +581,7 @@ function CollectionContent() {
             }`}
             onTransitionEnd={() => setSkeletonExited(true)}
           >
-            <CollectionPageSkeleton isAlbum={isAlbum} />
+            <CollectionPageSkeleton isAlbum={isAlbum} preview={preview} />
           </div>
         )}
       </div>

@@ -20,7 +20,12 @@ describe("playerEngine.stopAndClear", () => {
   it("forgets the old account's track and queue but keeps player settings", async () => {
     vi.spyOn(api, "recordPlaybackEvent").mockResolvedValue(undefined as never);
     await playerEngine.playTrack(track("a"), [track("a"), track("b")]);
-    usePlayerStore.setState({ volume: 0.4, repeat: "all", fullscreen: true, positionMs: 42_000 });
+    usePlayerStore.setState({
+      volume: 0.4,
+      repeat: "all",
+      fullscreen: true,
+      positionMs: 42_000,
+    });
 
     await playerEngine.stopAndClear();
 
@@ -45,16 +50,23 @@ describe("playerEngine.stopAndClear", () => {
 
     await playerEngine.stopAndClear();
 
-    const persisted = JSON.parse(localStorage.getItem("liner_player_session_v2") ?? "{}");
+    const persisted = JSON.parse(
+      localStorage.getItem("liner_player_session_v2") ?? "{}",
+    );
     expect(persisted.state?.currentTrack ?? null).toBeNull();
     expect(persisted.state?.queue ?? []).toEqual([]);
   });
 
   it("reports the last listen before clearing, and waits for it", async () => {
     let finishReport: () => void = () => {};
-    const report = vi.spyOn(api, "recordPlaybackEvent").mockImplementation(
-      () => new Promise((resolve) => (finishReport = () => resolve(undefined as never))),
-    );
+    const report = vi
+      .spyOn(api, "recordPlaybackEvent")
+      .mockImplementation(
+        () =>
+          new Promise(
+            (resolve) => (finishReport = () => resolve(undefined as never)),
+          ),
+      );
     let now = 1_000_000;
     vi.spyOn(Date, "now").mockImplementation(() => now);
     await playerEngine.playTrack(track("d"), [track("d")]);
@@ -69,7 +81,9 @@ describe("playerEngine.stopAndClear", () => {
       done = true;
     });
     await Promise.resolve();
-    expect(report).toHaveBeenCalledWith(expect.objectContaining({ trackId: "d" }));
+    expect(report).toHaveBeenCalledWith(
+      expect.objectContaining({ trackId: "d" }),
+    );
     expect(done).toBe(false);
     finishReport();
     await stopping;

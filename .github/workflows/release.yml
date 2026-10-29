@@ -3,9 +3,8 @@ name: Build & Release
 on:
   push:
     tags:
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+*'
-  workflow_dispatch:
+      - "v*"
+      - "[0-9]+.[0-9]+.[0-9]+*"
 
 permissions:
   contents: write
@@ -27,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -64,7 +63,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -111,7 +110,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -137,6 +136,7 @@ jobs:
     name: Publish Release
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
+    environment: release
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
@@ -144,16 +144,23 @@ jobs:
         with:
           path: artifacts
 
+      - name: Write checksums
+        run: |
+          cd artifacts
+          sha256sum */*.AppImage */*.deb */*.exe */*.dmg */*.zip 2>/dev/null | sed 's#  [^/]*/#  #' > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: |
             artifacts/linux-packages/*.AppImage
             artifacts/linux-packages/*.deb
             artifacts/windows-installer/*.exe
             artifacts/macos-packages/*.dmg
             artifacts/macos-packages/*.zip
+            artifacts/SHA256SUMS.txt
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

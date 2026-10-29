@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CloseCircleFill } from "@mingcute/react";
-import { ResetIcon } from "./ResetIcon";
+
 import { useTranslation } from "@/languages";
 import {
   getEnglishKeyFromEvent,
   normalizeShortcutToEnglish,
-  formatAcceleratorForDisplay,
   getAcceleratorKeycaps,
   isMacPlatform,
 } from "../utils/shortcutMatching";
@@ -27,9 +26,7 @@ export interface ShortcutRecorderProps {
 
 export function ShortcutRecorder({
   value,
-  defaultValue,
   onChange,
-  onReset,
   isGlobal = false,
   validateCandidate,
   disabled = false,
@@ -41,14 +38,17 @@ export function ShortcutRecorder({
   const isControlled = isRecordingProp !== undefined;
   const isRecording = isControlled ? isRecordingProp : internalIsRecording;
 
-  const setIsRecording = (val: boolean | ((prev: boolean) => boolean)) => {
-    const nextVal = typeof val === "function" ? val(isRecording) : val;
-    if (isControlled) {
-      onRecordingChange?.(nextVal);
-    } else {
-      setInternalIsRecording(nextVal);
-    }
-  };
+  const setIsRecording = useCallback(
+    (val: boolean | ((prev: boolean) => boolean)) => {
+      const nextVal = typeof val === "function" ? val(isRecording) : val;
+      if (isControlled) {
+        onRecordingChange?.(nextVal);
+      } else {
+        setInternalIsRecording(nextVal);
+      }
+    },
+    [isRecording, isControlled, onRecordingChange],
+  );
 
   const [heldModifiers, setHeldModifiers] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -147,7 +147,10 @@ export function ShortcutRecorder({
           const conflictTemplate =
             t("settings.shortcuts.conflict_error") ||
             `Already used by "${conflict.conflictWith}"`;
-          const formatted = conflictTemplate.replace("{action}", conflict.conflictWith);
+          const formatted = conflictTemplate.replace(
+            "{action}",
+            conflict.conflictWith,
+          );
           triggerError(formatted);
           return;
         }
@@ -169,7 +172,10 @@ export function ShortcutRecorder({
 
     const handleMouseDown = (e: MouseEvent) => {
       if (isControlled) return;
-      if (recordButtonRef.current && !recordButtonRef.current.contains(e.target as Node)) {
+      if (
+        recordButtonRef.current &&
+        !recordButtonRef.current.contains(e.target as Node)
+      ) {
         setHeldModifiers([]);
         setErrorMessage(null);
         setIsRecording(false);
@@ -193,42 +199,18 @@ export function ShortcutRecorder({
       window.removeEventListener("mousedown", handleMouseDown, true);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [isRecording, isGlobal, validateCandidate, onChange, t, isControlled]);
-
-  const hasChanged = value !== defaultValue;
+  }, [
+    isRecording,
+    isGlobal,
+    validateCandidate,
+    onChange,
+    t,
+    isControlled,
+    setIsRecording,
+  ]);
 
   return (
     <div className="relative flex items-center gap-1.5 shrink-0 h-[30px]">
-      {/* Per-row reset button hidden for now */}
-      {/*
-      <AnimatePresence>
-        {hasChanged && !disabled && (
-          <motion.button
-            type="button"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.1, ease: "easeOut" }}
-            aria-label={
-              t("settings.shortcuts.reset_tooltip", {
-                shortcut: formatAcceleratorForDisplay(defaultValue),
-              }) || `Reset to ${formatAcceleratorForDisplay(defaultValue)}`
-            }
-            onClick={(e) => {
-              e.stopPropagation();
-              setHeldModifiers([]);
-              setErrorMessage(null);
-              setIsRecording(false);
-              onReset();
-            }}
-            className="h-[24px] w-[24px] rounded-md border-0 outline-none flex items-center justify-center bg-border-alpha-14 hover:bg-border-alpha-20 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer select-none active:scale-[0.95] p-0 shrink-0"
-          >
-            <ResetIcon size={12.5} className="-top-[0.62px] left-[0.3px]" style={{ top: "-0.62px", left: "0.3px" }} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-      */}
-
       <button
         ref={recordButtonRef}
         type="button"
@@ -273,7 +255,9 @@ export function ShortcutRecorder({
               {heldModifiers.length > 0
                 ? `${heldModifiers.join(" + ")} + ...`
                 : t("settings.shortcuts.press_keys") || "···"}
-              {errorMessage && <CloseCircleFill size={15} className="shrink-0 opacity-80" />}
+              {errorMessage && (
+                <CloseCircleFill size={15} className="shrink-0 opacity-80" />
+              )}
             </motion.span>
           ) : (
             <motion.div

@@ -13,6 +13,8 @@ export {
 export {
   lyricsCache,
   shouldCacheLyricsCandidate,
+  isProvisionalLyricsCandidate,
+  mergeLyricsProvider,
   compareLyricsCandidates,
   isBetterLyricsCandidate,
   isWordLevelSync,

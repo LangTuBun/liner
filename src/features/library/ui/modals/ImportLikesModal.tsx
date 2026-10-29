@@ -5,13 +5,15 @@ import { DialogActions, DialogButton, DialogHeader } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 import { useModalStore } from "../../store/modalStore";
 import { useImportStore } from "../../store/importStore";
-import { api, resolveApiErrorMessage } from "@/shared/api";
+import { resolveApiErrorMessage } from "@/shared/api";
 
 export default function ImportLikesModal() {
   const { t } = useTranslation();
 
   const open = useModalStore((state) => state.importLikesOpen);
-  const initialUsername = useModalStore((state) => state.importLikesInitialUsername);
+  const initialUsername = useModalStore(
+    (state) => state.importLikesInitialUsername,
+  );
   const close = useModalStore((state) => state.closeImportLikes);
 
   const [username, setUsername] = useState("");
@@ -35,9 +37,10 @@ export default function ImportLikesModal() {
       return;
     }
 
-    const sourceUrl = trimmed.startsWith("http://") || trimmed.startsWith("https://")
-      ? trimmed
-      : `https://soundcloud.com/${encodeURIComponent(trimmed)}/likes`;
+    const sourceUrl =
+      trimmed.startsWith("http://") || trimmed.startsWith("https://")
+        ? trimmed
+        : `https://soundcloud.com/${encodeURIComponent(trimmed)}/likes`;
 
     setImportError("");
     setImporting(true);
@@ -46,14 +49,20 @@ export default function ImportLikesModal() {
       await useImportStore.getState().startImport(sourceUrl);
       close();
     } catch (err: unknown) {
-      setImportError(resolveApiErrorMessage(err, t, "common.failed_import_playlist"));
+      setImportError(
+        resolveApiErrorMessage(err, t, "common.failed_import_playlist"),
+      );
     } finally {
       setImporting(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={360}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={360}
+    >
       <div className="flex flex-col gap-[14px] px-[20px] pb-[20px]">
         <DialogHeader
           title={t("common.import_soundcloud_likes")}

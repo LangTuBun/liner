@@ -1,5 +1,12 @@
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useState, Suspense, useRef, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  Suspense,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   PlayFill,
   NewFolderLine,
@@ -13,6 +20,7 @@ import AlbumCard from "@/features/collection/ui/AlbumCard";
 import ReleaseCard from "@/features/collection/ui/ReleaseCard";
 import ScrollableRow from "@/shared/ui/ScrollableRow";
 import CoverImage from "@/features/covers/ui/CoverImage";
+import { preloadCoverArt } from "@/features/covers/lib/coverArt";
 import { playerEngine } from "@/features/player";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Track } from "@/shared/types";
@@ -36,7 +44,10 @@ import { useArtist } from "../hooks/useArtist";
 function stripMarkdown(text: string): string {
   return text
     .replace(/(Дискография)(Официальный)/g, "$1\n\n$2")
-    .replace(/(сайт|ВКонтакте|канал|#\d|TikTok)(Официальный|Сообщество|Страница|Телеграм|YouTube|TikTok|Twitch)/g, "$1, $2")
+    .replace(
+      /(сайт|ВКонтакте|канал|#\d|TikTok)(Официальный|Сообщество|Страница|Телеграм|YouTube|TikTok|Twitch)/g,
+      "$1, $2",
+    )
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
@@ -92,9 +103,6 @@ function ArtistContent() {
     if (!data) return [];
     const urls = new Set<string>();
     if (data.coverUrl) urls.add(data.coverUrl);
-    for (const track of data.tracks.slice(0, 8)) {
-      if (track.coverUrl) urls.add(track.coverUrl);
-    }
     return Array.from(urls);
   }, [data]);
 
@@ -115,21 +123,9 @@ function ArtistContent() {
         settled = true;
         setImagesLoaded(true);
       }
-    }, 1000);
+    }, 300);
 
-    const promises = urlsToPreload.map(
-      (url) =>
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = url;
-          if (img.complete) {
-            resolve();
-            return;
-          }
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }),
-    );
+    const promises = urlsToPreload.map((url) => preloadCoverArt(url));
 
     Promise.all(promises).then(() => {
       if (active && !settled) {
@@ -284,9 +280,7 @@ function ArtistContent() {
                         draggable={false}
                       />
                     ) : (
-                      <span
-                        className="text-[56px] font-[700] text-border-alpha-33"
-                      >
+                      <span className="text-[56px] font-[700] text-border-alpha-33">
                         {data.title.charAt(0)}
                       </span>
                     )
@@ -401,7 +395,10 @@ function ArtistContent() {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.28, ease: [0.25, 1, 0.5, 1] }}
+                            transition={{
+                              duration: 0.28,
+                              ease: [0.25, 1, 0.5, 1],
+                            }}
                             className="overflow-hidden flex flex-col"
                           >
                             {data.tracks.slice(5).map(renderTrack)}

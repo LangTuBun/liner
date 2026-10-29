@@ -29,7 +29,6 @@ export interface Shutdown {
 
 export function createShutdown(deps: ShutdownDeps): Shutdown {
   let started = false;
-  let timer: ReturnType<typeof setTimeout> | null = null;
 
   const begin = () => {
     if (started) return;
@@ -41,8 +40,7 @@ export function createShutdown(deps: ShutdownDeps): Shutdown {
         console.error("[shutdown] cleanup step failed:", err);
       }
     }
-    timer = setTimeout(() => {
-      timer = null;
+    setTimeout(() => {
       console.warn("[shutdown] graceful quit did not finish, forcing exit");
       deps.forceExit();
     }, deps.watchdogMs);

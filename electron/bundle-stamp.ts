@@ -45,12 +45,19 @@ function describeUpdate(update: BundleUpdateState): string {
   }
 }
 
-export function formatBundleStamp(info: BundleVersionInfo, update: BundleUpdateState): string {
-  const build = info.isOta && info.sha256 ? ` ota ${info.sha256.slice(0, 7)}` : "";
+export function formatBundleStamp(
+  info: BundleVersionInfo,
+  update: BundleUpdateState,
+): string {
+  const build =
+    info.isOta && info.sha256 ? ` ota ${info.sha256.slice(0, 7)}` : "";
   return `${info.version}${build} · ${describeUpdate(update)}`;
 }
 
-export function createBundleErrorStamp(source: BundleStampSource, options: BundleStampOptions) {
+export function createBundleErrorStamp(
+  source: BundleStampSource,
+  options: BundleStampOptions,
+) {
   const quietMs = options.quietMs ?? DEFAULT_QUIET_MS;
   const minIntervalMs = options.minIntervalMs ?? DEFAULT_MIN_INTERVAL_MS;
   const updateCacheMs = options.updateCacheMs ?? DEFAULT_UPDATE_CACHE_MS;
@@ -62,9 +69,13 @@ export function createBundleErrorStamp(source: BundleStampSource, options: Bundl
   let cachedUpdate: { state: BundleUpdateState; at: number } | null = null;
 
   const readUpdate = async (): Promise<BundleUpdateState> => {
-    const cacheMs = cachedUpdate?.state.kind === "unknown" ? unknownCacheMs : updateCacheMs;
-    if (cachedUpdate && now() - cachedUpdate.at < cacheMs) return cachedUpdate.state;
-    const state = await source.peekUpdate().catch((): BundleUpdateState => ({ kind: "unknown" }));
+    const cacheMs =
+      cachedUpdate?.state.kind === "unknown" ? unknownCacheMs : updateCacheMs;
+    if (cachedUpdate && now() - cachedUpdate.at < cacheMs)
+      return cachedUpdate.state;
+    const state = await source
+      .peekUpdate()
+      .catch((): BundleUpdateState => ({ kind: "unknown" }));
     cachedUpdate = { state, at: now() };
     return state;
   };
@@ -72,7 +83,9 @@ export function createBundleErrorStamp(source: BundleStampSource, options: Bundl
   const emitStamp = async () => {
     timer = null;
     lastEmitAt = now();
-    options.emit(formatBundleStamp(source.getVersionInfo(), await readUpdate()));
+    options.emit(
+      formatBundleStamp(source.getVersionInfo(), await readUpdate()),
+    );
   };
 
   const onRendererError = () => {

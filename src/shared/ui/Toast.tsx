@@ -14,16 +14,10 @@ import { useTranslation } from "@/languages";
 import { api } from "@/shared/api";
 import { useImportStore } from "@/features/library/store/importStore";
 import { useModalStore } from "@/features/library/store/modalStore";
-import { notifyLibraryChanged } from "@/features/library/hooks/usePlaylists";
 import ScrollableText from "./ScrollableText";
 
 export type ToastVariant =
-  | "success"
-  | "error"
-  | "info"
-  | "loading"
-  | "checkmark"
-  | "loader";
+  "success" | "error" | "info" | "loading" | "checkmark" | "loader";
 
 export interface ToastAction {
   label: string;
@@ -109,7 +103,10 @@ export function showToast(
   maybeOptions?: ToastOptions,
 ) {
   if (typeof window === "undefined") return;
-  const { variant, options } = normalizeToastArgs(variantOrOptions, maybeOptions);
+  const { variant, options } = normalizeToastArgs(
+    variantOrOptions,
+    maybeOptions,
+  );
   window.dispatchEvent(
     new CustomEvent("liner:toast", {
       detail: { message, variant, options },
@@ -149,12 +146,24 @@ const SWIPE_DISMISS_VELOCITY_Y = -120;
 function CopyIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-      <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <rect
+        x="9"
+        y="9"
+        width="13"
+        height="13"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path
+        d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
-
 
 function CheckIcon() {
   return (
@@ -225,34 +234,6 @@ function SpinnerIcon() {
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M18 6L6 18M6 6l12 12"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function useSafeTranslation() {
   try {
     return useTranslation();
@@ -291,8 +272,12 @@ function ImportToastBridge({
   const openImportReview = useModalStore((state) => state.openImportReview);
   const isReviewOpen = useModalStore((state) => state.importReviewOpen);
 
-  const [dismissedQueuedId, setDismissedQueuedId] = useState<string | null>(null);
-  const [dismissedProgressId, setDismissedProgressId] = useState<string | null>(null);
+  const [dismissedQueuedId, setDismissedQueuedId] = useState<string | null>(
+    null,
+  );
+  const [dismissedProgressId, setDismissedProgressId] = useState<string | null>(
+    null,
+  );
   const [openingReview, setOpeningReview] = useState(false);
 
   const handleOpenReview = useCallback(async () => {
@@ -308,33 +293,15 @@ function ImportToastBridge({
       openImportReview(job.id, res.items, approvedTracks ?? undefined);
     } catch {
       const { reviewItems, approvedTracks } = useImportStore.getState();
-      openImportReview(job.id, reviewItems ?? undefined, approvedTracks ?? undefined);
+      openImportReview(
+        job.id,
+        reviewItems ?? undefined,
+        approvedTracks ?? undefined,
+      );
     } finally {
       setOpeningReview(false);
     }
   }, [job, openingReview, openImportReview]);
-
-  const finalizeWithMatches = useCallback(async (jobId: string) => {
-    try {
-      const autoMatchedTracks =
-        useModalStore.getState().importReviewApprovedTracks ||
-        (useImportStore.getState().job?.id === jobId ? useImportStore.getState().approvedTracks : null) ||
-        [];
-      if (autoMatchedTracks.length === 0) return;
-      const jobMeta = useImportStore.getState().job;
-      const res = await api.skipPlaylistImportReview(
-        jobId,
-        autoMatchedTracks,
-        jobMeta?.title,
-        jobMeta?.description,
-      );
-      if (res.finalized) {
-        const finalJob = await api.getPlaylistImport(jobId).catch(() => null);
-        useImportStore.setState({ job: finalJob ?? null, isPolling: false, reviewItems: null, approvedTracks: null });
-        notifyLibraryChanged();
-      }
-    } catch {}
-  }, []);
 
   const shouldShow =
     Boolean(job) &&
@@ -357,7 +324,8 @@ function ImportToastBridge({
     }
     if (isRunning) {
       if (job.result?.total) {
-        const processed = (job.result.imported ?? 0) + (job.result.skipped ?? 0);
+        const processed =
+          (job.result.imported ?? 0) + (job.result.skipped ?? 0);
         return t("import.status_running_progress", {
           count: processed,
           total: job.result.total,
@@ -374,7 +342,16 @@ function ImportToastBridge({
       return t("import.status_completed_sub_empty");
     }
     return "";
-  }, [job, isFailed, isQueued, isRunning, isAwaiting, isFinalizing, isCompleted, t]);
+  }, [
+    job,
+    isFailed,
+    isQueued,
+    isRunning,
+    isAwaiting,
+    isFinalizing,
+    isCompleted,
+    t,
+  ]);
 
   const getTitle = useCallback(() => {
     if (isQueued) {
@@ -441,7 +418,9 @@ function ImportToastBridge({
           ? {
               label: t("import.view_playlist"),
               onClick: () => {
-                navigate(`/library/playlist?id=${encodeURIComponent(job.playlistId!)}`);
+                navigate(
+                  `/library/playlist?id=${encodeURIComponent(job.playlistId!)}`,
+                );
                 reset();
               },
             }
@@ -561,22 +540,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       variantOrOptions?: ToastVariant | ToastOptions,
       options?: ToastOptions,
     ) => toastCore(message, variantOrOptions, options);
-    fn.success = (msg: string, opts?: ToastOptions) => toastCore(msg, "success", opts);
-    fn.checkmark = (msg: string, opts?: ToastOptions) => toastCore(msg, "checkmark", opts);
-    fn.loader = (msg: string, opts?: ToastOptions) => toastCore(msg, "loader", opts);
-    fn.loading = (msg: string, opts?: ToastOptions) => toastCore(msg, "loading", opts);
-    fn.error = (msg: string, opts?: ToastOptions) => toastCore(msg, "error", opts);
-    fn.info = (msg: string, opts?: ToastOptions) => toastCore(msg, "info", opts);
+    fn.success = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "success", opts);
+    fn.checkmark = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "checkmark", opts);
+    fn.loader = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "loader", opts);
+    fn.loading = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "loading", opts);
+    fn.error = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "error", opts);
+    fn.info = (msg: string, opts?: ToastOptions) =>
+      toastCore(msg, "info", opts);
     return fn as ToastCallable;
   }, [toastCore]);
 
   useEffect(() => {
     const handleCustomToast = (e: Event) => {
-      const detail = (e as CustomEvent<{
-        message: string;
-        variant?: ToastVariant;
-        options?: ToastOptions;
-      }>).detail;
+      const detail = (
+        e as CustomEvent<{
+          message: string;
+          variant?: ToastVariant;
+          options?: ToastOptions;
+        }>
+      ).detail;
       if (detail && detail.message) {
         toastCore(detail.message, detail.variant, detail.options);
       }
@@ -593,7 +580,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       }
     };
     window.addEventListener("liner:toast-dismiss", handleDismissToast);
-    return () => window.removeEventListener("liner:toast-dismiss", handleDismissToast);
+    return () =>
+      window.removeEventListener("liner:toast-dismiss", handleDismissToast);
   }, [remove]);
 
   const visibleToasts = toasts.slice(0, 3);
@@ -634,7 +622,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (deckHovered) {
       if (targetTimeRef.current !== null) {
-        pausedRemainingRef.current = Math.max(0, targetTimeRef.current - Date.now());
+        pausedRemainingRef.current = Math.max(
+          0,
+          targetTimeRef.current - Date.now(),
+        );
       }
     } else {
       if (pausedRemainingRef.current !== null) {
@@ -653,7 +644,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const isPipelinePaused = deckHovered || isBottomPermanent || !bottomToast || timedCount === 0;
+  const isPipelinePaused =
+    deckHovered || isBottomPermanent || !bottomToast || timedCount === 0;
 
   useEffect(() => {
     if (isPipelinePaused || !bottomToast) return;
@@ -672,12 +664,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return () => {
       clearTimeout(timer);
     };
-  }, [isPipelinePaused, bottomId, bottomDuration, bottomToast, timedCount, topId, remove]);
+  }, [
+    isPipelinePaused,
+    bottomId,
+    bottomDuration,
+    bottomToast,
+    timedCount,
+    topId,
+    remove,
+  ]);
 
   return (
     <ToastContext.Provider value={{ toast: toastCallable, dismiss: remove }}>
       {children}
-      <div data-toast className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+      <div
+        data-toast
+        className="fixed top-[44px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"
+      >
         <motion.div
           layout
           transition={{ type: "spring", stiffness: 480, damping: 38 }}
@@ -689,7 +692,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 key={item.id}
                 item={item}
                 index={index}
-                batchSize={toasts.length}
                 isTop={index === 0}
                 activeCardWidth={activeCardWidth}
                 activeCardHeight={activeCardHeight}
@@ -709,7 +711,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 function NotificationCard({
   item,
   index,
-  batchSize,
   isTop,
   activeCardWidth,
   activeCardHeight,
@@ -719,7 +720,6 @@ function NotificationCard({
 }: {
   item: Toast;
   index: number;
-  batchSize: number;
   isTop: boolean;
   activeCardWidth: number | null;
   activeCardHeight: number | null;
@@ -729,7 +729,6 @@ function NotificationCard({
 }) {
   const { t } = useSafeTranslation();
   const [hovered, setHovered] = useState(false);
-  const [dragging, setDragging] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -741,8 +740,14 @@ function NotificationCard({
     }
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => {
-      if (cardRef.current && (cardRef.current.offsetWidth > 0 || cardRef.current.offsetHeight > 0)) {
-        onMeasureActive(cardRef.current.offsetWidth, cardRef.current.offsetHeight);
+      if (
+        cardRef.current &&
+        (cardRef.current.offsetWidth > 0 || cardRef.current.offsetHeight > 0)
+      ) {
+        onMeasureActive(
+          cardRef.current.offsetWidth,
+          cardRef.current.offsetHeight,
+        );
       }
     });
     ro.observe(el);
@@ -799,11 +804,9 @@ function NotificationCard({
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0.85, bottom: 0.08 }}
       onDragStart={() => {
-        setDragging(true);
         onDeckHover?.(true);
       }}
       onDragEnd={(_, info) => {
-        setDragging(false);
         onDeckHover?.(false);
         if (
           info.offset.y < SWIPE_DISMISS_OFFSET_Y ||
@@ -835,8 +838,10 @@ function NotificationCard({
         fontFamily: "var(--font-inter), sans-serif",
         maxWidth: "min(520px, calc(100vw - 32px))",
         minHeight: "38px",
-        width: index > 0 && activeCardWidth ? `${activeCardWidth}px` : undefined,
-        height: index > 0 && activeCardHeight ? `${activeCardHeight}px` : undefined,
+        width:
+          index > 0 && activeCardWidth ? `${activeCardWidth}px` : undefined,
+        height:
+          index > 0 && activeCardHeight ? `${activeCardHeight}px` : undefined,
       }}
     >
       <span
@@ -854,7 +859,10 @@ function NotificationCard({
           />
           {item.description && (
             <>
-              <span aria-hidden className="shrink-0 text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]">
+              <span
+                aria-hidden
+                className="shrink-0 text-text-tertiary text-[12.5px] leading-tight translate-y-[1px]"
+              >
                 ·
               </span>
               <ScrollableText
@@ -877,7 +885,11 @@ function NotificationCard({
               title={t("settings.notifications.copy_request_id")}
             >
               <CopyIcon />
-              <span>{copiedId ? t("settings.notifications.copied") : `ID: ${item.requestId.length > 14 ? item.requestId.slice(0, 12) + "..." : item.requestId}`}</span>
+              <span>
+                {copiedId
+                  ? t("settings.notifications.copied")
+                  : `ID: ${item.requestId.length > 14 ? item.requestId.slice(0, 12) + "..." : item.requestId}`}
+              </span>
             </button>
           </div>
         )}

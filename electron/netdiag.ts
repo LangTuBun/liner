@@ -1,6 +1,7 @@
 // shared types for main-process network diagnostics (no electron imports,
 // so both main.ts and the renderer can use it).
-export const MAIN_NET_HOST_RE = /^(?=.{1,253}$)[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i;
+export const MAIN_NET_HOST_RE =
+  /^(?=.{1,253}$)[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i;
 export const MAIN_NET_MAX_HOSTS = 5;
 export const MAIN_NET_TRACE_MAX_HOPS = 12;
 
@@ -60,18 +61,25 @@ export interface MainNetResult {
 
 // the offline dump gets pasted into public issues: keep the network (isp, region) but not the exact address
 export function maskIp(ip: string): string {
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return ip.split(".").slice(0, 2).concat("x", "x").join(".");
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(ip))
+    return ip.split(".").slice(0, 2).concat("x", "x").join(".");
   if (ip.includes(":")) return `${ip.split(":").slice(0, 2).join(":")}:x:x`;
   return "x";
 }
 
 // first line is a header ("traceroute to …", "Tracing route …"), rest are hops.
 // keeps raw hop lines (capped) since hop formats differ per os and tool.
-export function parseTraceOutput(stdout: string, maxHops = MAIN_NET_TRACE_MAX_HOPS): string[] {
+export function parseTraceOutput(
+  stdout: string,
+  maxHops = MAIN_NET_TRACE_MAX_HOPS,
+): string[] {
   return stdout
     .split("\n")
     .map((line) => line.trim().slice(0, 160))
     .filter(Boolean)
-    .filter((line) => !/^(traceroute to|tracepath|tracing route|over a maximum)/i.test(line))
+    .filter(
+      (line) =>
+        !/^(traceroute to|tracepath|tracing route|over a maximum)/i.test(line),
+    )
     .slice(0, maxHops + 2);
 }

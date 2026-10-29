@@ -1,5 +1,10 @@
 import { memo, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useStableNavigate } from "@/shared/hooks/useStableNavigate";
+import {
+  collectionPath,
+  collectionPreviewState,
+} from "@/features/collection/lib/collectionPreview";
+import { prefetchCollection } from "@/features/collection/hooks/useCollection";
 import ScrollableRow from "@/shared/ui/ScrollableRow";
 import { playerEngine } from "@/features/player";
 import { useSongMenuItems } from "@/features/player/hooks/useSongMenuItems";
@@ -7,7 +12,7 @@ import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useToast } from "@/shared/ui";
 import DropdownMenu from "@/shared/ui/DropdownMenu";
 import type { PopularItem } from "../hooks/usePopularTracks";
-import type { Track } from "@/shared/types";
+
 import ArtistLink from "@/features/artist/ui/ArtistLink";
 import CoverImage from "@/features/covers/ui/CoverImage";
 import ExplicitBadge from "@/shared/ui/ExplicitBadge";
@@ -196,7 +201,7 @@ function AlbumCard({
   showRanks?: boolean;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
 
   const menuItems = useSongMenuItems({
     id: item.item.id,
@@ -229,12 +234,20 @@ function AlbumCard({
   }, []);
 
   const handleClick = () => {
-    navigate(`/collection?type=album&id=${encodeURIComponent(item.item.id)}`);
+    navigate(
+      collectionPath("album", item.item.id),
+      collectionPreviewState({
+        coverUrl: item.item.coverUrl,
+        title: item.item.title,
+        subtitle: item.item.artist,
+      }),
+    );
   };
 
   return (
     <div
       className="group flex-shrink-0 w-[175px] cursor-pointer select-none"
+      onPointerDown={() => prefetchCollection("album", item.item.id)}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
@@ -295,7 +308,7 @@ function PlaylistCard({
   showRanks?: boolean;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
 
   const menuItems = useSongMenuItems({
     id: item.item.id,
@@ -329,13 +342,19 @@ function PlaylistCard({
 
   const handleClick = () => {
     navigate(
-      `/collection?type=playlist&id=${encodeURIComponent(item.item.id)}`,
+      collectionPath("playlist", item.item.id),
+      collectionPreviewState({
+        coverUrl: item.item.coverUrl,
+        title: item.item.title,
+        subtitle: item.item.owner,
+      }),
     );
   };
 
   return (
     <div
       className="group flex-shrink-0 w-[175px] cursor-pointer select-none"
+      onPointerDown={() => prefetchCollection("playlist", item.item.id)}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >

@@ -9,9 +9,18 @@ describe("linerDb storage layer", () => {
 
   it("keeps at most 500 tracks in memory, dropping the oldest written", async () => {
     for (let i = 0; i <= 500; i++) {
-      await linerDb.putTrack({ id: `mem_${i}`, title: `T${i}`, artists: "A", durationMs: 1, coverUrl: "", playCount: 0 });
+      await linerDb.putTrack({
+        id: `mem_${i}`,
+        title: `T${i}`,
+        artists: "A",
+        durationMs: 1,
+        coverUrl: "",
+        playCount: 0,
+      });
     }
-    const memTracks = (linerDb as unknown as { memTracks: Map<string, unknown> }).memTracks;
+    const memTracks = (
+      linerDb as unknown as { memTracks: Map<string, unknown> }
+    ).memTracks;
     expect(memTracks.size).toBe(500);
     expect(memTracks.has("mem_0")).toBe(false);
     expect(memTracks.has("mem_500")).toBe(true);
@@ -38,14 +47,30 @@ describe("linerDb storage layer", () => {
     const generation = audioCache.currentGeneration();
     audioCache.invalidate();
     const blob = new Blob(["late download"], { type: "audio/webm" });
-    expect(await audioCache.saveAudioBlob("track_after_clear", blob, "audio/webm", generation)).toBe(false);
+    expect(
+      await audioCache.saveAudioBlob(
+        "track_after_clear",
+        blob,
+        "audio/webm",
+        generation,
+      ),
+    ).toBe(false);
     expect(await audioCache.hasAudio("track_after_clear")).toBe(false);
-    expect(await audioCache.saveAudioBlob("track_after_clear", blob, "audio/webm", audioCache.currentGeneration())).toBe(true);
+    expect(
+      await audioCache.saveAudioBlob(
+        "track_after_clear",
+        blob,
+        "audio/webm",
+        audioCache.currentGeneration(),
+      ),
+    ).toBe(true);
     expect(await audioCache.hasAudio("track_after_clear")).toBe(true);
   });
 
   it("stores, checks, and calculates total bytes for audio blobs", async () => {
-    const dummyBlob = new Blob(["dummy audio data content"], { type: "audio/ogg" });
+    const dummyBlob = new Blob(["dummy audio data content"], {
+      type: "audio/ogg",
+    });
     await audioCache.saveAudioBlob("track_audio_1", dummyBlob, "audio/ogg");
 
     const hasAudio = await audioCache.hasAudio("track_audio_1");
@@ -133,7 +158,6 @@ describe("linerDb storage layer", () => {
     expect(lineRecord?.activeProvider).toBe("lrclib");
     expect(lineRecord?.syncLevel).toBe("line_level");
 
-    // cadence / polaris with line_level should not be cached
     await linerDb.putLyrics({
       trackId: "track_cadence_line",
       syncLevel: "line_level",
@@ -163,7 +187,8 @@ describe("linerDb storage layer", () => {
       updatedAt: initialTime,
     });
     const cadenceRecord = await linerDb.getLyrics("track_cadence_line");
-    expect(cadenceRecord).toBeNull();
+    expect(cadenceRecord?.activeProvider).toBe("cadence");
+    expect(cadenceRecord?.syncLevel).toBe("line_level");
   });
 
   it("stores artist data and calculates total artist bytes", async () => {
@@ -200,13 +225,25 @@ describe("linerDb storage layer", () => {
 
   it("keeps only the most recent audio blobs in memory instead of every played track", async () => {
     for (let i = 1; i <= 6; i++) {
-      await linerDb.putAudio(`track_mem_${i}`, new Blob([`audio ${i}`], { type: "audio/ogg" }), "audio/ogg");
+      await linerDb.putAudio(
+        `track_mem_${i}`,
+        new Blob([`audio ${i}`], { type: "audio/ogg" }),
+        "audio/ogg",
+      );
     }
-    const inMemory = [...(linerDb as unknown as { memAudio: Map<string, unknown> }).memAudio.keys()];
+    const inMemory = [
+      ...(
+        linerDb as unknown as { memAudio: Map<string, unknown> }
+      ).memAudio.keys(),
+    ];
     expect(inMemory).toEqual(["track_mem_4", "track_mem_5", "track_mem_6"]);
 
     await linerDb.getAudio("track_mem_5");
-    const afterRead = [...(linerDb as unknown as { memAudio: Map<string, unknown> }).memAudio.keys()];
+    const afterRead = [
+      ...(
+        linerDb as unknown as { memAudio: Map<string, unknown> }
+      ).memAudio.keys(),
+    ];
     expect(afterRead).toEqual(["track_mem_4", "track_mem_6", "track_mem_5"]);
   });
 

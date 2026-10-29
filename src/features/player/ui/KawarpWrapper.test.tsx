@@ -3,16 +3,28 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const engine = vi.hoisted(() => ({ resize: vi.fn(), start: vi.fn(), dispose: vi.fn(), loadImage: vi.fn(async () => {}) }));
+const engine = vi.hoisted(() => ({
+  resize: vi.fn(),
+  start: vi.fn(),
+  dispose: vi.fn(),
+  loadImage: vi.fn(async () => {}),
+}));
 
 vi.mock("../engine/kawarpEngine", () => ({
   KawarpEngine: vi.fn(function KawarpEngine() {
     return engine;
   }),
 }));
-vi.mock("@/features/covers", () => ({ getCoverElement: () => undefined, useCoverElement: () => undefined }));
+vi.mock("@/features/covers", () => ({
+  getCoverElement: () => undefined,
+  useCoverElement: () => undefined,
+}));
 
-import { KAWARP_RENDER_SCALE, KAWARP_RESIZE_SETTLE_MS, KawarpWrapper } from "./KawarpWrapper";
+import {
+  KAWARP_RENDER_SCALE,
+  KAWARP_RESIZE_SETTLE_MS,
+  KawarpWrapper,
+} from "./KawarpWrapper";
 
 describe("KawarpWrapper", () => {
   let container: HTMLDivElement;
@@ -30,9 +42,22 @@ describe("KawarpWrapper", () => {
       },
     );
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
-      () => ({ ...size, x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height, toJSON: () => ({}) }) as DOMRect,
+      () =>
+        ({
+          ...size,
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          right: size.width,
+          bottom: size.height,
+          toJSON: () => ({}),
+        }) as DOMRect,
     );
-    Object.defineProperty(window, "devicePixelRatio", { value: 1, configurable: true });
+    Object.defineProperty(window, "devicePixelRatio", {
+      value: 1,
+      configurable: true,
+    });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -50,7 +75,10 @@ describe("KawarpWrapper", () => {
   it("fills the window and renders at half its resolution", () => {
     act(() => root.render(<KawarpWrapper />));
     const canvas = container.querySelector("canvas")!;
-    expect([canvas.width, canvas.height]).toEqual([800 * KAWARP_RENDER_SCALE, 600 * KAWARP_RENDER_SCALE]);
+    expect([canvas.width, canvas.height]).toEqual([
+      800 * KAWARP_RENDER_SCALE,
+      600 * KAWARP_RENDER_SCALE,
+    ]);
     expect(canvas.className).toContain("inset-0");
     expect(canvas.className).toContain("w-full");
     expect(canvas.className).toContain("h-full");
@@ -60,7 +88,11 @@ describe("KawarpWrapper", () => {
     act(() => root.render(<KawarpWrapper />));
     const canvas = container.querySelector("canvas")!;
     engine.resize.mockClear();
-    for (const [width, height] of [[1100, 700], [1500, 900], [2600, 1500]]) {
+    for (const [width, height] of [
+      [1100, 700],
+      [1500, 900],
+      [2600, 1500],
+    ]) {
       size = { width, height };
       window.dispatchEvent(new Event("resize"));
       act(() => vi.advanceTimersByTime(30));

@@ -4,7 +4,11 @@ export {
   rememberSoundCloudClientId,
   resetSoundCloudClientIdCache,
 } from "./soundcloudClientId";
-export { fetchSoundCloudApi, SOUNDCLOUD_API, type SoundCloudRequestOptions } from "./soundcloudApi";
+export {
+  fetchSoundCloudApi,
+  SOUNDCLOUD_API,
+  type SoundCloudRequestOptions,
+} from "./soundcloudApi";
 export { toSoundCloudTrackId } from "./soundcloudTrack";
 export {
   SoundCloudUnavailableError,

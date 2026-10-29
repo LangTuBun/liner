@@ -31,21 +31,21 @@ export default function UpdateModal() {
           title={t("updater.modal_title") || "New Update Available"}
           description={
             <>
-            {t("updater.modal_desc", { version: updateInfo.version }) ||
-              `A new version of Liner (v${updateInfo.version}) is ready.`}{" "}
-            <a
-              href={changelogUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => {
-                e.preventDefault();
-                window.open(changelogUrl, "_blank", "noopener,noreferrer");
-              }}
-              className="inline-flex items-center gap-[3px] text-[#2383e2] hover:bg-[#2383e2]/10 dark:hover:bg-[#2383e2]/15 px-[5px] py-[1px] -mx-[3px] rounded-md font-[500] cursor-pointer align-baseline select-none transition-colors"
-            >
-              <span>{t("updater.view_changelog") || "Changelog"}</span>
-              <LinkLine size={12} className="inline shrink-0 opacity-80" />
-            </a>
+              {t("updater.modal_desc", { version: updateInfo.version }) ||
+                `A new version of Liner (v${updateInfo.version}) is ready.`}{" "}
+              <a
+                href={changelogUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open(changelogUrl, "_blank", "noopener,noreferrer");
+                }}
+                className="inline-flex items-center gap-[3px] text-[#2383e2] hover:bg-[#2383e2]/10 dark:hover:bg-[#2383e2]/15 px-[5px] py-[1px] -mx-[3px] rounded-md font-[500] cursor-pointer align-baseline select-none transition-colors"
+              >
+                <span>{t("updater.view_changelog") || "Changelog"}</span>
+                <LinkLine size={12} className="inline shrink-0 opacity-80" />
+              </a>
             </>
           }
         />

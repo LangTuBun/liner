@@ -5,12 +5,15 @@ import { createTranslatorSync, getStoredLocale } from "@/languages";
 import { notifyLibraryChanged } from "../hooks/usePlaylists";
 import type { ActiveImportState } from "./importStore";
 
-export function watchPendingTrackAfterImport(store: UseBoundStore<StoreApi<ActiveImportState>>): void {
+export function watchPendingTrackAfterImport(
+  store: UseBoundStore<StoreApi<ActiveImportState>>,
+): void {
   let lastHandledJobId: string | null = null;
 
   store.subscribe((state) => {
     const { job, pendingTrack } = state;
-    if (!job || job.status !== "completed" || !job.playlistId || !pendingTrack) return;
+    if (!job || job.status !== "completed" || !job.playlistId || !pendingTrack)
+      return;
     if (job.id === lastHandledJobId) return;
     lastHandledJobId = job.id;
     const playlistId = job.playlistId;

@@ -14,9 +14,18 @@ import { useOverlaySettingsStore } from "@/features/overlay/store/overlaySetting
 interface ShortcutsStoreState extends ShortcutsSettings {
   isRecording: boolean;
   setIsRecording: (recording: boolean) => void;
-  setGlobalShortcut: (action: keyof GlobalShortcutsSettings, rawShortcut: string) => void;
-  setMainAppShortcut: (action: keyof MainAppShortcutsSettings, rawShortcut: string) => void;
-  setMiniplayerShortcut: (action: keyof MiniplayerShortcutsSettings, rawShortcut: string) => void;
+  setGlobalShortcut: (
+    action: keyof GlobalShortcutsSettings,
+    rawShortcut: string,
+  ) => void;
+  setMainAppShortcut: (
+    action: keyof MainAppShortcutsSettings,
+    rawShortcut: string,
+  ) => void;
+  setMiniplayerShortcut: (
+    action: keyof MiniplayerShortcutsSettings,
+    rawShortcut: string,
+  ) => void;
   resetShortcut: (scope: ShortcutScope, action: string) => void;
   resetSection: (scope: ShortcutScope) => void;
   resetAll: () => void;
@@ -35,7 +44,10 @@ function pickKnownShortcuts<T extends object>(
 }
 
 function notifyElectronGlobalShortcuts(global: GlobalShortcutsSettings) {
-  if (typeof window !== "undefined" && window.linerElectron?.updateOverlaySettings) {
+  if (
+    typeof window !== "undefined" &&
+    window.linerElectron?.updateOverlaySettings
+  ) {
     window.linerElectron.updateOverlaySettings({
       shortcut: global.toggleOverlay,
       likeShortcut: global.quickLikeSong,
@@ -51,14 +63,18 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
 
       setIsRecording: (recording: boolean) => {
         set({ isRecording: recording });
-        if (typeof window !== "undefined" && window.linerElectron?.pauseOverlayShortcuts) {
+        if (
+          typeof window !== "undefined" &&
+          window.linerElectron?.pauseOverlayShortcuts
+        ) {
           window.linerElectron.pauseOverlayShortcuts(recording);
         }
       },
 
       setGlobalShortcut: (action, rawShortcut) => {
         const normalized =
-          normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SHORTCUTS.global[action];
+          normalizeShortcutToEnglish(rawShortcut) ||
+          DEFAULT_SHORTCUTS.global[action];
         const nextGlobal = {
           ...get().global,
           [action]: normalized,
@@ -74,7 +90,8 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
 
       setMainAppShortcut: (action, rawShortcut) => {
         const normalized =
-          normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SHORTCUTS.mainApp[action];
+          normalizeShortcutToEnglish(rawShortcut) ||
+          DEFAULT_SHORTCUTS.mainApp[action];
         set({
           mainApp: {
             ...get().mainApp,
@@ -85,7 +102,8 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
 
       setMiniplayerShortcut: (action, rawShortcut) => {
         const normalized =
-          normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SHORTCUTS.miniplayer[action];
+          normalizeShortcutToEnglish(rawShortcut) ||
+          DEFAULT_SHORTCUTS.miniplayer[action];
         set({
           miniplayer: {
             ...get().miniplayer,
@@ -101,7 +119,10 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
         } else if (scope === "mainApp" && action in DEFAULT_SHORTCUTS.mainApp) {
           const act = action as keyof MainAppShortcutsSettings;
           get().setMainAppShortcut(act, DEFAULT_SHORTCUTS.mainApp[act]);
-        } else if (scope === "miniplayer" && action in DEFAULT_SHORTCUTS.miniplayer) {
+        } else if (
+          scope === "miniplayer" &&
+          action in DEFAULT_SHORTCUTS.miniplayer
+        ) {
           const act = action as keyof MiniplayerShortcutsSettings;
           get().setMiniplayerShortcut(act, DEFAULT_SHORTCUTS.miniplayer[act]);
         }
@@ -127,7 +148,9 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
           miniplayer: { ...DEFAULT_SHORTCUTS.miniplayer },
         });
         notifyElectronGlobalShortcuts(DEFAULT_SHORTCUTS.global);
-        useOverlaySettingsStore.setState({ shortcut: DEFAULT_SHORTCUTS.global.toggleOverlay });
+        useOverlaySettingsStore.setState({
+          shortcut: DEFAULT_SHORTCUTS.global.toggleOverlay,
+        });
       },
     }),
     {
@@ -142,29 +165,44 @@ export const useShortcutsStore = create<ShortcutsStoreState>()(
         if (!state) return;
 
         // Ensure newly added actions have defaults
-        state.global = pickKnownShortcuts(DEFAULT_SHORTCUTS.global, state.global);
-        state.mainApp = pickKnownShortcuts(DEFAULT_SHORTCUTS.mainApp, state.mainApp);
+        state.global = pickKnownShortcuts(
+          DEFAULT_SHORTCUTS.global,
+          state.global,
+        );
+        state.mainApp = pickKnownShortcuts(
+          DEFAULT_SHORTCUTS.mainApp,
+          state.mainApp,
+        );
         state.miniplayer = pickKnownShortcuts(
           DEFAULT_SHORTCUTS.miniplayer,
           state.miniplayer,
         );
 
         // Normalize all rehydrated shortcuts
-        for (const key of Object.keys(state.global) as (keyof GlobalShortcutsSettings)[]) {
+        for (const key of Object.keys(
+          state.global,
+        ) as (keyof GlobalShortcutsSettings)[]) {
           state.global[key] =
-            normalizeShortcutToEnglish(state.global[key]) || DEFAULT_SHORTCUTS.global[key];
+            normalizeShortcutToEnglish(state.global[key]) ||
+            DEFAULT_SHORTCUTS.global[key];
         }
-        for (const key of Object.keys(state.mainApp) as (keyof MainAppShortcutsSettings)[]) {
+        for (const key of Object.keys(
+          state.mainApp,
+        ) as (keyof MainAppShortcutsSettings)[]) {
           state.mainApp[key] =
-            normalizeShortcutToEnglish(state.mainApp[key]) || DEFAULT_SHORTCUTS.mainApp[key];
+            normalizeShortcutToEnglish(state.mainApp[key]) ||
+            DEFAULT_SHORTCUTS.mainApp[key];
         }
-        for (const key of Object.keys(state.miniplayer) as (keyof MiniplayerShortcutsSettings)[]) {
+        for (const key of Object.keys(
+          state.miniplayer,
+        ) as (keyof MiniplayerShortcutsSettings)[]) {
           state.miniplayer[key] =
-            normalizeShortcutToEnglish(state.miniplayer[key]) || DEFAULT_SHORTCUTS.miniplayer[key];
+            normalizeShortcutToEnglish(state.miniplayer[key]) ||
+            DEFAULT_SHORTCUTS.miniplayer[key];
         }
 
         notifyElectronGlobalShortcuts(state.global);
       },
-    }
-  )
+    },
+  ),
 );

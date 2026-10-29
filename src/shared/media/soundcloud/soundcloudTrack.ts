@@ -27,7 +27,9 @@ function text(value: unknown): string | undefined {
 }
 
 function positiveNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value
+    : undefined;
 }
 
 function parseTranscoding(raw: unknown): SoundCloudTranscoding | null {
@@ -48,7 +50,9 @@ function parseTranscoding(raw: unknown): SoundCloudTranscoding | null {
 export function parseSoundCloudTrack(raw: unknown): SoundCloudTrackInfo | null {
   if (!isObject(raw) || typeof raw.id !== "number") return null;
   const media = isObject(raw.media) ? raw.media : {};
-  const transcodings = Array.isArray(media.transcodings) ? media.transcodings : [];
+  const transcodings = Array.isArray(media.transcodings)
+    ? media.transcodings
+    : [];
   return {
     id: raw.id,
     policy: (text(raw.policy) ?? "ALLOW").toUpperCase(),
@@ -56,7 +60,9 @@ export function parseSoundCloudTrack(raw: unknown): SoundCloudTrackInfo | null {
     durationMs: positiveNumber(raw.duration),
     fullDurationMs: positiveNumber(raw.full_duration),
     trackAuthorization: text(raw.track_authorization),
-    transcodings: transcodings.map(parseTranscoding).filter((item): item is SoundCloudTranscoding => item !== null),
+    transcodings: transcodings
+      .map(parseTranscoding)
+      .filter((item): item is SoundCloudTranscoding => item !== null),
   };
 }
 

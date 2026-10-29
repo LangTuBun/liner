@@ -1,9 +1,25 @@
-import { app, BrowserWindow, ipcMain, net, safeStorage, type IpcMainEvent, type IpcMainInvokeEvent } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  net,
+  safeStorage,
+  type IpcMainEvent,
+  type IpcMainInvokeEvent,
+} from "electron";
 import path from "node:path";
-import { AuthSessionStore, type AuthSessionStoreDeps, type SessionCipher } from "./auth-session-store.js";
+import {
+  AuthSessionStore,
+  type AuthSessionStoreDeps,
+  type SessionCipher,
+} from "./auth-session-store.js";
 import { signRequest, syncServerTime } from "./crypto.js";
 
-function signedRequestHeaders(method: string, path: string, body: string): Record<string, string> {
+function signedRequestHeaders(
+  method: string,
+  path: string,
+  body: string,
+): Record<string, string> {
   try {
     const signed = signRequest({ method, path, body });
     return {
@@ -12,7 +28,10 @@ function signedRequestHeaders(method: string, path: string, body: string): Recor
       "x-liner-nonce": signed.nonce,
     };
   } catch (err) {
-    console.error("\x1b[41;37m signer \x1b[0m auth refresh signing failed:", err);
+    console.error(
+      "\x1b[41;37m signer \x1b[0m auth refresh signing failed:",
+      err,
+    );
     return {};
   }
 }
@@ -78,10 +97,17 @@ export function registerAuthSessionIpc(): AuthSessionStore {
 
   ipcMain.handle(
     "auth:refresh",
-    (event, input: { apiBaseUrl?: unknown; refreshToken?: unknown } | undefined) => {
+    (
+      event,
+      input: { apiBaseUrl?: unknown; refreshToken?: unknown } | undefined,
+    ) => {
       if (!fromApp(event)) return { outcome: "no_session", session: null };
-      const apiBaseUrl = typeof input?.apiBaseUrl === "string" ? input.apiBaseUrl : "";
-      const refreshToken = typeof input?.refreshToken === "string" ? input.refreshToken : undefined;
+      const apiBaseUrl =
+        typeof input?.apiBaseUrl === "string" ? input.apiBaseUrl : "";
+      const refreshToken =
+        typeof input?.refreshToken === "string"
+          ? input.refreshToken
+          : undefined;
       return store.refresh(apiBaseUrl, refreshToken, event.sender.id);
     },
   );

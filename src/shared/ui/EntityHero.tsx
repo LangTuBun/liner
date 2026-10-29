@@ -59,7 +59,12 @@ export function EntityHero({
         {cover}
       </div>
 
-      <div className={cn("flex min-w-0 flex-1 flex-col pt-[2px]", contentClassName)}>
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col pt-[2px]",
+          contentClassName,
+        )}
+      >
         <div className="min-w-0">{title}</div>
         {subtitle && <div className="mt-[4px] min-w-0">{subtitle}</div>}
         {meta && <div className="mt-[12px]">{meta}</div>}

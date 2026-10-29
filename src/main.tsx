@@ -1,10 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { initGlobalErrorHandlers } from "@/shared/utils/globalErrorHandlers";
+import { hydrateScreenCache } from "@/shared/cache/screenCache";
+import { applyStoredTheme } from "@/shared/utils/storedTheme";
 
 initGlobalErrorHandlers();
 
 const isOverlay = window.location.hash.startsWith("#/overlay");
+
+if (!isOverlay) applyStoredTheme();
 
 async function loadRoot(): Promise<React.ReactElement> {
   if (isOverlay) {
@@ -19,6 +23,7 @@ async function loadRoot(): Promise<React.ReactElement> {
     import("./app/mainWindowServices"),
     import("./app/App"),
     import("@/shared/ui/RootErrorBoundary"),
+    hydrateScreenCache(),
   ]);
   initMainWindowServices();
   return (

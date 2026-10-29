@@ -1,6 +1,10 @@
 import AppImage, { type ImageProps } from "./AppImage";
 import { useEffect, useState, useRef } from "react";
-import { markCoverReady, useCoverSrc } from "../lib/coverArt";
+import {
+  markCoverReady,
+  useCoverCrossOrigin,
+  useRenderedCoverSrc,
+} from "../lib/coverArt";
 import { prepareCoverFallback } from "../lib/coverSigner";
 
 type CoverImageProps = Omit<ImageProps, "src" | "onError"> & {
@@ -14,21 +18,26 @@ export default function CoverImage({
   crossOrigin = "anonymous",
   ...rest
 }: CoverImageProps) {
-  const centralSrc = useCoverSrc(src);
-  const [localFallback, setLocalFallback] = useState<string | undefined>(undefined);
+  const centralSrc = useRenderedCoverSrc(src);
+  const registryCors = useCoverCrossOrigin(src);
+  const preferredCors = crossOrigin ? registryCors : undefined;
+  const [localFallback, setLocalFallback] = useState<string | undefined>(
+    undefined,
+  );
   const [retryCount, setRetryCount] = useState(0);
-  const [corsMode, setCorsMode] = useState<ImageProps["crossOrigin"]>(crossOrigin || undefined);
+  const [corsMode, setCorsMode] =
+    useState<ImageProps["crossOrigin"]>(preferredCors);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setLocalFallback(undefined);
     setRetryCount(0);
-    setCorsMode(crossOrigin || undefined);
+    setCorsMode(preferredCors);
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
     }
-  }, [src, crossOrigin]);
+  }, [src, preferredCors]);
 
   useEffect(() => {
     return () => {
@@ -71,7 +80,7 @@ export default function CoverImage({
       src={effectiveSrc}
       crossOrigin={corsMode}
       onLoad={(event) => {
-        markCoverReady(src, effectiveSrc, event.currentTarget);
+        markCoverReady(src, effectiveSrc, corsMode !== "anonymous");
         onLoad?.(event);
       }}
       onError={handleError}

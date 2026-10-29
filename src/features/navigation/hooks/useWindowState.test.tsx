@@ -39,7 +39,8 @@ describe("useWindowState", () => {
     mockIsFullScreen = vi.fn().mockResolvedValue(false);
     mockIsMaximized = vi.fn().mockResolvedValue(false);
     mockToggleFullScreen = vi.fn().mockResolvedValue(undefined);
-    document.body.className = "h-full w-full bg-transparent overflow-hidden p-1";
+    document.body.className =
+      "h-full w-full bg-transparent overflow-hidden p-1";
     document.body.removeAttribute("data-edge-to-edge");
 
     (window as any).linerElectron = {
@@ -186,7 +187,10 @@ describe("useWindowState", () => {
     root = null;
 
     expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
-    expect(removeEventListenerSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      "resize",
+      expect.any(Function),
+    );
   });
 
   it("works safely when window.linerElectron is undefined (browser mode)", async () => {
@@ -294,7 +298,10 @@ describe("useWindowState", () => {
   it("prevents default on F11 keydown to disable uncoordinated fullscreen", async () => {
     await mount();
 
-    const event = new KeyboardEvent("keydown", { key: "F11", cancelable: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "F11",
+      cancelable: true,
+    });
     window.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
@@ -304,7 +311,10 @@ describe("useWindowState", () => {
     (window as any).linerElectron.platform = "linux";
     await mount();
 
-    const event = new KeyboardEvent("keydown", { key: "F11", cancelable: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "F11",
+      cancelable: true,
+    });
     window.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
@@ -314,7 +324,10 @@ describe("useWindowState", () => {
   it("keeps F11 ignored outside Linux while still swallowing the platform default", async () => {
     await mount();
 
-    const event = new KeyboardEvent("keydown", { key: "F11", cancelable: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "F11",
+      cancelable: true,
+    });
     window.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);

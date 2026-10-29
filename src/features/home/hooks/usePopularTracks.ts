@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { api, toClientTrack } from "@/shared/api";
 import type { Track } from "@/shared/types";
+import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
 
 export type PopularTrackItem = Track;
 
@@ -36,85 +36,29 @@ export const popularTracksAllTimeKeys = {
   allTime: ["popularTracksAllTime"] as const,
 };
 
-const cache = new Map<string, { data: PopularItem[]; timestamp: number }>();
-const CACHE_TTL = 60_000;
+const EMPTY_ITEMS: PopularItem[] = [];
+const POPULAR_POLICY = { isFresh: freshFor(10 * 60_000) };
 
-export function usePopularTracksOnly(limit = 20) {
-  const [data, setData] = useState<PopularItem[]>(() => cache.get(`tracks_7d_${limit}`)?.data ?? []);
-  const [isLoading, setIsLoading] = useState(!cache.has(`tracks_7d_${limit}`));
-
-  useEffect(() => {
-    const cached = cache.get(`tracks_7d_${limit}`);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setData(cached.data);
-      setIsLoading(false);
-      return;
-    }
-
-    let active = true;
-    api
-      .getPopularTracks("7d", limit)
-      .then((res) => {
-        if (!active) return;
-        const items: PopularItem[] = (res.items || []).map((entry) => ({
+function usePopularTracks(range: "7d" | "all", limit: number) {
+  const { data, isLoading } = useCachedResource(
+    `home:popular-tracks:${range}:${limit}`,
+    () =>
+      api.getPopularTracks(range, limit).then((res) =>
+        (res.items || []).map((entry): PopularItem => ({
           type: "track",
           item: toClientTrack(entry.track),
           playCount: entry.playCount,
-        }));
-        cache.set(`tracks_7d_${limit}`, { data: items, timestamp: Date.now() });
-        setData(items);
-      })
-      .catch(() => {
-        if (active) setData([]);
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+        })),
+      ),
+    POPULAR_POLICY,
+  );
+  return { data: data ?? EMPTY_ITEMS, isLoading };
+}
 
-    return () => {
-      active = false;
-    };
-  }, [limit]);
-
-  return { data, isLoading };
+export function usePopularTracksOnly(limit = 20) {
+  return usePopularTracks("7d", limit);
 }
 
 export function usePopularTracksAllTime(limit = 20) {
-  const [data, setData] = useState<PopularItem[]>(() => cache.get(`tracks_all_${limit}`)?.data ?? []);
-  const [isLoading, setIsLoading] = useState(!cache.has(`tracks_all_${limit}`));
-
-  useEffect(() => {
-    const cached = cache.get(`tracks_all_${limit}`);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setData(cached.data);
-      setIsLoading(false);
-      return;
-    }
-
-    let active = true;
-    api
-      .getPopularTracks("all", limit)
-      .then((res) => {
-        if (!active) return;
-        const items: PopularItem[] = (res.items || []).map((entry) => ({
-          type: "track",
-          item: toClientTrack(entry.track),
-          playCount: entry.playCount,
-        }));
-        cache.set(`tracks_all_${limit}`, { data: items, timestamp: Date.now() });
-        setData(items);
-      })
-      .catch(() => {
-        if (active) setData([]);
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [limit]);
-
-  return { data, isLoading };
+  return usePopularTracks("all", limit);
 }

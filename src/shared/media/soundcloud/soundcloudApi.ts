@@ -1,4 +1,8 @@
-import { getSoundCloudClientId, refreshSoundCloudClientId, rememberSoundCloudClientId } from "./soundcloudClientId";
+import {
+  getSoundCloudClientId,
+  refreshSoundCloudClientId,
+  rememberSoundCloudClientId,
+} from "./soundcloudClientId";
 
 export const SOUNDCLOUD_API = "https://api-v2.soundcloud.com";
 
@@ -10,9 +14,14 @@ function isClientIdRejection(status: number): boolean {
   return status === 401 || status === 403;
 }
 
-function buildUrl(pathOrUrl: string, params: Record<string, string>, clientId: string): string {
+function buildUrl(
+  pathOrUrl: string,
+  params: Record<string, string>,
+  clientId: string,
+): string {
   const url = new URL(pathOrUrl, SOUNDCLOUD_API);
-  for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
+  for (const [name, value] of Object.entries(params))
+    url.searchParams.set(name, value);
   url.searchParams.set("client_id", clientId);
   return url.toString();
 }

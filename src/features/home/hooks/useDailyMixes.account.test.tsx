@@ -31,7 +31,9 @@ function mixesFor(owner: string) {
         description: "",
         clusterArtists: [`${owner} artist`],
         trackCount: 1,
-        tracks: [{ id: `${owner}-track`, title: "t", artists: `${owner} artist` }],
+        tracks: [
+          { id: `${owner}-track`, title: "t", artists: `${owner} artist` },
+        ],
       },
     ],
   };
@@ -39,7 +41,9 @@ function mixesFor(owner: string) {
 
 function Probe() {
   const { data } = useDailyMixes();
-  return <div data-testid="titles">{data.map((mix) => mix.title).join("|")}</div>;
+  return (
+    <div data-testid="titles">{data.map((mix) => mix.title).join("|")}</div>
+  );
 }
 
 describe("useDailyMixes account switch", () => {
@@ -102,7 +106,9 @@ describe("useDailyMixes account switch", () => {
     try {
       session.userId = "user-e";
       getDailyMixes
-        .mockRejectedValueOnce(Object.assign(new Error("offline"), { status: 0 }))
+        .mockRejectedValueOnce(
+          Object.assign(new Error("offline"), { status: 0 }),
+        )
         .mockImplementationOnce(async () => mixesFor("user-e"));
       await act(async () => {
         root.render(<Probe />);

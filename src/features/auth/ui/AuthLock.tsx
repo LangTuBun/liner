@@ -12,7 +12,7 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
   const initialize = useAuthStore((state) => state.initialize);
   // keeps the body's outer padding in step with maximize / fullscreen on every screen,
   // including login and the startup spinner (the app frame mounts its own copy too)
-  useWindowState();
+  const { isEdgeToEdge } = useWindowState();
 
   useEffect(() => {
     void initialize();
@@ -41,9 +41,9 @@ export function AuthLock({ children }: { children: React.ReactNode }) {
     (status === "authenticated" && pathname === "/login")
   ) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-bg-primary">
-        <span className="h-[22px] w-[22px] animate-spin rounded-full border-2 border-text-tertiary border-t-text-primary" />
-      </div>
+      <div
+        className={`h-full w-full bg-bg-canvas ${isEdgeToEdge ? "rounded-none" : "rounded-[12px]"}`}
+      />
     );
   }
 

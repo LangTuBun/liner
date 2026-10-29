@@ -101,7 +101,7 @@ describe("useSongMenuItems", () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "https://link.tryliner.fun/track?id=track-123"
+      "https://link.tryliner.fun/track?id=track-123",
     );
     expect(showToast).toHaveBeenCalledWith("Link copied", "checkmark", {
       description: "Tarde o temprano — Nsqk",
@@ -129,7 +129,7 @@ describe("useSongMenuItems", () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "https://link.tryliner.fun/track?id=track-456"
+      "https://link.tryliner.fun/track?id=track-456",
     );
   });
 
@@ -153,21 +153,30 @@ describe("useSongMenuItems", () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "https://link.tryliner.fun/album?id=album-789"
+      "https://link.tryliner.fun/album?id=album-789",
     );
   });
 
   it("adds a remove-from-queue entry only for queue rows", () => {
     const onRemoveFromQueue = vi.fn();
-    const entry = renderHookHelper({ id: "t1", title: "Demo", artists: "Me", coverUrl: "", onRemoveFromQueue })().find(
-      (item) => item.id === "remove-from-queue",
-    );
+    const entry = renderHookHelper({
+      id: "t1",
+      title: "Demo",
+      artists: "Me",
+      coverUrl: "",
+      onRemoveFromQueue,
+    })().find((item) => item.id === "remove-from-queue");
     expect(entry?.label).toBe("common.remove_from_queue");
     expect(entry?.danger).toBe(true);
     act(() => entry?.onClick?.());
     expect(onRemoveFromQueue).toHaveBeenCalledTimes(1);
 
-    const elsewhere = renderHookHelper({ id: "t1", title: "Demo", artists: "Me", coverUrl: "" })();
+    const elsewhere = renderHookHelper({
+      id: "t1",
+      title: "Demo",
+      artists: "Me",
+      coverUrl: "",
+    })();
     expect(elsewhere.map((item) => item.id)).not.toContain("remove-from-queue");
   });
 });

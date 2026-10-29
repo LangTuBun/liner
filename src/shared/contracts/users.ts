@@ -1,4 +1,4 @@
-import type { PublicUser } from './auth';
+import type { PublicUser } from "./auth";
 
 export interface UserPrivacySettings {
   isPublic: boolean;

@@ -137,7 +137,12 @@ describe("resolvePlaybackStream for album rows that are not the song", () => {
 
   it("keeps the album row when nothing matches exactly", async () => {
     mocks.searchRaw.mockResolvedValue([
-      searchTrack("Fb3j_yuFh1s", "Blinding Lights (Remix)", "The Weeknd", 200_000),
+      searchTrack(
+        "Fb3j_yuFh1s",
+        "Blinding Lights (Remix)",
+        "The Weeknd",
+        200_000,
+      ),
     ]);
     mocks.resolveDirectAudioStream.mockResolvedValue(directStream);
 

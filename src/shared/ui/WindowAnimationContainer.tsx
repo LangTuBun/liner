@@ -9,29 +9,35 @@ interface WindowAnimationStore {
   triggerClose: () => void;
 }
 
-export const useWindowAnimationStore = create<WindowAnimationStore>((set, get) => ({
-  phase: "idle",
-  triggerMinimize: () => {
-    // Native instant minimize: zero DOM opacity/scale manipulation.
-    // Preserves the DWM taskbar preview thumbnail perfectly and restores with zero grey flash or lag.
-    void window.linerElectron?.minimize?.();
-  },
-  triggerClose: () => {
-    if (get().phase !== "idle") return;
+export const useWindowAnimationStore = create<WindowAnimationStore>(
+  (set, get) => ({
+    phase: "idle",
+    triggerMinimize: () => {
+      // Native instant minimize: zero DOM opacity/scale manipulation.
+      // Preserves the DWM taskbar preview thumbnail perfectly and restores with zero grey flash or lag.
+      void window.linerElectron?.minimize?.();
+    },
+    triggerClose: () => {
+      if (get().phase !== "idle") return;
 
-    if (process.env.NODE_ENV === "test") {
-      void window.linerElectron?.close?.();
-      return;
-    }
+      if (process.env.NODE_ENV === "test") {
+        void window.linerElectron?.close?.();
+        return;
+      }
 
-    set({ phase: "closing" });
-    setTimeout(() => {
-      void window.linerElectron?.close?.();
-    }, 120);
-  },
-}));
+      set({ phase: "closing" });
+      setTimeout(() => {
+        void window.linerElectron?.close?.();
+      }, 120);
+    },
+  }),
+);
 
-export function WindowAnimationContainer({ children }: { children: ReactNode }) {
+export function WindowAnimationContainer({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const phase = useWindowAnimationStore((s) => s.phase);
 
   let transform = "none";

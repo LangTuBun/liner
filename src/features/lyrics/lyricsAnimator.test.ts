@@ -15,9 +15,7 @@ describe("Lyrics Animator Clock Synchronization logic", () => {
     {
       timeMs: 6000,
       text: "Line at 6s",
-      words: [
-        { timeMs: 6000, endMs: 8000, text: "Line at 6s" },
-      ],
+      words: [{ timeMs: 6000, endMs: 8000, text: "Line at 6s" }],
     },
   ];
 
@@ -62,7 +60,7 @@ describe("Lyrics Animator Clock Synchronization logic", () => {
 
   it("word-fill progress calculates accurately without overflowing 100%", () => {
     const word = { timeMs: 2000, endMs: 3000, text: "Test" };
-    
+
     // Before word
     expect(calcWordProgress(1500, word)).toBe(0);
     // Middle of word (50%)
@@ -83,7 +81,10 @@ describe("Lyrics Animator Clock Synchronization logic", () => {
   });
 });
 
-function calcWordProgress(estimatedMs: number, w: { timeMs: number; endMs: number }) {
+function calcWordProgress(
+  estimatedMs: number,
+  w: { timeMs: number; endMs: number },
+) {
   if (w.endMs <= w.timeMs) {
     return estimatedMs >= w.timeMs ? 100 : 0;
   }

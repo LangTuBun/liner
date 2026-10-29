@@ -97,10 +97,7 @@ export function useLyricsAnimator({
   );
 
   const setWordData = useCallback(
-    (
-      lineIndex: number,
-      words: { timeMs: number; endMs: number }[],
-    ) => {
+    (lineIndex: number, words: { timeMs: number; endMs: number }[]) => {
       wordDataByLine.current.set(lineIndex, words);
     },
     [],
@@ -121,7 +118,7 @@ export function useLyricsAnimator({
       if (!el) return;
       let lineSpans = wordSpansByLine.current.get(lineIndex);
       if (!lineSpans || lineSpans.length !== totalWords) {
-        lineSpans = new Array(totalWords);
+        lineSpans = Array.from<HTMLElement>({ length: totalWords });
         wordSpansByLine.current.set(lineIndex, lineSpans);
       }
       lineSpans[wordIndex] = el;
@@ -203,8 +200,7 @@ export function useLyricsAnimator({
             } else if (estimated >= w.endMs) {
               progress = 100;
             } else if (estimated >= w.timeMs) {
-              const pct =
-                ((estimated - w.timeMs) / (w.endMs - w.timeMs)) * 100;
+              const pct = ((estimated - w.timeMs) / (w.endMs - w.timeMs)) * 100;
               progress = Math.max(0, Math.min(100, isNaN(pct) ? 0 : pct));
             } else {
               progress = 0;

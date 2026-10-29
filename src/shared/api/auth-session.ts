@@ -4,12 +4,17 @@ import { signApiRequest, syncServerTime } from "./requestSigner";
 export type { AuthTokens, AuthUser };
 
 import { getApiBaseUrl } from "./baseUrl";
- 
+
 const STORAGE_KEY = "liner_auth_session";
-const DEAD_REFRESH_CODES = new Set(["INVALID_REFRESH_TOKEN", "REFRESH_SESSION_EXPIRED"]);
+const DEAD_REFRESH_CODES = new Set([
+  "INVALID_REFRESH_TOKEN",
+  "REFRESH_SESSION_EXPIRED",
+]);
 const REFRESH_ATTEMPTS = 2;
 
-type MainAuthBridge = NonNullable<NonNullable<Window["linerElectron"]>["authSession"]>;
+type MainAuthBridge = NonNullable<
+  NonNullable<Window["linerElectron"]>["authSession"]
+>;
 
 let session: AuthTokens | null = null;
 let loadedFromMain = false;
@@ -45,14 +50,17 @@ function emit() {
 
 function adopt(next: AuthTokens | null): void {
   const changed =
-    session?.refreshToken !== next?.refreshToken || session?.accessToken !== next?.accessToken;
+    session?.refreshToken !== next?.refreshToken ||
+    session?.accessToken !== next?.accessToken;
   session = next;
   if (changed) emit();
 }
 
 function followMain(bridge: MainAuthBridge): void {
   if (!unsubscribeMain) {
-    unsubscribeMain = bridge.onChange((next) => adopt(next as AuthTokens | null));
+    unsubscribeMain = bridge.onChange((next) =>
+      adopt(next as AuthTokens | null),
+    );
   }
 }
 
@@ -102,7 +110,9 @@ export function setAuthSession(next: AuthTokens | null): void {
     followMain(bridge);
     loadedFromMain = true;
     dropLocal();
-    void bridge.set(next).catch((err) => console.error("[Auth] saving the session failed:", err));
+    void bridge
+      .set(next)
+      .catch((err) => console.error("[Auth] saving the session failed:", err));
   } else if (typeof window !== "undefined") {
     if (next) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     else dropLocal();
@@ -184,7 +194,9 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
   refreshPromise = (async () => {
     try {
       const bridge = mainBridge();
-      return bridge ? await refreshInMain(bridge, current) : await refreshHere(current);
+      return bridge
+        ? await refreshInMain(bridge, current)
+        : await refreshHere(current);
     } catch (err) {
       console.error("[Auth] refreshAuthSession request failed:", err);
       return null;
@@ -196,16 +208,23 @@ export function refreshAuthSession(): Promise<AuthTokens | null> {
   return refreshPromise;
 }
 
-async function refreshInMain(bridge: MainAuthBridge, current: AuthTokens): Promise<AuthTokens | null> {
+async function refreshInMain(
+  bridge: MainAuthBridge,
+  current: AuthTokens,
+): Promise<AuthTokens | null> {
   const result = await bridge.refresh({
     apiBaseUrl: getApiBaseUrl(),
     refreshToken: current.refreshToken,
   });
   adopt(result.session as AuthTokens | null);
   if (result.outcome === "signed_out") {
-    console.warn(`[Auth] signed out: refresh token rejected (${result.reason ?? "unknown"})`);
+    console.warn(
+      `[Auth] signed out: refresh token rejected (${result.reason ?? "unknown"})`,
+    );
   } else if (result.outcome === "transient") {
-    console.warn(`[Auth] refresh failed (${result.reason ?? "unknown"}), keeping the session`);
+    console.warn(
+      `[Auth] refresh failed (${result.reason ?? "unknown"}), keeping the session`,
+    );
   }
   return result.outcome === "refreshed" || result.outcome === "rotated"
     ? (result.session as AuthTokens | null)
@@ -229,7 +248,9 @@ async function refreshHere(current: AuthTokens): Promise<AuthTokens | null> {
     }
 
     if (response.status !== 401 && response.status !== 403) {
-      console.warn(`[Auth] refresh failed with ${response.status}, keeping the session`);
+      console.warn(
+        `[Auth] refresh failed with ${response.status}, keeping the session`,
+      );
       return null;
     }
 
@@ -280,7 +301,8 @@ function rotatedElsewhere(usedRefreshToken: string): AuthTokens | null {
 
 async function rejectionCode(response: Response): Promise<string> {
   try {
-    const data = (await response.clone?.().json?.()) as Record<string, unknown> | undefined;
+    const data = (await response.clone?.().json?.()) as
+      Record<string, unknown> | undefined;
     return typeof data?.code === "string" ? data.code : "";
   } catch {
     return "";

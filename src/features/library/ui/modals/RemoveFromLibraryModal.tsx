@@ -54,14 +54,26 @@ function RemoveFromLibraryModalContent() {
           toast(t("common.removed_from_library_success"), "info", {
             description: detail.title || undefined,
           }),
-        onError: () =>
-          toast(t("common.failed_to_remove_library"), "error"),
+        onError: () => toast(t("common.failed_to_remove_library"), "error"),
       },
     );
-  }, [detail, pathname, searchParams, navigate, removeExternal, toast, t, close]);
+  }, [
+    detail,
+    pathname,
+    searchParams,
+    navigate,
+    removeExternal,
+    toast,
+    t,
+    close,
+  ]);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next ? close() : undefined)} maxWidth={380}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!next ? close() : undefined)}
+      maxWidth={380}
+    >
       <div className="flex flex-col px-[20px] pb-[20px]">
         <DialogHeader
           className="mb-[16px]"
@@ -112,7 +124,9 @@ function RemoveFromLibraryModalContent() {
             onClick={handleRemove}
             loading={removeExternal.isPending}
           >
-            {removeExternal.isPending ? t("common.removing") : t("common.confirm")}
+            {removeExternal.isPending
+              ? t("common.removing")
+              : t("common.confirm")}
           </DialogButton>
         </DialogActions>
       </div>

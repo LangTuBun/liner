@@ -4,23 +4,13 @@
 
 **Modern desktop music streaming player with syllable-synced lyrics and reactive dynamic visuals.**
 
-[![Electron](https://img.shields.io/badge/Electron-44.0-47848F?style=flat-square&logo=electron&logoColor=black&labelColor=white)](https://electronjs.org)
-[![React 19](https://img.shields.io/badge/React_19-19.2-61DAFB?style=flat-square&logo=react&logoColor=black&labelColor=white)](https://react.dev)
-[![TypeScript 5](https://img.shields.io/badge/TypeScript_5-5.0-3178C6?style=flat-square&logo=typescript&logoColor=black&labelColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-v4.0-06B6D4?style=flat-square&logo=tailwindcss&logoColor=black&labelColor=white)](https://tailwindcss.com)
-[![WebAssembly](https://img.shields.io/badge/Rust-WebAssembly-654FF0?style=flat-square&logo=webassembly&logoColor=black&labelColor=white)](https://webassembly.org)
-[![License: Source-Available](https://img.shields.io/badge/License-Source--Available-blueviolet?style=flat-square&labelColor=white)](./LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/tryliner/desktop/ci.yml?branch=main&style=flat-square&label=CI&labelColor=0d0d10&logo=githubactions&logoColor=white)](https://github.com/tryliner/desktop/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/tryliner/desktop?style=flat-square&label=release&labelColor=0d0d10&color=7a4dff)](https://github.com/tryliner/desktop/releases/latest) [![Downloads](https://img.shields.io/github/downloads/tryliner/desktop/total?style=flat-square&label=downloads&labelColor=0d0d10&color=4d71ff)](https://github.com/tryliner/desktop/releases) [![Platforms](https://img.shields.io/badge/platforms-Windows%20·%20macOS%20·%20Linux-2ec4b6?style=flat-square&labelColor=0d0d10)](https://github.com/tryliner/desktop/releases/latest) [![Discussions](https://img.shields.io/github/discussions/tryliner/desktop?style=flat-square&label=discussions&labelColor=0d0d10&color=3ddc97)](https://github.com/tryliner/desktop/discussions) [![License](https://img.shields.io/badge/license-source--available-534dff?style=flat-square&labelColor=0d0d10)](./LICENSE)
 
-[Preview](#preview) •
-[Architecture](#architecture) •
-[Getting Started](#getting-started) •
-[Building](#building) •
-[Contributing](#contributing) •
-[License](#license)
+[Preview](#preview) • [Architecture](#architecture) • [Getting Started](#getting-started) • [Building](#building) • [Docs](#docs) • [Contributing](#contributing) • [License](#license)
 
 <br/>
 
-<img src="./.github/assets/lyrics_preview.png" alt="Liner Fullscreen Lyrics" width="100%" />
+<img src="./.github/assets/album.png" alt="Liner Album Page" width="100%" />
 
 </div>
 
@@ -32,14 +22,14 @@
   <table>
     <tr>
       <td align="center" width="50%">
-        <img src="./.github/assets/home.png" alt="Liner Home Page" />
+        <img src="./.github/assets/library.png" alt="Liner Library" />
         <br/>
-        <sub><b>Home</b></sub>
+        <sub><b>Library</b></sub>
       </td>
       <td align="center" width="50%">
-        <img src="./.github/assets/demo.gif" alt="Liner Fullscreen Mode Demo" />
+        <img src="./.github/assets/lyrics.png" alt="Liner Fullscreen Lyrics" />
         <br/>
-        <sub><b>Fullscreen mode</b></sub>
+        <sub><b>Fullscreen lyrics</b></sub>
       </td>
     </tr>
   </table>
@@ -54,21 +44,29 @@
 
 ## Architecture
 
+The renderer follows [Feature-Sliced Design](https://feature-sliced.design): imports only point down the layers (`app` → `widgets` → `features` → `entities` → `shared`).
+
 ```
 liner/desktop/
 ├── electron/
-│   ├── main.ts              # Electron main process & IPC handlers
-│   ├── preload.ts           # Context bridge & secure renderer bindings
-│   ├── crypto.ts            # High-performance in-memory WebAssembly signer
+│   ├── main.ts              # Main process: windows, IPC, updates, deep links
+│   ├── preload.ts           # Context bridge between the renderer and the main process
+│   ├── local-tracks/        # Imported audio files and the liner-local:// protocol
+│   ├── youtube/             # Helpers for the YouTube playback fallback
+│   ├── overlay.ts           # Floating overlay player window
+│   ├── discord.ts           # Discord Rich Presence
+│   ├── crypto.ts            # In-memory WebAssembly request signer
 │   └── signer.ts            # Embedded WebAssembly binary
+├── native/                  # Windows snap preview add-on
 ├── src/
-│   ├── assets/              # Static assets and media
-│   ├── components/          # Shared reusable UI components
-│   ├── features/            # Feature modules (player, lyrics, queue, library, search, auth)
-│   ├── pages/               # Route views (Home, Search, Album, Artist, Playlist)
-│   ├── shared/              # API client, state stores (Zustand), and data contracts
-│   ├── App.tsx              # Application root
+│   ├── app/                 # App shell, routes, providers, global styles
+│   ├── widgets/             # Screen blocks: sidebar, header, player bar, fullscreen player, modals
+│   ├── features/            # player, lyrics, library, search, collection, settings, overlay, …
+│   ├── entities/            # track, playlist, artist, user
+│   ├── shared/              # API client, storage, UI kit, contracts, utilities
+│   ├── languages/           # Translations for 11 languages
 │   └── main.tsx             # Vite entry point
+├── docs/                    # Design, storage, privacy, translations, FAQ
 ├── package.json
 └── vite.config.ts
 ```
@@ -79,22 +77,17 @@ liner/desktop/
 
 ### Prerequisites
 
-- **Node.js** `v20+` and **pnpm** or **Bun**
-- Modern OS (Windows 10/11, macOS, or Linux)
+- **Node.js** `v22+` and **pnpm** `v10+`
+- Windows 10/11, macOS or Linux
 
 ---
 
 ### Setup
 
 ```bash
-# 1. Clone repository
 git clone https://github.com/tryliner/desktop.git
 cd desktop
-
-# 2. Install dependencies (pnpm or Bun)
 pnpm install
-# or
-bun install
 ```
 
 ---
@@ -102,10 +95,8 @@ bun install
 ### Running in Development
 
 ```bash
-# Start Liner in development mode (Electron app with Vite hot-reload)
-pnpm run dev
-# or
-bun run dev
+# Electron app with Vite hot reload
+pnpm dev
 ```
 
 ---
@@ -113,10 +104,11 @@ bun run dev
 ## Testing
 
 ```bash
-# Run test suite with Vitest
-bun run test
-# or
+# Tests only
 pnpm test
+
+# Everything CI runs on a pull request: lint, format check, types, build, tests
+pnpm check
 ```
 
 ---
@@ -124,48 +116,40 @@ pnpm test
 ## Building
 
 ```bash
-# Build desktop packages for your current OS:
-
 # Linux (AppImage & .deb)
-pnpm run electron:build:linux
-# or
-bun run electron:build:linux
+pnpm electron:build:linux
 
 # Windows (.exe installer)
-pnpm run electron:build:win
-# or
-bun run electron:build:win
+pnpm electron:build:win
 
 # macOS (.dmg & .zip, for both Intel and Apple Silicon)
-pnpm run electron:build:mac
-# or
-bun run electron:build:mac
+pnpm electron:build:mac
 ```
 
-The macOS build produces `x64` (Intel) and `arm64` (Apple Silicon) packages. To build only one, pass the architecture flag:
+The macOS build produces `x64` (Intel) and `arm64` (Apple Silicon) packages. To build only one, add `--arm64` or `--x64`. Packages are placed in the `release/` directory.
 
-```bash
-# Apple Silicon only
-pnpm run electron:build:mac --arm64
+---
 
-# Intel only
-pnpm run electron:build:mac --x64
-```
+## Docs
 
-Compiled distributions will be placed in the `release/` directory.
+- [Design guidelines](./docs/DESIGN.md): tokens, glass surfaces, motion and building blocks
+- [Storage](./docs/STORAGE.md): where data lives on your device and what "Clear cache" removes
+- [Privacy](./docs/PRIVACY.md): everything the app sends off your device
+- [Translations](./docs/I18N.md): adding strings, plurals and languages
+- [FAQ](./docs/FAQ.md): answers to the most common problems
 
 ---
 
 ## Contributing
 
-Bug fixes, small features, and docs fixes are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before you open a pull request. The [license](./LICENSE) limits what a fork is allowed to do.
+Bug fixes, small features, translations and docs fixes are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) and [AGENTS.md](./AGENTS.md) before you open a pull request, and report bugs with the [issue forms](https://github.com/tryliner/desktop/issues/new/choose). Questions and ideas go to [Discussions](https://github.com/tryliner/desktop/discussions), security issues to [SECURITY.md](./SECURITY.md). The [license](./LICENSE) limits what a fork is allowed to do.
 
 ---
 
 ## Special Thanks
 
 - [`@braccato/core`](https://github.com/better-lyrics/braccato) & `@braccato/parsers` — Synced lyrics components and format parsers.
-- [`@kawarp/react`](https://github.com/better-lyrics/kawarp) & `@kawarp/core` — WebGL background shader components.
+- [Kawarp](https://github.com/better-lyrics/kawarp) — WebGL background shader the fullscreen background is based on.
 - [Solar Icons](https://solar-icons.com) & [MingCute Icons](https://www.mingcute.com) — Icon collections.
 
 ---
@@ -178,4 +162,3 @@ Liner is distributed under the **Liner Source-Available & Non-Commercial Contrib
 - **Prohibited**: Commercial distribution, public competing forks, or extracting core algorithms for third-party products.
 
 See [LICENSE](./LICENSE) for details.
-

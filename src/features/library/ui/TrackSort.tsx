@@ -8,10 +8,12 @@ import {
 } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 
-export type TrackSortOption = "default" | "title" | "duration" | "popularity";
+export type TrackSortOption =
+  "default" | "added" | "title" | "duration" | "popularity";
 
 export const TRACK_SORT_OPTIONS: TrackSortOption[] = [
   "default",
+  "added",
   "title",
   "duration",
   "popularity",
@@ -21,6 +23,19 @@ interface SortableTrack {
   title: string;
   durationMs: number;
   playCount: number;
+  addedAt?: string;
+}
+
+function addedTime(track: SortableTrack): number {
+  const time = track.addedAt ? Date.parse(track.addedAt) : NaN;
+  return Number.isNaN(time) ? -Infinity : time;
+}
+
+export function sortOptionsFor(tracks: SortableTrack[]): TrackSortOption[] {
+  const hasDates = tracks.some(
+    (track) => !Number.isNaN(Date.parse(track.addedAt ?? "")),
+  );
+  return TRACK_SORT_OPTIONS.filter((option) => option !== "added" || hasDates);
 }
 
 /** Stable sort; "default" keeps the source order untouched. */
@@ -39,6 +54,10 @@ export function sortTracks<T extends SortableTrack>(
       });
     } else if (option === "duration") {
       diff = (a.track.durationMs || 0) - (b.track.durationMs || 0);
+    } else if (option === "added") {
+      const a1 = addedTime(a.track);
+      const b1 = addedTime(b.track);
+      diff = a1 === b1 ? 0 : b1 > a1 ? 1 : -1;
     } else if (option === "popularity") {
       diff = (b.track.playCount || 0) - (a.track.playCount || 0);
     }
@@ -49,6 +68,7 @@ export function sortTracks<T extends SortableTrack>(
 
 export interface TrackSortState<T> {
   option: TrackSortOption;
+  options: TrackSortOption[];
   setOption: (option: TrackSortOption) => void;
   sorted: T[];
 }
@@ -65,8 +85,9 @@ export function useTrackSort<T extends SortableTrack>(
   }, [key]);
 
   const sorted = useMemo(() => sortTracks(tracks, option), [tracks, option]);
+  const options = useMemo(() => sortOptionsFor(tracks), [tracks]);
 
-  return { option, setOption, sorted };
+  return { option, options, setOption, sorted };
 }
 
 interface TrackSortMenuProps {
@@ -82,6 +103,7 @@ export const TrackSortMenu = memo(function TrackSortMenu({
 
   const labels: Record<TrackSortOption, string> = {
     default: t("track_sort.default"),
+    added: t("track_sort.added") || "By date added",
     title: t("track_sort.title"),
     duration: t("track_sort.duration"),
     popularity: t("track_sort.popularity"),
@@ -101,7 +123,7 @@ export const TrackSortMenu = memo(function TrackSortMenu({
           <LuArrowUpNarrowWide size={18} />
         </Button>
       }
-      items={TRACK_SORT_OPTIONS.map((option) => ({
+      items={sort.options.map((option) => ({
         id: option,
         label: labels[option],
         active: sort.option === option,

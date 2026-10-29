@@ -28,22 +28,41 @@ export function isWordLevelSync(syncLevel: LyricsSyncLevel): boolean {
   return syncLevel === "word_level" || syncLevel === "syllable_level";
 }
 
-// strict word-level check for ai/timing providers
 export function shouldCacheLyricsCandidate(
   candidate?: LyricsCandidate | null,
 ): boolean {
-  if (!candidate || !candidate.lyrics?.content) return false;
+  return Boolean(candidate?.lyrics?.content);
+}
+
+export function isProvisionalLyricsCandidate(
+  candidate?: LyricsCandidate | null,
+): boolean {
+  if (!candidate) return false;
   const p = (candidate.provider || "")
     .toLowerCase()
     .trim()
     .replace(/[-_]/g, " ");
-
-  // cadence, polaris, polaris mono: only cache if word-level returned
   if (p === "cadence" || p === "polaris" || p === "polaris mono") {
-    return isWordLevelSync(candidate.syncLevel);
+    return !isWordLevelSync(candidate.syncLevel);
   }
+  return false;
+}
 
-  return true;
+export function mergeLyricsProvider(
+  providers: Record<string, LyricsCandidate>,
+  candidate: LyricsCandidate,
+): void {
+  if (!shouldCacheLyricsCandidate(candidate)) return;
+  const key = normalizeProviderKey(candidate.provider);
+  const existing = providers[key];
+  if (
+    existing &&
+    isProvisionalLyricsCandidate(candidate) &&
+    !isProvisionalLyricsCandidate(existing)
+  ) {
+    return;
+  }
+  providers[key] = candidate;
 }
 
 // ranks lyrics candidates by priority, sync depth, and quality
@@ -228,7 +247,7 @@ class LyricsCache {
     const providers: Record<string, LyricsCandidate> = {
       ...existing?.providers,
     };
-    providers[normalizeProviderKey(candidate.provider)] = candidate;
+    mergeLyricsProvider(providers, candidate);
 
     const validCandidates = Object.values(providers).filter(
       shouldCacheLyricsCandidate,
@@ -272,16 +291,11 @@ class LyricsCache {
       ...existing?.providers,
     };
 
-    if (shouldCacheLyricsCandidate(candidate)) {
-      providers[normalizeProviderKey(candidate.provider)] = candidate;
-    }
+    mergeLyricsProvider(providers, candidate);
 
     if (availableProviders) {
       for (const opt of availableProviders) {
-        if (opt.candidate && shouldCacheLyricsCandidate(opt.candidate)) {
-          providers[normalizeProviderKey(opt.candidate.provider)] =
-            opt.candidate;
-        }
+        if (opt.candidate) mergeLyricsProvider(providers, opt.candidate);
       }
     }
 
@@ -319,7 +333,7 @@ class LyricsCache {
   private saveToStorage(item: CachedLyricsItem) {
     try {
       localStorage.setItem(STORAGE_PREFIX + item.trackId, JSON.stringify(item));
-    } catch (e) {
+    } catch {
       this.evictOldest(20);
       try {
         localStorage.setItem(
@@ -355,6 +369,14 @@ class LyricsCache {
       } catch {}
     }
     this.saveIndex(index);
+  }
+
+  delete(trackId: string) {
+    this.memCache.delete(trackId);
+    try {
+      localStorage.removeItem(STORAGE_PREFIX + trackId);
+    } catch {}
+    this.saveIndex(this.getIndex().filter((id) => id !== trackId));
   }
 
   clear() {

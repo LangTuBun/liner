@@ -56,10 +56,12 @@ export class RootErrorBoundary extends Component<
 
     this.props.onError?.(error, errorInfo);
 
-    telemetry.reportError(error, {
-      componentStack: errorInfo.componentStack,
-      source: "React.RootErrorBoundary",
-    }).catch(() => {});
+    telemetry
+      .reportError(error, {
+        componentStack: errorInfo.componentStack,
+        source: "React.RootErrorBoundary",
+      })
+      .catch(() => {});
   }
 
   resetErrorBoundary = (): void => {

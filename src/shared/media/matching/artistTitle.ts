@@ -21,7 +21,11 @@ export const TITLE_DELIMITER = /\s*[-–—:|~]\s*/;
 export function parseArtistAndTitle(rawTitle: string): ParsedArtistTitle {
   const cleaned = stripJunk(rawTitle);
   const parts = cleaned.split(TITLE_DELIMITER);
-  if (parts.length >= 3 && parts[1].trim().length >= 2 && parts[2].trim().length >= 1) {
+  if (
+    parts.length >= 3 &&
+    parts[1].trim().length >= 2 &&
+    parts[2].trim().length >= 1
+  ) {
     const artist = parts[1].trim();
     const title = parts.slice(2).join(" - ").trim();
     return { artist, title, rawArtist: artist, rawTitle: title };
@@ -39,7 +43,10 @@ export function parseArtistAndTitle(rawTitle: string): ParsedArtistTitle {
   return { title: cleaned };
 }
 
-export function cleanSoundCloudMetadata(rawTitle: string, uploaderArtist?: string): SoundCloudMetadata {
+export function cleanSoundCloudMetadata(
+  rawTitle: string,
+  uploaderArtist?: string,
+): SoundCloudMetadata {
   const parsed = parseArtistAndTitle(rawTitle);
   const versionTags = getVersionTags(rawTitle);
   const cleanedTitle = stripJunk(parsed.title);

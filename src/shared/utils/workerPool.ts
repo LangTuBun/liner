@@ -11,11 +11,13 @@ export async function runWorkerPool<T>(
       await task(items[index], index);
     }
   };
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () =>
-    worker().catch((error: unknown) => {
-      failed = true;
-      throw error;
-    }),
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () =>
+      worker().catch((error: unknown) => {
+        failed = true;
+        throw error;
+      }),
   );
   await Promise.all(workers);
 }

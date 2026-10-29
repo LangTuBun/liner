@@ -12,6 +12,8 @@ import {
 } from "@mingcute/react";
 import { useLyricsStore } from "../store/lyricsStore";
 import { useTranslation } from "@/languages";
+import { cn } from "@/shared/lib";
+import { ISLAND_SURFACE } from "@/shared/ui";
 
 function formatOffsetBadge(ms: number): string {
   if (ms === 0) return "0.0s";
@@ -139,7 +141,12 @@ export function LyricsProviderIsland() {
       ref={containerRef}
       className="relative inline-flex items-center pointer-events-auto select-none"
     >
-      <div className="inline-flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border rounded-lg bg-black/50 backdrop-blur-xl px-[3px] gap-[2px] text-white">
+      <div
+        className={cn(
+          ISLAND_SURFACE,
+          "inline-flex items-center h-[32px] min-h-[32px] max-h-[32px] box-border px-[3px] gap-[2px] text-white",
+        )}
+      >
         {hasMultiple && (
           <button
             type="button"
@@ -160,9 +167,7 @@ export function LyricsProviderIsland() {
             }
           }}
           className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
-            hasMultiple
-              ? "hover:bg-white/10 cursor-pointer"
-              : "cursor-default"
+            hasMultiple ? "hover:bg-white/10 cursor-pointer" : "cursor-default"
           }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
@@ -277,10 +282,7 @@ export function LyricsProviderIsland() {
                 >
                   <span className="truncate">{option.provider}</span>
                   {isActive ? (
-                    <CheckFill
-                      size={14}
-                      className="text-white shrink-0"
-                    />
+                    <CheckFill size={14} className="text-white shrink-0" />
                   ) : (
                     <span className="text-[10px] font-mono text-white/40 shrink-0">
                       {idx + 1}
@@ -434,4 +436,3 @@ export function LyricsProviderIsland() {
     </div>
   );
 }
-

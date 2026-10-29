@@ -3,7 +3,10 @@ import { translations } from "./data";
 
 export type TranslationDict = Record<string, string>;
 
-export function flatten(obj: Record<string, unknown>, prefix = ""): TranslationDict {
+export function flatten(
+  obj: Record<string, unknown>,
+  prefix = "",
+): TranslationDict {
   const result: TranslationDict = {};
   for (const [key, val] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key;
@@ -18,7 +21,7 @@ export function flatten(obj: Record<string, unknown>, prefix = ""): TranslationD
 
 export type TFunction = (
   key: string,
-  vars?: Record<string, string | number>
+  vars?: Record<string, string | number>,
 ) => string;
 
 const flatCaches = new Map<Locale, Record<string, string>>();
@@ -59,7 +62,7 @@ function getPluralRules(locale: Locale): Intl.PluralRules {
 
 export function formatTemplate(
   template: string,
-  vars: Record<string, string | number>
+  vars: Record<string, string | number>,
 ): string {
   let result = template;
   for (const [k, v] of Object.entries(vars)) {
@@ -102,7 +105,7 @@ export function createTranslatorSync(locale: Locale): TFunction {
 export function t(
   dict: TranslationDict,
   key: string,
-  vars?: Record<string, string | number>
+  vars?: Record<string, string | number>,
 ): string {
   if (!dict) return key;
   let val = dict[key];

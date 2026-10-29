@@ -526,7 +526,28 @@
     "eq_preset_smooth": "Smooth",
     "eq_preset_smooth_hint": "Softens harsh highs for long listening",
     "eq_preset_rnb": "R&B",
-    "eq_preset_rnb_hint": "Silky vocals over a round, warm low end"
+    "eq_preset_rnb_hint": "Silky vocals over a round, warm low end",
+    "beta_visuals": {
+      "label": "Warning",
+      "ambient_title": "Ambient is in beta",
+      "ambient_body": "This track has a custom animated background. It is still in beta and can load weaker devices, so pick a lighter mode if the player stutters.",
+      "settings_title": "Visual quality",
+      "settings_body": "Choose how much the fullscreen player animates. Lighter modes save battery and run smoother on weaker devices.",
+      "modes": {
+        "full": {
+          "name": "All effects",
+          "hint": "Everything on, including blurred lyric edges"
+        },
+        "balanced": {
+          "name": "Balanced",
+          "hint": "Live backgrounds, no lyric blur"
+        },
+        "lite": {
+          "name": "Lite",
+          "hint": "Still cover, plain lyrics"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -942,7 +963,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Channel",
-      "support": "Support",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Website",
       "tagline": "Modern desktop music streaming player with syllable-synced lyrics",
@@ -977,11 +998,6 @@
     },
     "connection": {
       "open_folder": "Open saved location"
-    },
-    "cover_glow": {
-      "title": "Cover glow",
-      "description": "Blurred artwork glow behind pages. Turn off to keep a plain background.",
-      "disabled_for_light": "Off in light theme."
     },
     "audio_quality": {
       "title": "Audio quality monitor",
@@ -1140,6 +1156,7 @@
   "track_sort": {
     "label": "Sort",
     "default": "Default",
+    "added": "By date added",
     "title": "By title (A–Z)",
     "duration": "By duration",
     "popularity": "By popularity"

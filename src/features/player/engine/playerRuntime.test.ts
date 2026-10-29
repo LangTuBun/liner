@@ -118,20 +118,32 @@ describe("PlayerRuntime — status must always match the real audio state", () =
 describe("PlayerRuntime — buffering hiccups don't flash the loading state", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    usePlayerStore.setState({ status: "playing", currentTrack: track, error: null });
+    usePlayerStore.setState({
+      status: "playing",
+      currentTrack: track,
+      error: null,
+    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement })
+      .audio;
     Reflect.deleteProperty(audio, "readyState");
     Reflect.deleteProperty(audio, "paused");
   });
 
   it("a seek inside a loaded track (waiting -> seeked right away) keeps the play state", () => {
-    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
-    Object.defineProperty(audio, "paused", { value: false, configurable: true });
-    Object.defineProperty(audio, "readyState", { value: 4, configurable: true });
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement })
+      .audio;
+    Object.defineProperty(audio, "paused", {
+      value: false,
+      configurable: true,
+    });
+    Object.defineProperty(audio, "readyState", {
+      value: 4,
+      configurable: true,
+    });
     audio.dispatchEvent(new Event("waiting"));
     audio.dispatchEvent(new Event("seeked"));
     vi.advanceTimersByTime(1000);
@@ -139,9 +151,16 @@ describe("PlayerRuntime — buffering hiccups don't flash the loading state", ()
   });
 
   it("a real stall still shows loading once it lasts", () => {
-    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement }).audio;
-    Object.defineProperty(audio, "paused", { value: false, configurable: true });
-    Object.defineProperty(audio, "readyState", { value: 2, configurable: true });
+    const audio = (playerRuntime as unknown as { audio: HTMLAudioElement })
+      .audio;
+    Object.defineProperty(audio, "paused", {
+      value: false,
+      configurable: true,
+    });
+    Object.defineProperty(audio, "readyState", {
+      value: 2,
+      configurable: true,
+    });
     audio.dispatchEvent(new Event("waiting"));
     vi.advanceTimersByTime(100);
     expect(usePlayerStore.getState().status).toBe("playing");

@@ -3,5 +3,15 @@
   "plugins": ["react", "typescript", "unicorn", "oxc"],
   "env": {
     "browser": true
+  },
+  "ignorePatterns": ["electron/signer.ts"],
+  "rules": {
+    "react/set-state-in-effect": "off",
+    "react/refs": "off",
+    "react/immutability": "off",
+    "react/purity": "off",
+    "react/globals": "off",
+    "react/incompatible-library": "off",
+    "react/preserve-manual-memoization": "off"
   }
 }

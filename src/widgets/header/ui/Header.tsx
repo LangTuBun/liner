@@ -10,7 +10,12 @@ import WindowControls, {
 import logo from "@/assets/logo.svg";
 import { cn } from "@/shared/lib";
 
-const BACK_BUTTON_ROUTES = ["/library/playlist", "/artist", "/collection"];
+const BACK_BUTTON_ROUTES = [
+  "/library/playlist",
+  "/library/local",
+  "/artist",
+  "/collection",
+];
 
 function BackButton() {
   const navigate = useNavigate();
@@ -38,7 +43,9 @@ function BackButton() {
         size={16}
         className="transition-transform duration-150 group-hover:-translate-x-0.5"
       />
-      <span className="relative -left-[1.5px] top-[1px]">{t("common.back")}</span>
+      <span className="relative -left-[1.5px] top-[1px]">
+        {t("common.back")}
+      </span>
     </button>
   );
 }

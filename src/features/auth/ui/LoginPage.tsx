@@ -36,6 +36,9 @@ export default function LoginPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<
+    "username" | "displayName" | null
+  >(null);
 
   const selectMode = (next: "login" | "register") => {
     if (submitting || next === mode) return;
@@ -100,6 +103,7 @@ export default function LoginPage() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (submitting) return;
+    setErrorField(null);
 
     if (mode === "login") {
       const normalizedEmail = email.trim().toLowerCase();
@@ -136,10 +140,12 @@ export default function LoginPage() {
     const cleanDisplayName = displayName.trim();
 
     if (!USERNAME_RE.test(normalizedUsername)) {
+      setErrorField("username");
       setError(t("login.errors.username_invalid"));
       return;
     }
     if (!cleanDisplayName) {
+      setErrorField("displayName");
       setError(t("login.errors.display_name_required"));
       return;
     }
@@ -160,6 +166,9 @@ export default function LoginPage() {
         setRegisterStep(1);
         setError(t("login.errors.email_already_used"));
       } else {
+        if (code === "username_taken" || code === "invalid_username")
+          setErrorField("username");
+        if (code === "invalid_input") setErrorField("displayName");
         setError(resolveErrorMessage(nextError));
       }
     } finally {
@@ -401,10 +410,16 @@ export default function LoginPage() {
                             @
                           </span>
                         }
-                        hasError={Boolean(error)}
-                        aria-invalid={Boolean(error)}
+                        hasError={
+                          Boolean(error) && errorField !== "displayName"
+                        }
+                        aria-invalid={
+                          Boolean(error) && errorField !== "displayName"
+                        }
                         aria-describedby={
-                          error ? "auth-form-error" : "auth-username-hint"
+                          error && errorField !== "displayName"
+                            ? "auth-form-error"
+                            : "auth-username-hint"
                         }
                         onChange={(event) => {
                           setUsername(
@@ -416,12 +431,22 @@ export default function LoginPage() {
                         }}
                         disabled={submitting}
                       />
-                      <span
-                        id="auth-username-hint"
-                        className="mt-1 text-[11px] text-text-tertiary"
-                      >
-                        {t("login.username_hint")}
-                      </span>
+                      {error && errorField === "username" ? (
+                        <span
+                          id="auth-form-error"
+                          role="alert"
+                          className="mt-1 text-[11px] font-[500] text-accent-primary"
+                        >
+                          {error}
+                        </span>
+                      ) : (
+                        <span
+                          id="auth-username-hint"
+                          className="mt-1 text-[11px] text-text-tertiary"
+                        >
+                          {t("login.username_hint")}
+                        </span>
+                      )}
 
                       <label
                         className="mb-[7px] mt-[14px] block text-[12px] font-[500] text-text-secondary"
@@ -435,8 +460,10 @@ export default function LoginPage() {
                         autoComplete="name"
                         placeholder={t("login.placeholder_display_name")}
                         value={displayName}
-                        hasError={Boolean(error)}
-                        aria-invalid={Boolean(error)}
+                        hasError={Boolean(error) && errorField !== "username"}
+                        aria-invalid={
+                          Boolean(error) && errorField !== "username"
+                        }
                         aria-describedby={error ? "auth-form-error" : undefined}
                         onChange={(event) => {
                           setDisplayName(event.target.value);
@@ -450,7 +477,7 @@ export default function LoginPage() {
 
                 <div className="min-h-[22px] py-[6px]">
                   <AnimatePresence mode="wait" initial={false}>
-                    {error && (
+                    {error && errorField !== "username" && (
                       <motion.p
                         key={error}
                         id="auth-form-error"

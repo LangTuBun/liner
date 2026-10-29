@@ -21,10 +21,16 @@ const inFlight = new Map();
 function isCoverRequest(url) {
   try {
     const parsed = new URL(url);
-    if (!parsed.pathname || parsed.pathname === "/" || parsed.pathname === "/health") {
+    if (
+      !parsed.pathname ||
+      parsed.pathname === "/" ||
+      parsed.pathname === "/health"
+    ) {
       return false;
     }
-    return COVER_HOSTS.some((h) => parsed.hostname === h || parsed.hostname.endsWith("." + h));
+    return COVER_HOSTS.some(
+      (h) => parsed.hostname === h || parsed.hostname.endsWith("." + h),
+    );
   } catch {
     return false;
   }
@@ -54,8 +60,7 @@ async function enforceQuota(cache) {
       const toDelete = keys.slice(0, keys.length - MAX_ENTRIES);
       await Promise.all(toDelete.map((req) => cache.delete(req)));
     }
-  } catch {
-  }
+  } catch {}
 }
 
 async function fetchAndCache(request, cache, cacheKey) {

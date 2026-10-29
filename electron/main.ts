@@ -6,7 +6,6 @@ import {
   ipcMain,
   shell,
   screen,
-  dialog,
   session,
   nativeImage,
   powerSaveBlocker,

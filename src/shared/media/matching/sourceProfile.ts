@@ -1,6 +1,11 @@
 import type { ImportedTrack } from "@/shared/contracts";
 import { artistsMatch } from "./artists";
-import { cleanSoundCloudMetadata, parseArtistAndTitle, TITLE_DELIMITER, type SoundCloudMetadata } from "./artistTitle";
+import {
+  cleanSoundCloudMetadata,
+  parseArtistAndTitle,
+  TITLE_DELIMITER,
+  type SoundCloudMetadata,
+} from "./artistTitle";
 import { cleanBaseTitle, stripJunk } from "./junk";
 
 export interface SourceProfile {
@@ -21,13 +26,18 @@ export function buildSourceProfile(source: ImportedTrack): SourceProfile {
   const meta = cleanSoundCloudMetadata(source.title, source.artists[0]);
   const parsed = parseArtistAndTitle(source.title);
   const artists = [...source.artists];
-  if (meta.artist && !artists.some((artist) => artistsMatch(artist, meta.artist))) {
+  if (
+    meta.artist &&
+    !artists.some((artist) => artistsMatch(artist, meta.artist))
+  ) {
     artists.push(meta.artist);
   }
 
   const titleParts = stripJunk(source.title).split(TITLE_DELIMITER);
   const hasTwoParts =
-    titleParts.length === 2 && titleParts[0].trim().length >= 2 && titleParts[1].trim().length >= 1;
+    titleParts.length === 2 &&
+    titleParts[0].trim().length >= 2 &&
+    titleParts[1].trim().length >= 1;
 
   return {
     title: source.title,

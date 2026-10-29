@@ -8,7 +8,7 @@ import {
 import { ArtistLink } from "@/features/artist";
 import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
-import { usePlayerState } from "../hooks/usePlayerState";
+import { usePlayerStore } from "../store/playerStore";
 import { LikeMorphIcon } from "./LikeMorphIcon";
 
 interface FullscreenTrackInfoProps {
@@ -18,7 +18,7 @@ interface FullscreenTrackInfoProps {
 export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
   const { t } = useTranslation();
   const location = useLocation();
-  const track = usePlayerState().currentTrack;
+  const track = usePlayerStore((s) => s.currentTrack);
 
   const isLocal = isLocalTrackId(track?.id);
   const isLiked = useIsTrackLiked(track?.id);
@@ -47,7 +47,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
         </p>
         <p className="font-montserrat m-0 flex min-w-0 items-center gap-[6px] text-[14px] font-[500] text-white/70 leading-snug">
           {track?.explicit && (
-            <span className="font-montserrat inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-[#303030]/50 backdrop-blur-2xl backdrop-saturate-150 text-[10px] font-[700] leading-none text-white">
+            <span className="font-montserrat inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-[#303030]/70 text-[10px] font-[700] leading-none text-white">
               <span className="[text-box:trim-both_cap_alphabetic]">E</span>
             </span>
           )}
@@ -69,7 +69,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
           type="button"
           aria-label={isLiked ? t("common.unlike") : t("common.like")}
           onClick={handleLikeToggle}
-          className="relative inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border-none bg-[#303030]/50 backdrop-blur-2xl backdrop-saturate-150 cursor-pointer text-white transition-colors duration-200 ease-out hover:bg-[#303030]/65 active:scale-[0.92]"
+          className="relative inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border-none bg-[#303030]/70 cursor-pointer text-white transition-colors duration-200 ease-out hover:bg-[#303030]/65 active:scale-[0.92]"
         >
           <LikeMorphIcon liked={Boolean(isLiked)} size={20} />
         </button>

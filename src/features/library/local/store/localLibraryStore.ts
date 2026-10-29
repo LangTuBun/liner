@@ -6,6 +6,8 @@ import {
   type LocalImportResult,
   type LocalTrackRecord,
 } from "@/shared/media/local";
+import { linerDb } from "@/shared/storage/linerDb";
+import { lyricsCache } from "@/features/lyrics";
 import type { Track } from "@/shared/types";
 import { recordMatchKey, trackMatchKey } from "../lib/downloadMatch";
 
@@ -131,6 +133,9 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
         withTracks(get().records.filter((record) => !removing.has(record.id))),
       );
       await bridge.localTracksRemove(fileIds);
+      const trackIds = fileIds.map(toLocalTrackId);
+      for (const trackId of trackIds) lyricsCache.delete(trackId);
+      await linerDb.deleteLyrics(trackIds);
     },
   };
 });

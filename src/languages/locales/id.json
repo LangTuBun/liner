@@ -406,7 +406,28 @@
     "preset_nightcore": "1.35x Nightcore",
     "reverb": "Reverb",
     "reverb_hint": "Ruang atmosferik & kedalaman ambient",
-    "reverb_amount": "Reverb"
+    "reverb_amount": "Reverb",
+    "beta_visuals": {
+      "label": "Peringatan",
+      "ambient_title": "Ambient masih beta",
+      "ambient_body": "Lagu ini punya latar animasi sendiri. Masih beta dan bisa membebani perangkat yang lemah, jadi pilih mode yang lebih ringan kalau pemutar tersendat.",
+      "settings_title": "Kualitas visual",
+      "settings_body": "Atur seberapa hidup pemutar layar penuh. Mode yang lebih ringan menghemat baterai dan lebih lancar di perangkat yang lemah.",
+      "modes": {
+        "full": {
+          "name": "Semua efek",
+          "hint": "Semua aktif, termasuk tepi lirik yang diburamkan"
+        },
+        "balanced": {
+          "name": "Seimbang",
+          "hint": "Latar bergerak, tanpa blur lirik"
+        },
+        "lite": {
+          "name": "Ringan",
+          "hint": "Sampul diam, lirik polos"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -819,7 +840,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Kanal",
-      "support": "Dukungan",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Situs web",
       "tagline": "Pemutar musik streaming desktop modern dengan lirik tersinkron per suku kata",
@@ -854,11 +875,6 @@
     },
     "connection": {
       "open_folder": "Buka lokasi penyimpanan"
-    },
-    "cover_glow": {
-      "title": "Cahaya sampul",
-      "description": "Cahaya buram dari sampul di belakang halaman. Matikan untuk latar polos.",
-      "disabled_for_light": "Nonaktif di tema terang."
     }
   },
   "toast": {

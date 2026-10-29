@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  collectionPath,
+  collectionPreviewState,
+} from "@/features/collection/lib/collectionPreview";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Search3Fill,
   Search3Line,
   CloseCircleFill,
   GridFill,
@@ -355,7 +358,13 @@ export function SearchModal({
         itemData: it,
       });
       onClose();
-      navigate(`/collection?type=playlist&id=${encodeURIComponent(it.id)}`);
+      navigate(collectionPath("playlist", it.id), {
+        state: collectionPreviewState({
+          coverUrl: it.coverUrl,
+          title: it.name || it.title,
+          subtitle: it.author || it.owner,
+        }),
+      });
     } else if (
       (it as any)._type === "album" ||
       it.totalTracks !== undefined ||
@@ -371,7 +380,13 @@ export function SearchModal({
         itemData: it,
       });
       onClose();
-      navigate(`/collection?type=album&id=${encodeURIComponent(it.id)}`);
+      navigate(collectionPath("album", it.id), {
+        state: collectionPreviewState({
+          coverUrl: it.coverUrl,
+          title: it.name || it.title,
+          subtitle: it.artists || it.artist,
+        }),
+      });
     }
   };
 

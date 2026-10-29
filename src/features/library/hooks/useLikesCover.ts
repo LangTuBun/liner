@@ -1,6 +1,9 @@
 import { useTheme } from "next-themes";
 import likesCover from "@/assets/likes-cover.svg";
-import { buildLightLikesCoverSvg, svgToDataUrl } from "../lib/likesCoverPalette";
+import {
+  buildLightLikesCoverSvg,
+  svgToDataUrl,
+} from "../lib/likesCoverPalette";
 
 let lightCover: string | null = null;
 

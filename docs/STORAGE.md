@@ -5,23 +5,23 @@ should go.
 
 All paths below are under Electron's `userData` folder:
 
-| OS | `userData` |
-|---|---|
-| Linux | `~/.config/@liner/client` (dev) or `~/.config/Liner` (packaged) |
-| Windows | `%APPDATA%\Liner` |
-| macOS | `~/Library/Application Support/Liner` |
+| OS      | `userData`                                                      |
+| ------- | --------------------------------------------------------------- |
+| Linux   | `~/.config/@liner/client` (dev) or `~/.config/Liner` (packaged) |
+| Windows | `%APPDATA%\Liner`                                               |
+| macOS   | `~/Library/Application Support/Liner`                           |
 
 ## IndexedDB: `liner_db_v1`
 
 `src/shared/storage/linerDb.ts`, schema version 4. Each store has a small in-memory map
 in front of it.
 
-| Store | Key | Holds | Memory cap |
-|---|---|---|---|
-| `audio` | `trackId` | Downloaded audio blobs with size and last-played time | 3 records |
-| `tracks` | `id` | Track metadata saved next to cached audio | 500 |
-| `lyrics` | `trackId` | Lyrics and the providers that had them | 100 |
-| `artists` | `id` | Cached artist pages | 100 |
+| Store     | Key       | Holds                                                 | Memory cap |
+| --------- | --------- | ----------------------------------------------------- | ---------- |
+| `audio`   | `trackId` | Downloaded audio blobs with size and last-played time | 3 records  |
+| `tracks`  | `id`      | Track metadata saved next to cached audio             | 500        |
+| `lyrics`  | `trackId` | Lyrics and the providers that had them                | 100        |
+| `artists` | `id`      | Cached artist pages                                   | 100        |
 
 The audio cache is limited to 3 GB by default (`liner_audio_cache_limit_bytes`, minimum
 250 MB, changed in Settings → Cache & Storage). Over the limit, the least recently
@@ -29,17 +29,17 @@ played tracks are evicted (`src/shared/storage/audioCache.ts`).
 
 ## Files managed by the main process
 
-| Path | Holds | Code |
-|---|---|---|
-| `auth/session.json` | Liner session, encrypted with `safeStorage` | `electron/auth-session-store.ts` |
-| `auth/youtube-session.json` | YouTube account tokens, encrypted the same way | `electron/auth-session-ipc.ts` |
-| `local-tracks/library.json` | Index of imported audio files | `electron/local-tracks/library.ts` |
-| `local-tracks/audio/<hash>.<ext>` | Copies of imported audio files | same |
-| `local-tracks/covers/<hash>.<ext>` | Artwork taken from their tags | same |
-| `lossless/bin/sockseek(.exe)` | The sockseek downloader, installed on request | `electron/lossless/install.ts` |
-| `lossless/soulseek-auth.enc` | Soulseek username and password, encrypted with `safeStorage` | `electron/lossless/daemon.ts` |
-| `lossless/incoming/` | Downloads in progress; each file moves into `local-tracks/` when it finishes | same |
-| `lossless/sockseek.conf`, `lossless/daemon.pid` | Plain-text config with the Soulseek login and the daemon pid, only while sockseek runs. Removed when it stops, and on the next start after a crash | same |
+| Path                                            | Holds                                                                                                                                              | Code                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `auth/session.json`                             | Liner session, encrypted with `safeStorage`                                                                                                        | `electron/auth-session-store.ts`   |
+| `auth/youtube-session.json`                     | YouTube account tokens, encrypted the same way                                                                                                     | `electron/auth-session-ipc.ts`     |
+| `local-tracks/library.json`                     | Index of imported audio files                                                                                                                      | `electron/local-tracks/library.ts` |
+| `local-tracks/audio/<hash>.<ext>`               | Copies of imported audio files                                                                                                                     | same                               |
+| `local-tracks/covers/<hash>.<ext>`              | Artwork taken from their tags                                                                                                                      | same                               |
+| `lossless/bin/sockseek(.exe)`                   | The sockseek downloader, installed on request                                                                                                      | `electron/lossless/install.ts`     |
+| `lossless/soulseek-auth.enc`                    | Soulseek username and password, encrypted with `safeStorage`                                                                                       | `electron/lossless/daemon.ts`      |
+| `lossless/incoming/`                            | Downloads in progress; each file moves into `local-tracks/` when it finishes                                                                       | same                               |
+| `lossless/sockseek.conf`, `lossless/daemon.pid` | Plain-text config with the Soulseek login and the daemon pid, only while sockseek runs. Removed when it stops, and on the next start after a crash | same                               |
 
 Lossless downloads become ordinary `local-tracks/` records with `source: "soulseek"`,
 the search they came from (`matchKey`) and the result of the upsample check (`hiRes`).
@@ -52,21 +52,21 @@ protocol (`electron/local-tracks/protocol.ts`), never through IndexedDB.
 
 Settings and small state, as zustand `persist` stores or plain keys.
 
-| Key | Holds |
-|---|---|
-| `liner_player_session_v2` | Repeat, shuffle, volume and player settings; the queue and position only when "resume" is the start mode |
-| `liner_lyrics_session_v1` | Lyrics view settings |
-| `liner_customization_v1` | Appearance settings |
-| `liner_shortcuts_settings_v1` | Keyboard shortcuts |
-| `liner_lossless_v1` | The "Prefer hi-res" setting for lossless downloads |
-| `liner_overlay_settings_v1` | Overlay settings |
-| `liner_discord_settings_v1` | Discord Rich Presence settings |
-| `liner_youtube_preferences` | YouTube playback and sync settings |
-| `liner_youtube_page_id` | The brand channel picked for the YouTube account |
-| `liner_search_history` | Recent searches |
-| `liner_library_view_mode` | Grid or list in the library |
-| `liner_locale`, `theme` | Language and theme |
-| `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches |
+| Key                                                                   | Holds                                                                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `liner_player_session_v2`                                             | Repeat, shuffle, volume and player settings; the queue and position only when "resume" is the start mode |
+| `liner_lyrics_session_v1`                                             | Lyrics view settings                                                                                     |
+| `liner_customization_v1`                                              | Appearance settings                                                                                      |
+| `liner_shortcuts_settings_v1`                                         | Keyboard shortcuts                                                                                       |
+| `liner_lossless_v1`                                                   | The "Prefer hi-res" setting for lossless downloads                                                       |
+| `liner_overlay_settings_v1`                                           | Overlay settings                                                                                         |
+| `liner_discord_settings_v1`                                           | Discord Rich Presence settings                                                                           |
+| `liner_youtube_preferences`                                           | YouTube playback and sync settings                                                                       |
+| `liner_youtube_page_id`                                               | The brand channel picked for the YouTube account                                                         |
+| `liner_search_history`                                                | Recent searches                                                                                          |
+| `liner_library_view_mode`                                             | Grid or list in the library                                                                              |
+| `liner_locale`, `theme`                                               | Language and theme                                                                                       |
+| `liner_lyrics_*`, `liner:artist:*`, `liner:search:*`, `liner:query:*` | Small caches                                                                                             |
 
 `liner_auth_session` and `liner_youtube_tv_session` are legacy keys. They are moved
 into the encrypted files above on first launch and then removed.
@@ -83,13 +83,13 @@ into the encrypted files above on first launch and then removed.
 `clearStorageCategories` in `src/shared/utils/cacheManager.ts`, with the IPC handlers in
 `electron/main.ts`.
 
-| Category | Removes |
-|---|---|
-| Audio | `audio` and `tracks` stores, then **every** `*.indexeddb.blob` folder and `blob_storage`; with all categories selected, the whole IndexedDB |
-| Covers | CacheStorage and the service worker folder |
-| Lyrics | `lyrics` store, `liner_lyrics_*` keys and the lyrics session |
-| Metadata | `artists` store, `queryCache`, search caches and search history |
-| Any | Chromium's HTTP cache |
+| Category | Removes                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Audio    | `audio` and `tracks` stores, then **every** `*.indexeddb.blob` folder and `blob_storage`; with all categories selected, the whole IndexedDB |
+| Covers   | CacheStorage and the service worker folder                                                                                                  |
+| Lyrics   | `lyrics` store, `liner_lyrics_*` keys and the lyrics session                                                                                |
+| Metadata | `artists` store, `queryCache`, search caches and search history                                                                             |
+| Any      | Chromium's HTTP cache                                                                                                                       |
 
 Never removed: the sign-in sessions, `liner_locale`, `theme`, settings stores,
 `local-tracks/` and `lossless/`.

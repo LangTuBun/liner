@@ -6,9 +6,23 @@ import type {
   RadioResponse,
   TrackDetails,
 } from "@/shared/contracts";
-import { asArray, isRecord, numberValue, trimmedString } from "@/shared/utils/json";
-import { getCollection, getJson, requireId, SoundCloudCatalogError } from "./soundcloudCatalogRequest";
-import { parseSoundCloudPlaylistId, parseSoundCloudUserId, soundCloudPlaylistId } from "./soundcloudIds";
+import {
+  asArray,
+  isRecord,
+  numberValue,
+  trimmedString,
+} from "@/shared/utils/json";
+import {
+  getCollection,
+  getJson,
+  requireId,
+  SoundCloudCatalogError,
+} from "./soundcloudCatalogRequest";
+import {
+  parseSoundCloudPlaylistId,
+  parseSoundCloudUserId,
+  soundCloudPlaylistId,
+} from "./soundcloudIds";
 import {
   mapSoundCloudArtist,
   mapSoundCloudCatalogTrack,
@@ -28,11 +42,18 @@ const DEFAULT_RADIO_SIZE = 25;
 
 function uniqueTracks(tracks: ApiTrack[]): ApiTrack[] {
   const seen = new Set<string>();
-  return tracks.filter((track) => !seen.has(track.id) && Boolean(seen.add(track.id)));
+  return tracks.filter(
+    (track) => !seen.has(track.id) && Boolean(seen.add(track.id)),
+  );
 }
 
-function splitReleases(releases: unknown[]): Pick<ArtistDetails, "albums" | "singles"> {
-  const split: Pick<ArtistDetails, "albums" | "singles"> = { albums: [], singles: [] };
+function splitReleases(
+  releases: unknown[],
+): Pick<ArtistDetails, "albums" | "singles"> {
+  const split: Pick<ArtistDetails, "albums" | "singles"> = {
+    albums: [],
+    singles: [],
+  };
   for (const raw of releases) {
     const release = mapSoundCloudRelease(raw);
     const releaseType = soundCloudReleaseType(raw);
@@ -43,7 +64,10 @@ function splitReleases(releases: unknown[]): Pick<ArtistDetails, "albums" | "sin
   return split;
 }
 
-async function getArtist(artistId: string, signal?: AbortSignal): Promise<ArtistDetails> {
+async function getArtist(
+  artistId: string,
+  signal?: AbortSignal,
+): Promise<ArtistDetails> {
   const userId = requireId(parseSoundCloudUserId(artistId), "Artist");
   const [user, topTracks, uploads, releases] = await Promise.all([
     getJson(`/users/${userId}`, {}, signal),
@@ -63,22 +87,37 @@ async function getArtist(artistId: string, signal?: AbortSignal): Promise<Artist
     ...(bio ? { bio } : {}),
     ...(cover ? { cover } : {}),
     verified: user.verified === true,
-    tracks: uniqueTracks([...mapSoundCloudTracks(topTracks), ...mapSoundCloudTracks(uploads)]),
+    tracks: uniqueTracks([
+      ...mapSoundCloudTracks(topTracks),
+      ...mapSoundCloudTracks(uploads),
+    ]),
     albums,
     singles,
   };
 }
 
-async function getArtistImage(artistId: string, signal?: AbortSignal): Promise<string | undefined> {
+async function getArtistImage(
+  artistId: string,
+  signal?: AbortSignal,
+): Promise<string | undefined> {
   const userId = parseSoundCloudUserId(artistId);
   if (!userId) return undefined;
-  return soundCloudCover((await getJson(`/users/${userId}`, {}, signal)).avatar_url)?.url;
+  return soundCloudCover(
+    (await getJson(`/users/${userId}`, {}, signal)).avatar_url,
+  )?.url;
 }
 
 async function loadSet(setId: string, signal?: AbortSignal) {
   const playlistId = requireId(parseSoundCloudPlaylistId(setId), "Playlist");
-  const record = await getJson(`/playlists/${playlistId}`, { representation: "full" }, signal);
-  const rawTracks = await hydrateSoundCloudStubs(asArray(record.tracks).filter(isRecord), signal);
+  const record = await getJson(
+    `/playlists/${playlistId}`,
+    { representation: "full" },
+    signal,
+  );
+  const rawTracks = await hydrateSoundCloudStubs(
+    asArray(record.tracks).filter(isRecord),
+    signal,
+  );
   const tracks = mapSoundCloudTracks(rawTracks);
   const title = trimmedString(record.title);
   if (!title) throw new SoundCloudCatalogError("Playlist was not found.", 404);
@@ -96,32 +135,59 @@ async function loadSet(setId: string, signal?: AbortSignal) {
   return { record, summary };
 }
 
-async function getAlbum(albumId: string, signal?: AbortSignal): Promise<AlbumDetails> {
+async function getAlbum(
+  albumId: string,
+  signal?: AbortSignal,
+): Promise<AlbumDetails> {
   const { record, summary } = await loadSet(albumId, signal);
   const artist = mapSoundCloudArtist(record.user);
   return { type: "album", ...summary, artists: artist ? [artist] : [] };
 }
 
-async function getPlaylist(playlistId: string, signal?: AbortSignal): Promise<CatalogPlaylistDetails> {
+async function getPlaylist(
+  playlistId: string,
+  signal?: AbortSignal,
+): Promise<CatalogPlaylistDetails> {
   const { record, summary } = await loadSet(playlistId, signal);
   const author = mapSoundCloudArtist(record.user)?.name;
   const description = trimmedString(record.description);
-  return { type: "playlist", ...summary, ...(author ? { author } : {}), ...(description ? { description } : {}) };
+  return {
+    type: "playlist",
+    ...summary,
+    ...(author ? { author } : {}),
+    ...(description ? { description } : {}),
+  };
 }
 
-async function getTrack(trackId: string, signal?: AbortSignal): Promise<TrackDetails> {
+async function getTrack(
+  trackId: string,
+  signal?: AbortSignal,
+): Promise<TrackDetails> {
   const numericId = requireId(toSoundCloudTrackId(trackId), "Track");
   const record = await getJson(`/tracks/${numericId}`, {}, signal);
   const track = mapSoundCloudCatalogTrack(record);
   if (!track) throw new SoundCloudCatalogError("Track was not found.", 404);
   const description = trimmedString(record.description);
-  const releaseDate = trimmedString(record.release_date) ?? trimmedString(record.display_date);
-  return { ...track, ...(description ? { description } : {}), ...(releaseDate ? { releaseDate } : {}) };
+  const releaseDate =
+    trimmedString(record.release_date) ?? trimmedString(record.display_date);
+  return {
+    ...track,
+    ...(description ? { description } : {}),
+    ...(releaseDate ? { releaseDate } : {}),
+  };
 }
 
-async function getRadio(trackId: string, k = DEFAULT_RADIO_SIZE, signal?: AbortSignal): Promise<RadioResponse> {
+async function getRadio(
+  trackId: string,
+  k = DEFAULT_RADIO_SIZE,
+  signal?: AbortSignal,
+): Promise<RadioResponse> {
   const numericId = requireId(toSoundCloudTrackId(trackId), "Track");
-  const related = await getCollection(`/tracks/${numericId}/related`, String(k), signal);
+  const related = await getCollection(
+    `/tracks/${numericId}/related`,
+    String(k),
+    signal,
+  );
   return { items: mapSoundCloudTracks(related).slice(0, k) };
 }
 

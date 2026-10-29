@@ -5,7 +5,13 @@ const player = vi.hoisted(() => ({ stopAndClear: vi.fn(async () => {}) }));
 vi.mock("@/features/player", () => ({ playerEngine: player }));
 
 import { useAuthStore } from "./authStore";
-import { api, ApiError, getAuthSession, setAuthSession, type AuthTokens } from "@/shared/api";
+import {
+  api,
+  ApiError,
+  getAuthSession,
+  setAuthSession,
+  type AuthTokens,
+} from "@/shared/api";
 
 const stored = {
   accessToken: "expired-access",
@@ -26,7 +32,9 @@ describe("authStore.initialize — expired access token at launch", () => {
   });
 
   it("keeps the session when the refresh fails for a transient reason (server down)", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("error code: 525", { status: 525 }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("error code: 525", { status: 525 }),
+    );
 
     await useAuthStore.getState().initialize();
 
@@ -36,7 +44,10 @@ describe("authStore.initialize — expired access token at launch", () => {
 
   it("signs out when the server rejects the refresh token", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(
-      async () => new Response(JSON.stringify({ code: "INVALID_REFRESH_TOKEN" }), { status: 401 }),
+      async () =>
+        new Response(JSON.stringify({ code: "INVALID_REFRESH_TOKEN" }), {
+          status: 401,
+        }),
     );
 
     await useAuthStore.getState().initialize();
@@ -46,7 +57,9 @@ describe("authStore.initialize — expired access token at launch", () => {
   });
 
   it("stays signed in when a refresh 401 carries no token verdict", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("{}", { status: 401 }));
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}", { status: 401 }),
+    );
 
     await useAuthStore.getState().initialize();
 
@@ -68,9 +81,12 @@ describe("signing out clears the player", () => {
     useAuthStore.setState({ status: "authenticated", user: stored.user });
     let sessionDuringStop: unknown = "not called";
     player.stopAndClear.mockImplementation(async () => {
-      if (sessionDuringStop === "not called") sessionDuringStop = getAuthSession();
+      if (sessionDuringStop === "not called")
+        sessionDuringStop = getAuthSession();
     });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
 
     await useAuthStore.getState().logout();
 
@@ -92,7 +108,9 @@ describe("signing out clears the player", () => {
       setAuthSession(stored);
       useAuthStore.setState({ status: "authenticated", user: stored.user });
       player.stopAndClear.mockImplementation(() => new Promise(() => {}));
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(null, { status: 204 }),
+      );
       const loggingOut = useAuthStore.getState().logout();
       await vi.advanceTimersByTimeAsync(3_000);
       await loggingOut;

@@ -15,7 +15,11 @@ function StatusDot({ status }: { status: DiagCheck["status"] }) {
       : status === "fail"
         ? "bg-red-400"
         : "bg-text-tertiary";
-  return <span className={`mt-[5px] h-[8px] w-[8px] shrink-0 rounded-full ${color}`} />;
+  return (
+    <span
+      className={`mt-[5px] h-[8px] w-[8px] shrink-0 rounded-full ${color}`}
+    />
+  );
 }
 
 export default function ConnectivityWall() {
@@ -65,13 +69,21 @@ export default function ConnectivityWall() {
               className="m-0 text-[18px] font-[600] tracking-[-0.01em] text-text-primary"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              {t(serverOutage ? "connectivity.wall_title_server" : "connectivity.wall_title")}
+              {t(
+                serverOutage
+                  ? "connectivity.wall_title_server"
+                  : "connectivity.wall_title",
+              )}
             </h1>
             <p
               className="m-0 mt-[2px] text-[13px] text-text-secondary"
               style={{ fontFamily: "var(--font-inter), sans-serif" }}
             >
-              {t(serverOutage ? "connectivity.wall_subtitle_server" : "connectivity.wall_subtitle")}
+              {t(
+                serverOutage
+                  ? "connectivity.wall_subtitle_server"
+                  : "connectivity.wall_subtitle",
+              )}
             </p>
           </div>
         </div>
@@ -104,7 +116,10 @@ export default function ConnectivityWall() {
             style={{ fontFamily: "var(--font-inter), sans-serif" }}
           >
             {checks.length > 0
-              ? t("connectivity.check_ok_count", { ok: okCount, total: checks.length })
+              ? t("connectivity.check_ok_count", {
+                  ok: okCount,
+                  total: checks.length,
+                })
               : t("connectivity.checks_title")}
             {lastRunAt
               ? ` · ${new Date(lastRunAt).toLocaleTimeString()}`
@@ -122,7 +137,10 @@ export default function ConnectivityWall() {
                 </p>
               ) : null}
               {checks.map((check, idx) => (
-                <div key={`${check.id}-${check.host ?? ""}-${idx}`} className="flex items-start gap-[8px] px-[2px] py-[3px]">
+                <div
+                  key={`${check.id}-${check.host ?? ""}-${idx}`}
+                  className="flex items-start gap-[8px] px-[2px] py-[3px]"
+                >
                   <StatusDot status={check.status} />
                   <div className="min-w-0 flex-1">
                     <p
@@ -131,7 +149,10 @@ export default function ConnectivityWall() {
                     >
                       {checkLabel(check)}
                       {typeof check.latencyMs === "number" ? (
-                        <span className="font-[400] text-text-tertiary"> · {check.latencyMs}ms</span>
+                        <span className="font-[400] text-text-tertiary">
+                          {" "}
+                          · {check.latencyMs}ms
+                        </span>
                       ) : null}
                     </p>
                     {check.detail ? (

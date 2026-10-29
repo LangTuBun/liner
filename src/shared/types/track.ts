@@ -21,6 +21,7 @@ export interface Track {
   explicit?: boolean;
   audioVariant?: TrackAudioVariant;
   releaseDate?: string;
+  addedAt?: string;
   album?: {
     id: string;
     title: string;

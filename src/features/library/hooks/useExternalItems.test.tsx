@@ -11,6 +11,7 @@ vi.mock("@/shared/api", () => ({
   api: { listSavedCollections: vi.fn() },
   mediaUrl: (url: string) => url,
   toMaxQualityAvatarUrl: (url: string) => url,
+  getAuthSession: () => null,
 }));
 
 const artistsResponse = {
@@ -37,7 +38,9 @@ describe("useExternalItems", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    vi.mocked(api.listSavedCollections).mockResolvedValue(artistsResponse as any);
+    vi.mocked(api.listSavedCollections).mockResolvedValue(
+      artistsResponse as any,
+    );
   });
 
   afterEach(() => {
@@ -55,7 +58,9 @@ describe("useExternalItems", () => {
 
     act(() => root.unmount());
     root = createRoot(container);
-    vi.mocked(api.listSavedCollections).mockReturnValue(new Promise(() => undefined));
+    vi.mocked(api.listSavedCollections).mockReturnValue(
+      new Promise(() => undefined),
+    );
 
     act(() => {
       root.render(<Probe />);

@@ -8,8 +8,10 @@ import {
   type CSSProperties,
 } from "react";
 
-export interface ImageProps
-  extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "placeholder"> {
+export interface ImageProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  "src" | "placeholder"
+> {
   src: string | { src: string };
   alt?: string;
   width?: number | string;
@@ -32,8 +34,8 @@ export default function AppImage({
   height,
   fill = false,
   priority = false,
-  placeholder = "empty",
-  blurDataURL,
+  placeholder: _placeholder,
+  blurDataURL: _blurDataURL,
   fallbackSrc,
   crossOrigin,
   autoCropLetterbox = true,
@@ -44,7 +46,7 @@ export default function AppImage({
   draggable = false,
   ...rest
 }: ImageProps) {
-  const resolvedSrc = typeof src === "string" ? src : src?.src ?? "";
+  const resolvedSrc = typeof src === "string" ? src : (src?.src ?? "");
   const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -126,19 +128,41 @@ export default function AppImage({
     : {
         position: "relative",
         display: "inline-block",
-        width: width ? (typeof width === "number" ? `${width}px` : width) : undefined,
-        height: height ? (typeof height === "number" ? `${height}px` : height) : undefined,
+        width: width
+          ? typeof width === "number"
+            ? `${width}px`
+            : width
+          : undefined,
+        height: height
+          ? typeof height === "number"
+            ? `${height}px`
+            : height
+          : undefined,
       };
 
   const baseScale = isLetterboxed ? "scale(1.34)" : undefined;
-  const combinedTransform = [baseScale, style?.transform].filter(Boolean).join(" ") || undefined;
+  const combinedTransform =
+    [baseScale, style?.transform].filter(Boolean).join(" ") || undefined;
 
   const imgStyle: CSSProperties = {
-    width: fill ? "100%" : width ? (typeof width === "number" ? `${width}px` : width) : undefined,
-    height: fill ? "100%" : height ? (typeof height === "number" ? `${height}px` : height) : undefined,
+    width: fill
+      ? "100%"
+      : width
+        ? typeof width === "number"
+          ? `${width}px`
+          : width
+        : undefined,
+    height: fill
+      ? "100%"
+      : height
+        ? typeof height === "number"
+          ? `${height}px`
+          : height
+        : undefined,
     opacity: isLoaded ? 1 : 0,
     transformOrigin: "center center",
-    transition: style?.transition ?? "opacity 0.22s ease-in-out, filter 0.3s ease-out",
+    transition:
+      style?.transition ?? "opacity 0.22s ease-in-out, filter 0.3s ease-out",
     ...style,
     ...(combinedTransform ? { transform: combinedTransform } : {}),
   };
@@ -176,4 +200,3 @@ export default function AppImage({
     </div>
   );
 }
-

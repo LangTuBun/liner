@@ -13,7 +13,9 @@ export default function UpdateToastBridge() {
   const error = useUpdaterStore((state) => state.error);
   const installUpdate = useUpdaterStore((state) => state.installUpdate);
   const reset = useUpdaterStore((state) => state.reset);
-  const initUpdaterListeners = useUpdaterStore((state) => state.initUpdaterListeners);
+  const initUpdaterListeners = useUpdaterStore(
+    (state) => state.initUpdaterListeners,
+  );
 
   // initialize ipc listeners from electron main process
   useEffect(() => {
@@ -28,7 +30,10 @@ export default function UpdateToastBridge() {
       const version = updateInfo?.version ? `v${updateInfo.version}` : "";
       let desc = version;
       if (downloadProgress && downloadProgress.total > 0) {
-        const currentMb = (downloadProgress.transferred / (1024 * 1024)).toFixed(1);
+        const currentMb = (
+          downloadProgress.transferred /
+          (1024 * 1024)
+        ).toFixed(1);
         const totalMb = (downloadProgress.total / (1024 * 1024)).toFixed(1);
         desc = `${version ? `${version} · ` : ""}${downloadProgress.percent}% (${currentMb} / ${totalMb} MB)`;
       }
@@ -46,8 +51,9 @@ export default function UpdateToastBridge() {
       toast(t("updater.downloaded_title") || "Update downloaded", "checkmark", {
         id: TOAST_ID,
         description:
-          t("updater.downloaded_desc", { version: updateInfo?.version || "" }) ||
-          "Restart Liner to complete installation.",
+          t("updater.downloaded_desc", {
+            version: updateInfo?.version || "",
+          }) || "Restart Liner to complete installation.",
         duration: 999999,
         action: {
           label: t("updater.install_button") || "Install",
@@ -73,7 +79,17 @@ export default function UpdateToastBridge() {
     if (status === "idle" || status === "checking" || status === "available") {
       dismiss(TOAST_ID);
     }
-  }, [status, updateInfo, downloadProgress, error, toast, dismiss, t, installUpdate, reset]);
+  }, [
+    status,
+    updateInfo,
+    downloadProgress,
+    error,
+    toast,
+    dismiss,
+    t,
+    installUpdate,
+    reset,
+  ]);
 
   return null;
 }

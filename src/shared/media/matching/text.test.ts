@@ -9,11 +9,15 @@ import { compareVersionTags, getVersionTags } from "./versionTags";
 describe("matcher text helpers", () => {
   it("tokenSortRatio handles inverted word orders cleanly", () => {
     expect(tokenSortRatio("Кино - Кукушка", "Кукушка Кино")).toBe(100);
-    expect(tokenSortRatio("Pharaoh & Boulevard Depo", "Boulevard Depo, Pharaoh")).toBe(100);
+    expect(
+      tokenSortRatio("Pharaoh & Boulevard Depo", "Boulevard Depo, Pharaoh"),
+    ).toBe(100);
   });
 
   it("tokenSetRatio rewards subsets", () => {
-    expect(tokenSetRatio("в машине целуемся", "мы в машине с тобой целуемся")).toBe(73);
+    expect(
+      tokenSetRatio("в машине целуемся", "мы в машине с тобой целуемся"),
+    ).toBe(73);
     expect(tokenSetRatio("abc", "xyz")).toBe(0);
   });
 
@@ -23,7 +27,9 @@ describe("matcher text helpers", () => {
   });
 
   it("transliterates cyrillic to phonetic latin", () => {
-    expect(toPhoneticLatin("Пошлая Молли")).toBe(toPhoneticLatin("Poshlaya Molly"));
+    expect(toPhoneticLatin("Пошлая Молли")).toBe(
+      toPhoneticLatin("Poshlaya Molly"),
+    );
   });
 
   it("matches artist aliases", () => {
@@ -33,20 +39,41 @@ describe("matcher text helpers", () => {
   });
 
   it("detects version tags", () => {
-    expect([...getVersionTags("Nightcall (Slowed + Reverb)")].sort()).toEqual(["reverb", "slowed"]);
-    expect(compareVersionTags(new Set(), new Set())).toEqual({ matches: true, penalty: 0, bonus: 5 });
-    expect(compareVersionTags(new Set(["remix"]), new Set())).toEqual({ matches: false, penalty: 50, bonus: 0 });
+    expect([...getVersionTags("Nightcall (Slowed + Reverb)")].sort()).toEqual([
+      "reverb",
+      "slowed",
+    ]);
+    expect(compareVersionTags(new Set(), new Set())).toEqual({
+      matches: true,
+      penalty: 0,
+      bonus: 5,
+    });
+    expect(compareVersionTags(new Set(["remix"]), new Set())).toEqual({
+      matches: false,
+      penalty: 50,
+      bonus: 0,
+    });
   });
 
   it("strips junk and search noise", () => {
     expect(stripJunk("Track (Official Video) @handle")).toBe("Track");
-    expect(cleanSearchTitle("Song (Official Music Video) [Explicit]")).toBe("Song");
+    expect(cleanSearchTitle("Song (Official Music Video) [Explicit]")).toBe(
+      "Song",
+    );
   });
 
   it("parses artist and title pairs", () => {
-    expect(parseArtistAndTitle("Doja Cat - Say So")).toMatchObject({ artist: "Doja Cat", title: "Say So" });
-    expect(parseArtistAndTitle("Uploader - Artist - Title")).toMatchObject({ artist: "Artist", title: "Title" });
-    expect(parseArtistAndTitle("Plain Title")).toEqual({ title: "Plain Title" });
+    expect(parseArtistAndTitle("Doja Cat - Say So")).toMatchObject({
+      artist: "Doja Cat",
+      title: "Say So",
+    });
+    expect(parseArtistAndTitle("Uploader - Artist - Title")).toMatchObject({
+      artist: "Artist",
+      title: "Title",
+    });
+    expect(parseArtistAndTitle("Plain Title")).toEqual({
+      title: "Plain Title",
+    });
   });
 
   it("cleanSoundCloudMetadata strips junk while preserving artist and version tags", () => {

@@ -409,7 +409,28 @@
     "preset_nightcore": "1,35x Nightcore",
     "reverb": "Hall",
     "reverb_hint": "Atmosphärischer Raum & Tiefe",
-    "reverb_amount": "Hall"
+    "reverb_amount": "Hall",
+    "beta_visuals": {
+      "label": "Warnung",
+      "ambient_title": "Ambient ist in der Beta",
+      "ambient_body": "Dieser Track hat einen eigenen animierten Hintergrund. Er ist noch in der Beta und kann schwächere Geräte belasten. Wähle einen leichteren Modus, wenn der Player ruckelt.",
+      "settings_title": "Visuelle Qualität",
+      "settings_body": "Lege fest, wie lebendig der Vollbild-Player ist. Leichtere Modi schonen den Akku und laufen auf schwächeren Geräten flüssiger.",
+      "modes": {
+        "full": {
+          "name": "Alle Effekte",
+          "hint": "Alles an, inklusive unscharfer Textränder"
+        },
+        "balanced": {
+          "name": "Ausgewogen",
+          "hint": "Lebendige Hintergründe, ohne Textunschärfe"
+        },
+        "lite": {
+          "name": "Leicht",
+          "hint": "Ruhiges Cover, schlichter Text"
+        }
+      }
+    }
   },
   "playlist": {
     "playlist": "Playlist",
@@ -689,7 +710,7 @@
     "about": {
       "liner": "Liner",
       "telegram": "Kanal",
-      "support": "Support",
+      "discord": "Discord",
       "github": "GitHub",
       "website": "Website",
       "tagline": "Moderner Desktop-Musikplayer mit silbensynchronen Songtexten",
@@ -724,11 +745,6 @@
     },
     "connection": {
       "open_folder": "Speicherort öffnen"
-    },
-    "cover_glow": {
-      "title": "Cover-Leuchten",
-      "description": "Unscharfes Cover-Leuchten hinter Seiten. Ausschalten für einen schlichten Hintergrund.",
-      "disabled_for_light": "Im hellen Design aus."
     }
   },
   "toast": {
@@ -876,6 +892,7 @@
   "track_sort": {
     "label": "Sortieren",
     "default": "Standard",
+    "added": "Nach Hinzufügedatum",
     "title": "Nach Titel (A–Z)",
     "duration": "Nach Dauer",
     "popularity": "Nach Beliebtheit"

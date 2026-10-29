@@ -86,3 +86,4 @@ export {
   type DialogButtonProps,
 } from "./DialogActions";
 export { default as QrCode, type QrCodeProps } from "./QrCode";
+export { ISLAND_SURFACE } from "./islandSurface";

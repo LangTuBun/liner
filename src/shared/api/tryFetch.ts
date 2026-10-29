@@ -15,10 +15,16 @@ async function tryFetch<T>(
   }
 }
 
-export function tryFetchJson(url: string, init: RequestInit = {}): Promise<unknown> {
+export function tryFetchJson(
+  url: string,
+  init: RequestInit = {},
+): Promise<unknown> {
   return tryFetch(url, init, (response) => response.json() as Promise<unknown>);
 }
 
-export function tryFetchText(url: string, init: RequestInit = {}): Promise<string | undefined> {
+export function tryFetchText(
+  url: string,
+  init: RequestInit = {},
+): Promise<string | undefined> {
   return tryFetch(url, init, (response) => response.text());
 }

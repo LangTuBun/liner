@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getCoverElement,
-  preloadCoverArt,
-} from "@/features/covers/lib/coverArt";
+import { loadCoverElement } from "@/features/covers/lib/coverArt";
 import {
   extractColorsFromImage,
   DEFAULT_FLUID_COLORS,
@@ -40,31 +37,9 @@ export function useCoverFluidColors(imageUrl: string | undefined): FluidColors {
       }
     };
 
-    const existingEl = getCoverElement(imageUrl);
-    if (existingEl && existingEl.complete && existingEl.naturalWidth > 0) {
-      process(existingEl);
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (active) process(img);
-    };
-    img.onerror = () => {
-      void preloadCoverArt(imageUrl).then(() => {
-        const fallbackEl = getCoverElement(imageUrl);
-        if (
-          active &&
-          fallbackEl &&
-          fallbackEl.complete &&
-          fallbackEl.naturalWidth > 0
-        ) {
-          process(fallbackEl);
-        }
-      });
-    };
-    img.src = imageUrl;
+    void loadCoverElement(imageUrl).then((element) => {
+      if (active && element) process(element);
+    });
 
     return () => {
       active = false;

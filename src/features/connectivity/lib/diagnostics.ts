@@ -7,8 +7,10 @@ const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
   "https://api.tryliner.fun";
 const COVERS_BASE =
-  (import.meta.env.VITE_COVERS_PROXY_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "https://covers.tryliner.fun";
+  (import.meta.env.VITE_COVERS_PROXY_URL as string | undefined)?.replace(
+    /\/+$/,
+    "",
+  ) || "https://covers.tryliner.fun";
 
 const CHECK_TIMEOUT_MS = 8000;
 
@@ -22,7 +24,18 @@ export const DIAG_ENDPOINTS = {
 export type CheckStatus = "ok" | "fail" | "skip";
 
 export interface DiagCheck {
-  id: "device" | "api" | "covers" | "link" | "dns" | "tcp" | "tls" | "control" | "trace" | "platform" | "main";
+  id:
+    | "device"
+    | "api"
+    | "covers"
+    | "link"
+    | "dns"
+    | "tcp"
+    | "tls"
+    | "control"
+    | "trace"
+    | "platform"
+    | "main";
   host?: string;
   status: CheckStatus;
   detail?: string;
@@ -54,8 +67,19 @@ async function timedFetch(url: string, init?: RequestInit): Promise<DiagCheck> {
   try {
     const res = await fetch(url, { ...init, signal: controller.signal });
     const ms = Math.round(performance.now() - start);
-    if (!res.ok) return { id: "api", status: "fail", detail: `HTTP ${res.status}`, latencyMs: ms };
-    return { id: "api", status: "ok", detail: `HTTP ${res.status}`, latencyMs: ms };
+    if (!res.ok)
+      return {
+        id: "api",
+        status: "fail",
+        detail: `HTTP ${res.status}`,
+        latencyMs: ms,
+      };
+    return {
+      id: "api",
+      status: "ok",
+      detail: `HTTP ${res.status}`,
+      latencyMs: ms,
+    };
   } catch (err) {
     return { id: "api", status: "fail", detail: shortError(err) };
   } finally {
@@ -84,7 +108,11 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
     try {
       // opaque ping, no cors needed, resolving at all means reachable
       await fetch(url, { mode: "no-cors", signal: controller.signal });
-      return { id, status: "ok", latencyMs: Math.round(performance.now() - start) };
+      return {
+        id,
+        status: "ok",
+        latencyMs: Math.round(performance.now() - start),
+      };
     } catch (err) {
       return { id, status: "fail", detail: shortError(err) };
     } finally {
@@ -101,7 +129,10 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
   const hosts = [API_BASE, COVERS_BASE, SHARE_BASE_URL].map(hostOf);
   let main: MainNetResult | null = null;
   try {
-    const bridge = typeof window !== "undefined" ? window.linerElectron?.diagnoseNetwork : undefined;
+    const bridge =
+      typeof window !== "undefined"
+        ? window.linerElectron?.diagnoseNetwork
+        : undefined;
     if (bridge) {
       main = await bridge(hosts);
       for (const d of main.dns) {
@@ -126,14 +157,18 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
         });
       }
       for (const h of main.tls) {
-        const certBits = [h.subject, h.authorized === false ? "untrusted" : null].filter(Boolean);
+        const certBits = [
+          h.subject,
+          h.authorized === false ? "untrusted" : null,
+        ].filter(Boolean);
         checks.push({
           id: "tls",
           host: h.host,
           status: h.ok ? "ok" : "fail",
           detail:
-            (h.protocol ? `${h.protocol}${certBits.length > 0 ? ` · ${certBits.join(" · ")}` : ""}` : undefined) ??
-            (!h.ok && h.error ? h.error : undefined),
+            (h.protocol
+              ? `${h.protocol}${certBits.length > 0 ? ` · ${certBits.join(" · ")}` : ""}`
+              : undefined) ?? (!h.ok && h.error ? h.error : undefined),
           latencyMs: h.ms,
         });
       }
@@ -142,7 +177,8 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
           id: "control",
           host: c.name,
           status: c.ok ? "ok" : "fail",
-          detail: c.detail ?? (c.status ? `HTTP ${c.status}` : undefined) ?? c.error,
+          detail:
+            c.detail ?? (c.status ? `HTTP ${c.status}` : undefined) ?? c.error,
           latencyMs: c.ms,
         });
       }
@@ -150,16 +186,25 @@ export async function runAllChecks(): Promise<DiagnosticsResult> {
         checks.push({
           id: "trace",
           host: main.trace.host,
-          status: main.trace.ok ? "ok" : main.trace.error === "traceroute not installed" ? "skip" : "fail",
-          detail: main.trace.hops.length > 0
-            ? `${main.trace.hops.length} hops`
-            : (main.trace.error ?? "no hops"),
+          status: main.trace.ok
+            ? "ok"
+            : main.trace.error === "traceroute not installed"
+              ? "skip"
+              : "fail",
+          detail:
+            main.trace.hops.length > 0
+              ? `${main.trace.hops.length} hops`
+              : (main.trace.error ?? "no hops"),
           latencyMs: main.trace.ms,
         });
       }
       checks.push({ id: "platform", status: "skip", detail: main.platform });
     } else {
-      checks.push({ id: "main", status: "skip", detail: "desktop bridge unavailable" });
+      checks.push({
+        id: "main",
+        status: "skip",
+        detail: "desktop bridge unavailable",
+      });
     }
   } catch (err) {
     checks.push({ id: "main", status: "fail", detail: shortError(err) });

@@ -23,7 +23,12 @@ const ARROW_CONSUMING_ROLES = new Set([
   "tab",
 ]);
 
-const ARROW_CODES = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
+const ARROW_CODES = new Set([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+]);
 
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -57,7 +62,11 @@ export function isKeyHandledByFocusedControl(
 
   if (ARROW_CODES.has(code)) {
     if (target.tagName === "SELECT") return true;
-    if (target.tagName === "INPUT" && (target as HTMLInputElement).type === "range") return true;
+    if (
+      target.tagName === "INPUT" &&
+      (target as HTMLInputElement).type === "range"
+    )
+      return true;
     return role !== null && ARROW_CONSUMING_ROLES.has(role);
   }
 

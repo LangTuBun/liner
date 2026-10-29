@@ -4,7 +4,6 @@ import { debouncedStorage } from "@/shared/utils/storage";
 import {
   parseRawLyrics,
   applyLyricsOffset,
-  type WordData,
   type SyncedLine,
 } from "../engine/lyricsParser";
 import type { Lyric } from "@braccato/parsers";
@@ -39,7 +38,6 @@ export function hasSyncedLyricsSources(
     return true;
   }
   if (
-    braccatoLyrics.length > 0 &&
     braccatoLyrics.some(
       (l) => (l.startTimeMs ?? 0) > 0 || (l.durationMs ?? 0) > 0,
     )

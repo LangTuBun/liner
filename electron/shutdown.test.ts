@@ -17,7 +17,12 @@ describe("createShutdown", () => {
       throw new Error("boom");
     });
     const b = vi.fn();
-    const s = createShutdown({ cleanup: [a, b], quit: vi.fn(), forceExit: vi.fn(), watchdogMs: 1000 });
+    const s = createShutdown({
+      cleanup: [a, b],
+      quit: vi.fn(),
+      forceExit: vi.fn(),
+      watchdogMs: 1000,
+    });
     s.begin();
     s.begin();
     expect(a).toHaveBeenCalledTimes(1);
@@ -44,7 +49,12 @@ describe("createShutdown", () => {
 
   it("forces the exit when the graceful quit hangs", () => {
     const forceExit = vi.fn();
-    const s = createShutdown({ cleanup: [], quit: vi.fn(), forceExit, watchdogMs: 4000 });
+    const s = createShutdown({
+      cleanup: [],
+      quit: vi.fn(),
+      forceExit,
+      watchdogMs: 4000,
+    });
     s.quit();
     vi.advanceTimersByTime(3999);
     expect(forceExit).not.toHaveBeenCalled();
@@ -67,7 +77,12 @@ describe("createShutdown", () => {
   });
 
   it("is not quitting until asked", () => {
-    const s = createShutdown({ cleanup: [], quit: vi.fn(), forceExit: vi.fn(), watchdogMs: 10 });
+    const s = createShutdown({
+      cleanup: [],
+      quit: vi.fn(),
+      forceExit: vi.fn(),
+      watchdogMs: 10,
+    });
     expect(s.isQuitting()).toBe(false);
   });
 });

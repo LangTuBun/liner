@@ -8,7 +8,8 @@ export type StoredAuthSession = {
   [key: string]: unknown;
 };
 
-export type AuthRefreshOutcome = "refreshed" | "rotated" | "signed_out" | "transient" | "no_session";
+export type AuthRefreshOutcome =
+  "refreshed" | "rotated" | "signed_out" | "transient" | "no_session";
 
 export type AuthRefreshResult = {
   outcome: AuthRefreshOutcome;
@@ -25,12 +26,22 @@ export type SessionCipher = {
 export type AuthSessionStoreDeps = {
   fetch: (url: string, init: RequestInit) => Promise<Response>;
   syncClock: (dateHeader: string) => void;
-  signHeaders?: (method: string, path: string, body: string) => Record<string, string>;
+  signHeaders?: (
+    method: string,
+    path: string,
+    body: string,
+  ) => Record<string, string>;
 };
 
-export type AuthSessionListener = (session: StoredAuthSession | null, origin?: number) => void;
+export type AuthSessionListener = (
+  session: StoredAuthSession | null,
+  origin?: number,
+) => void;
 
-const DEAD_REFRESH_CODES = new Set(["INVALID_REFRESH_TOKEN", "REFRESH_SESSION_EXPIRED"]);
+const DEAD_REFRESH_CODES = new Set([
+  "INVALID_REFRESH_TOKEN",
+  "REFRESH_SESSION_EXPIRED",
+]);
 const REFRESH_PATH = "/v1/auth/refresh";
 const REFRESH_TIMEOUT_MS = 15_000;
 const REFRESH_ATTEMPTS = 2;
@@ -39,13 +50,18 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 export function isTrustedApiBase(url: string): boolean {
   try {
     const { protocol, hostname } = new URL(url);
-    return protocol === "https:" || (protocol === "http:" && LOOPBACK_HOSTS.has(hostname));
+    return (
+      protocol === "https:" ||
+      (protocol === "http:" && LOOPBACK_HOSTS.has(hostname))
+    );
   } catch {
     return false;
   }
 }
 
-export function isStoredAuthSession(value: unknown): value is StoredAuthSession {
+export function isStoredAuthSession(
+  value: unknown,
+): value is StoredAuthSession {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return (
@@ -100,17 +116,34 @@ export class AuthSessionStore {
     return () => this.listeners.delete(listener);
   }
 
-  refresh(apiBaseUrl: string, usedRefreshToken?: string, origin?: number): Promise<AuthRefreshResult> {
+  refresh(
+    apiBaseUrl: string,
+    usedRefreshToken?: string,
+    origin?: number,
+  ): Promise<AuthRefreshResult> {
     const current = this.get();
-    if (!current) return Promise.resolve({ outcome: "no_session", session: null });
-    if (usedRefreshToken && usedRefreshToken !== current.refreshToken && !this.inFlight) {
+    if (!current)
+      return Promise.resolve({ outcome: "no_session", session: null });
+    if (
+      usedRefreshToken &&
+      usedRefreshToken !== current.refreshToken &&
+      !this.inFlight
+    ) {
       return Promise.resolve({ outcome: "rotated", session: current });
     }
     if (!isTrustedApiBase(apiBaseUrl)) {
-      return Promise.resolve({ outcome: "transient", session: current, reason: "untrusted api base url" });
+      return Promise.resolve({
+        outcome: "transient",
+        session: current,
+        reason: "untrusted api base url",
+      });
     }
     if (!this.inFlight) {
-      this.inFlight = this.runRefresh(apiBaseUrl.replace(/\/+$/, ""), current, origin).finally(() => {
+      this.inFlight = this.runRefresh(
+        apiBaseUrl.replace(/\/+$/, ""),
+        current,
+        origin,
+      ).finally(() => {
         this.inFlight = null;
       });
     }
@@ -128,7 +161,11 @@ export class AuthSessionStore {
       try {
         response = await this.postRefresh(apiBaseUrl, current.refreshToken);
       } catch (err) {
-        return { outcome: "transient", session: this.get(), reason: describeError(err) };
+        return {
+          outcome: "transient",
+          session: this.get(),
+          reason: describeError(err),
+        };
       }
 
       const dateHeader = response.headers.get("date");
@@ -139,12 +176,22 @@ export class AuthSessionStore {
         try {
           body = await response.json();
         } catch (err) {
-          return { outcome: "transient", session: this.get(), reason: describeError(err) };
+          return {
+            outcome: "transient",
+            session: this.get(),
+            reason: describeError(err),
+          };
         }
-        const next = (body && typeof body === "object" ? body : {}) as Partial<StoredAuthSession>;
+        const next = (
+          body && typeof body === "object" ? body : {}
+        ) as Partial<StoredAuthSession>;
         const merged = { ...current, ...next, user: next.user ?? current.user };
         if (!isStoredAuthSession(merged)) {
-          return { outcome: "transient", session: this.get(), reason: "malformed refresh response" };
+          return {
+            outcome: "transient",
+            session: this.get(),
+            reason: "malformed refresh response",
+          };
         }
         if (this.get()?.refreshToken !== current.refreshToken) {
           return { outcome: "rotated", session: this.get() };
@@ -157,14 +204,22 @@ export class AuthSessionStore {
       reason = [String(response.status), code].filter(Boolean).join(" ");
       if (response.status !== 401 && response.status !== 403) break;
       if (DEAD_REFRESH_CODES.has(code)) {
-        if (this.get()?.refreshToken === current.refreshToken) this.commit(null, origin);
-        return { outcome: this.get() ? "rotated" : "signed_out", session: this.get(), reason };
+        if (this.get()?.refreshToken === current.refreshToken)
+          this.commit(null, origin);
+        return {
+          outcome: this.get() ? "rotated" : "signed_out",
+          session: this.get(),
+          reason,
+        };
       }
     }
     return { outcome: "transient", session: this.get(), reason };
   }
 
-  private postRefresh(apiBaseUrl: string, refreshToken: string): Promise<Response> {
+  private postRefresh(
+    apiBaseUrl: string,
+    refreshToken: string,
+  ): Promise<Response> {
     const body = JSON.stringify({ refreshToken });
     return this.deps.fetch(`${apiBaseUrl}${REFRESH_PATH}`, {
       method: "POST",
@@ -198,10 +253,16 @@ export class AuthSessionStore {
       return null;
     }
     try {
-      const envelope = JSON.parse(raw) as { encrypted?: unknown; data?: unknown };
+      const envelope = JSON.parse(raw) as {
+        encrypted?: unknown;
+        data?: unknown;
+      };
       if (typeof envelope.data !== "string") return null;
       const bytes = Buffer.from(envelope.data, "base64");
-      const json = envelope.encrypted === true ? this.cipher.decrypt(bytes) : bytes.toString("utf8");
+      const json =
+        envelope.encrypted === true
+          ? this.cipher.decrypt(bytes)
+          : bytes.toString("utf8");
       const parsed: unknown = JSON.parse(json);
       return isStoredAuthSession(parsed) ? parsed : null;
     } catch (err) {
@@ -218,7 +279,9 @@ export class AuthSessionStore {
       }
       const json = JSON.stringify(next);
       const encrypted = this.cipher.available();
-      const data = (encrypted ? this.cipher.encrypt(json) : Buffer.from(json, "utf8")).toString("base64");
+      const data = (
+        encrypted ? this.cipher.encrypt(json) : Buffer.from(json, "utf8")
+      ).toString("base64");
       const contents = JSON.stringify({ version: 1, encrypted, data });
       fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
       const tempPath = `${this.filePath}.${process.pid}.tmp`;

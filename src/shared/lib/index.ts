@@ -5,3 +5,4 @@ export {
   type PageBackdropOptions,
 } from "./pageBackdrop";
 export { revealThemeChange, type RevealOrigin } from "./themeReveal";
+export { isWeakDevice } from "./deviceTier";

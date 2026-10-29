@@ -46,7 +46,7 @@ describe("useDisableButtonFocus", () => {
     expect(document.activeElement).not.toBe(button);
   });
 
-  it("blurs a role=\"button\" element the moment it gains focus", () => {
+  it('blurs a role="button" element the moment it gains focus', () => {
     mount();
     const div = document.createElement("div");
     div.setAttribute("role", "button");

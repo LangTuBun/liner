@@ -1,6 +1,10 @@
 import type { SearchResult, SearchType } from "@/shared/contracts";
 import { rethrowIfAborted } from "@/shared/utils/abort";
-import { type JsonRecord, numberValue, trimmedString } from "@/shared/utils/json";
+import {
+  type JsonRecord,
+  numberValue,
+  trimmedString,
+} from "@/shared/utils/json";
 import { getJson } from "./soundcloudCatalogRequest";
 import { soundCloudPlaylistId } from "./soundcloudIds";
 import {
@@ -11,7 +15,8 @@ import {
   soundCloudYear,
 } from "./soundcloudMappers";
 
-const SOUNDCLOUD_URL = /^(?:https?:\/\/)?(?:www\.|m\.|on\.)?soundcloud\.com\/\S+$/i;
+const SOUNDCLOUD_URL =
+  /^(?:https?:\/\/)?(?:www\.|m\.|on\.)?soundcloud\.com\/\S+$/i;
 const SHORT_LINK_HOST = "on.soundcloud.com";
 
 export function isSoundCloudUrl(value: string): boolean {
@@ -23,7 +28,10 @@ function stripQuery(value: string): string {
   return `${url.origin}${url.pathname}`;
 }
 
-async function canonicalUrl(value: string, signal?: AbortSignal): Promise<string> {
+async function canonicalUrl(
+  value: string,
+  signal?: AbortSignal,
+): Promise<string> {
   const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
   if (url.hostname.toLowerCase() === SHORT_LINK_HOST) {
     try {
@@ -66,7 +74,9 @@ function mapResolved(record: JsonRecord): SearchResult | null {
   if (record.kind === "user") {
     const artist = mapSoundCloudArtist(record);
     const cover = soundCloudCover(record.avatar_url);
-    return artist ? { type: "artist", ...artist, ...(cover ? { cover } : {}) } : null;
+    return artist
+      ? { type: "artist", ...artist, ...(cover ? { cover } : {}) }
+      : null;
   }
   if (record.kind === "playlist") return mapSet(record);
   if (record.kind === "track") {
@@ -80,7 +90,11 @@ function matchesType(result: SearchResult, type: SearchType): boolean {
   return type === "all" || result.type === type;
 }
 
-export async function resolveSoundCloudUrl(value: string, type: SearchType = "all", signal?: AbortSignal): Promise<SearchResult[]> {
+export async function resolveSoundCloudUrl(
+  value: string,
+  type: SearchType = "all",
+  signal?: AbortSignal,
+): Promise<SearchResult[]> {
   const url = await canonicalUrl(value.trim(), signal);
   const result = mapResolved(await getJson("/resolve", { url }, signal));
   return result && matchesType(result, type) ? [result] : [];

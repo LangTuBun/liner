@@ -1,4 +1,4 @@
-import Select from "@/shared/ui/Select";
+import { MenuSelect } from "@/shared/ui";
 import { useTranslation, LOCALE_OPTIONS } from "@/languages";
 import logo from "@/assets/logo.svg";
 import loginMark from "@/assets/login-mark.svg";
@@ -39,15 +39,16 @@ export function LoginBrandPanel({ title, subtitle }: LoginBrandPanelProps) {
       </div>
 
       <div className="relative mt-auto flex flex-col">
-        <Select
-          options={LOCALE_OPTIONS}
-          value={locale}
-          onChange={setLocale}
-          align="bottom-left"
-          variant="transparent"
-          className="mb-[22px] w-fit min-w-[132px]"
-          aria-label={t("login.select_language")}
-        />
+        <div className="mb-[22px] w-fit">
+          <MenuSelect
+            options={LOCALE_OPTIONS}
+            value={locale}
+            onChange={setLocale}
+            align="start"
+            className="min-w-[132px]"
+            aria-label={t("login.select_language")}
+          />
+        </div>
         <h1
           className="m-0 text-[30px] font-[700] leading-[1.08] tracking-[-0.035em] text-text-primary"
           style={{ textWrap: "balance" }}

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react";
-import { RootErrorBoundary, RootErrorFallback } from "./index";
+import { RootErrorBoundary } from "./index";
 
 function ProblematicChild({ shouldThrow }: { shouldThrow: boolean }) {
   if (shouldThrow) {
@@ -60,7 +60,9 @@ describe("RootErrorBoundary", () => {
     });
 
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls[0][0].message).toBe("Simulated component explosion");
+    expect(onError.mock.calls[0][0].message).toBe(
+      "Simulated component explosion",
+    );
 
     const alertElement = container.querySelector('[role="alert"]');
     expect(alertElement).not.toBeNull();
@@ -86,13 +88,16 @@ describe("RootErrorBoundary", () => {
       );
     });
 
-    const fallbackEl = container.querySelector('[data-testid="custom-fallback"]');
+    const fallbackEl = container.querySelector(
+      '[data-testid="custom-fallback"]',
+    );
     expect(fallbackEl).not.toBeNull();
-    expect(fallbackEl?.textContent).toContain("Error: Simulated component explosion");
+    expect(fallbackEl?.textContent).toContain(
+      "Error: Simulated component explosion",
+    );
   });
 
   it("resets error boundary state when Try Again is clicked", async () => {
-    let throwError = true;
     const onReset = vi.fn();
 
     function DynamicComponent() {
@@ -117,7 +122,9 @@ describe("RootErrorBoundary", () => {
 
     // Find and click the Try Again button
     const buttons = Array.from(container.querySelectorAll("button"));
-    const tryAgainBtn = buttons.find((btn) => btn.textContent?.includes("Try again"));
+    const tryAgainBtn = buttons.find((btn) =>
+      btn.textContent?.includes("Try again"),
+    );
     expect(tryAgainBtn).toBeDefined();
 
     await act(async () => {
@@ -146,7 +153,9 @@ describe("RootErrorBoundary", () => {
     expect(detailsToggleBtn).toBeDefined();
 
     await act(async () => {
-      detailsToggleBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      detailsToggleBtn?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true }),
+      );
     });
 
     expect(container.textContent).toContain("JavaScript Stack Trace");
@@ -180,7 +189,11 @@ describe("RootErrorBoundary", () => {
     });
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
-    expect(writeTextMock.mock.calls[0][0]).toContain("Liner Desktop Client Error Report");
-    expect(writeTextMock.mock.calls[0][0]).toContain("Simulated component explosion");
+    expect(writeTextMock.mock.calls[0][0]).toContain(
+      "Liner Desktop Client Error Report",
+    );
+    expect(writeTextMock.mock.calls[0][0]).toContain(
+      "Simulated component explosion",
+    );
   });
 });

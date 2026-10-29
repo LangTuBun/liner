@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import PopularTracksSection from "./PopularTracksSection";
 import DailyMixesSection from "./DailyMixesSection";
-import HomePageSkeleton from "./HomePageSkeleton";
+import HomePageSkeleton, { MixesSectionSkeleton } from "./HomePageSkeleton";
 import { usePopularTracksAllTime } from "../hooks/usePopularTracks";
 import { useListeningNow } from "../hooks/useListeningNow";
 import ListeningNowSection from "./ListeningNowSection";
@@ -10,8 +10,7 @@ import { useDailyMixes } from "../hooks/useDailyMixes";
 import { useMostSaved, usePopularAlbums } from "../hooks/useExploreCollections";
 import { useTranslation } from "@/languages";
 import { usePageBackdrop } from "@/shared/lib";
-import { useStrikingCover } from "../hooks/useStrikingCover";
-import { useAccentBackdrop } from "../hooks/useAccentBackdrop";
+import { useHomeBackdrop } from "../hooks/useHomeBackdrop";
 import {
   AlbumFill,
   BookmarkFill,
@@ -30,22 +29,21 @@ export default function HomePage() {
     useRecentlyPlayed(20);
   const { items: popularAlbums, isLoading: albumsLoading } = usePopularAlbums();
   const { items: mostSaved, isLoading: savedLoading } = useMostSaved();
-  const { data: dailyMixes } = useDailyMixes();
-  const hasMixes = Boolean(dailyMixes && dailyMixes.length > 0);
+  const { data: dailyMixes, isLoading: mixesLoading } = useDailyMixes();
+  const hasMixes = dailyMixes.length > 0;
   const firstAlbum = popularAlbums[0];
   const firstAlbumCover =
     firstAlbum?.type === "album" ? firstAlbum.item.coverUrl : undefined;
-  const mixBackdropCover = useStrikingCover(
-    (dailyMixes ?? []).slice(0, 4).map((mix) => mix.coverUrl),
-  );
-  const mixAccentBackdrop = useAccentBackdrop(mixBackdropCover);
+  const homeBackdrop = useHomeBackdrop(dailyMixes);
+  const usesMixBackdrop = hasMixes || mixesLoading;
   usePageBackdrop(
-    hasMixes
-      ? mixAccentBackdrop
+    usesMixBackdrop
+      ? homeBackdrop.backdrop
       : firstAlbumCover || listeningNow[0]?.coverUrl || undefined,
-    hasMixes ? { blur: 56, dim: 0.22 } : undefined,
+    usesMixBackdrop ? { blur: 56, dim: 0.22 } : undefined,
   );
 
+  const hasMixesSlot = hasMixes || mixesLoading;
   const isDataLoading =
     tracksLoading ||
     allTimeLoading ||
@@ -70,12 +68,18 @@ export default function HomePage() {
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && (
           <div className="col-start-1 row-start-1 w-full pb-[16px]">
-            {dailyMixes && hasMixes && (
-              <DailyMixesSection
-                mixes={dailyMixes}
-                headingMarginTop="mt-0"
-                accentCoverUrl={mixBackdropCover}
-              />
+            {mixesLoading ? (
+              <MixesSectionSkeleton />
+            ) : (
+              hasMixes && (
+                <div style={{ animation: "page-enter 200ms ease-out" }}>
+                  <DailyMixesSection
+                    mixes={dailyMixes}
+                    headingMarginTop="mt-0"
+                    accentCoverUrl={homeBackdrop.cover}
+                  />
+                </div>
+              )
             )}
 
             {popularAlbums.length > 0 && (
@@ -83,7 +87,7 @@ export default function HomePage() {
                 title={t("home.popularAlbums")}
                 icon={<AlbumFill className="w-6 h-6 text-emerald-400" />}
                 items={popularAlbums}
-                headingMarginTop={hasMixes ? "mt-[22px]" : "mt-0"}
+                headingMarginTop={hasMixesSlot ? "mt-[22px]" : "mt-0"}
               />
             )}
 
@@ -93,7 +97,9 @@ export default function HomePage() {
                 icon={<FireFill className="w-6 h-6 text-amber-500" />}
                 tracks={listeningNow}
                 headingMarginTop={
-                  hasMixes || popularAlbums.length > 0 ? "mt-[22px]" : "mt-0"
+                  hasMixesSlot || popularAlbums.length > 0
+                    ? "mt-[22px]"
+                    : "mt-0"
                 }
               />
             )}
@@ -124,7 +130,6 @@ export default function HomePage() {
                 headingMarginTop="mt-[22px]"
               />
             )}
-
           </div>
         )}
 

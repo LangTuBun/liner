@@ -14,7 +14,11 @@ function solid(r: number, g: number, b: number, count = 16): Uint8ClampedArray {
   return data;
 }
 
-const orange = { color1: "rgb(120, 60, 20)", color2: "rgb(240, 140, 40)", logoColor: "rgb(255, 240, 220)" };
+const orange = {
+  color1: "rgb(120, 60, 20)",
+  color2: "rgb(240, 140, 40)",
+  logoColor: "rgb(255, 240, 220)",
+};
 
 describe("wallpaper tone", () => {
   it("rates a dark wallpaper as not vivid", () => {
@@ -33,7 +37,10 @@ describe("wallpaper tone", () => {
 
   it("lifts the cover base on a vivid wallpaper", () => {
     const dark = buildLikesCoverSvg(orange, toneFromPixels(solid(15, 15, 18)));
-    const vivid = buildLikesCoverSvg(orange, toneFromPixels(solid(235, 140, 50)));
+    const vivid = buildLikesCoverSvg(
+      orange,
+      toneFromPixels(solid(235, 140, 50)),
+    );
     expect(dark).toContain('fill="black" fill-opacity="0.45"');
     expect(vivid).not.toContain('fill-opacity="0.45"');
   });
@@ -47,7 +54,13 @@ describe("buildLikesCoverSvg", () => {
       logoColor: "rgb(230, 250, 235)",
     });
 
-    for (const stock of ["#111224", "#433277", "#4D71FF", "#7A4DFF", "#534DFF"]) {
+    for (const stock of [
+      "#111224",
+      "#433277",
+      "#4D71FF",
+      "#7A4DFF",
+      "#534DFF",
+    ]) {
       expect(svg).not.toContain(stock);
     }
     expect(svg).toContain("<svg");
@@ -63,21 +76,31 @@ describe("buildLikesCoverSvg", () => {
   });
 
   it("encodes into a loadable data url", () => {
-    expect(svgToDataUrl("<svg/>")).toBe("data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E");
+    expect(svgToDataUrl("<svg/>")).toBe(
+      "data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E",
+    );
   });
 });
 
 describe("buildAccentBackdropSvg", () => {
   function lightness(hex: string): number {
     const n = parseInt(hex.slice(1), 16);
-    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const r = (n >> 16) & 255,
+      g = (n >> 8) & 255,
+      b = n & 255;
     return (Math.max(r, g, b) + Math.min(r, g, b)) / 2 / 255;
   }
 
   it("is the library artwork with only its hue moved to the cover accent", () => {
     const svg = buildAccentBackdropSvg(orange);
     expect(svg).toContain('fill="white" fill-opacity="0.7"');
-    for (const stock of ["#111224", "#433277", "#4D71FF", "#7A4DFF", "#534DFF"]) {
+    for (const stock of [
+      "#111224",
+      "#433277",
+      "#4D71FF",
+      "#7A4DFF",
+      "#534DFF",
+    ]) {
       expect(svg).not.toContain(stock);
     }
     const inner = svg.match(/stop-color="(#[0-9a-f]{6})"/)?.[1];

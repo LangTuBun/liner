@@ -3,10 +3,9 @@ import {
   useRef,
   useState,
   useLayoutEffect,
-  useEffect,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useStableNavigate } from "@/shared/hooks/useStableNavigate";
 import type { TrackArtist } from "@/shared/types";
 
 export interface ArtistLinkProps {
@@ -30,7 +29,7 @@ export default function ArtistLink({
   onNavigate,
   plain = false,
 }: ArtistLinkProps) {
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
   const outerRef = useRef<HTMLSpanElement>(null);
   const innerRef = useRef<HTMLSpanElement>(null);
   const [delta, setDelta] = useState(0);
@@ -44,11 +43,13 @@ export default function ArtistLink({
 
   useLayoutEffect(() => {
     measure();
-  });
-
-  useEffect(() => {
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(outer);
+    observer.observe(inner);
+    return () => observer.disconnect();
   }, [measure]);
 
   let innerContent: React.ReactNode = null;

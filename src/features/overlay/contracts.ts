@@ -22,6 +22,8 @@ export interface OverlayStatePayload {
   status: "playing" | "paused" | "loading" | "buffering" | "idle" | "error";
   track: OverlayTrackInfo | null;
   positionMs: number;
+  positionAt?: number;
+  playbackRate?: number;
   durationMs: number;
   volume: number;
   isLiked: boolean;

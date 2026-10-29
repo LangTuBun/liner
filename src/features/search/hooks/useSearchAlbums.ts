@@ -37,9 +37,7 @@ export function useSearchAlbums(
     try {
       const res = await api.search(q, "album");
       if (requestId !== latestRequestIdRef.current) return;
-      setAlbums(
-        res.items.filter((it): it is ApiAlbum => it.type === "album"),
-      );
+      setAlbums(res.items.filter((it): it is ApiAlbum => it.type === "album"));
       setError(null);
       setPartialWarning(undefined);
       lastFetchedQueryRef.current = q;

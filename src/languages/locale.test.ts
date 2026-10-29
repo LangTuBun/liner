@@ -1,12 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getStoredLocale, storeLocale, getBrowserLocale, SUPPORTED_LOCALES } from "./locale";
+import {
+  getStoredLocale,
+  storeLocale,
+  getBrowserLocale,
+  SUPPORTED_LOCALES,
+} from "./locale";
 import { translations } from "./data";
 import { LOCALE_OPTIONS } from "./options";
 
 function createStorage(): Storage {
   const values = new Map<string, string>();
   return {
-    get length() { return values.size; },
+    get length() {
+      return values.size;
+    },
     clear: () => values.clear(),
     getItem: (key) => values.get(key) ?? null,
     key: (index) => [...values.keys()][index] ?? null,
@@ -22,7 +29,10 @@ function stubBrowserLanguages(languages: string[]) {
 describe("locale", () => {
   beforeEach(() => {
     const storage = createStorage();
-    vi.stubGlobal("window", { localStorage: storage, navigator: { language: "en-US", languages: ["en-US"] } });
+    vi.stubGlobal("window", {
+      localStorage: storage,
+      navigator: { language: "en-US", languages: ["en-US"] },
+    });
     vi.stubGlobal("localStorage", storage);
   });
 
@@ -65,10 +75,13 @@ describe("getBrowserLocale", () => {
     ["pt-BR", "pt"],
     ["pt-PT", "pt"],
     ["en-GB", "en"],
-  ])("returns the matching locale when navigator.language is %s", (language, expected) => {
-    stubBrowserLanguages([language, "en-US"]);
-    expect(getBrowserLocale()).toBe(expected);
-  });
+  ])(
+    "returns the matching locale when navigator.language is %s",
+    (language, expected) => {
+      stubBrowserLanguages([language, "en-US"]);
+      expect(getBrowserLocale()).toBe(expected);
+    },
+  );
 
   it("falls back to ru for unknown locales", () => {
     stubBrowserLanguages(["nl-NL"]);

@@ -2,7 +2,9 @@ import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import CircleDitherCanvas, { DITHER_RESIZE_SETTLE_MS } from "./CircleDitherCanvas";
+import CircleDitherCanvas, {
+  DITHER_RESIZE_SETTLE_MS,
+} from "./CircleDitherCanvas";
 
 describe("CircleDitherCanvas", () => {
   let container: HTMLDivElement;
@@ -10,14 +12,20 @@ describe("CircleDitherCanvas", () => {
   let size = { width: 800, height: 600 };
   let screenSize = { width: 1920, height: 1080 };
   let observed: (() => void) | null = null;
-  const getImageData = vi.fn((_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }));
+  const getImageData = vi.fn(
+    (_x: number, _y: number, w: number, h: number) => ({
+      data: new Uint8ClampedArray(w * h * 4),
+    }),
+  );
 
   beforeEach(() => {
     vi.useFakeTimers();
     size = { width: 800, height: 600 };
     screenSize = { width: 1920, height: 1080 };
     getImageData.mockClear();
-    vi.spyOn(window, "screen", "get").mockImplementation(() => screenSize as Screen);
+    vi.spyOn(window, "screen", "get").mockImplementation(
+      () => screenSize as Screen,
+    );
     vi.stubGlobal(
       "ResizeObserver",
       class {
@@ -42,15 +50,33 @@ describe("CircleDitherCanvas", () => {
         }
       },
     );
-    const ctx = new Proxy({ getImageData } as Record<string | symbol, unknown>, {
-      get: (target, key) => (key in target ? target[key] : vi.fn()),
-      set: () => true,
-    });
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(ctx as never);
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
-      () => ({ ...size, x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height, toJSON: () => ({}) }) as DOMRect,
+    const ctx = new Proxy(
+      { getImageData } as Record<string | symbol, unknown>,
+      {
+        get: (target, key) => (key in target ? target[key] : vi.fn()),
+        set: () => true,
+      },
     );
-    Object.defineProperty(window, "devicePixelRatio", { value: 1, configurable: true });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      ctx as never,
+    );
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      () =>
+        ({
+          ...size,
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          right: size.width,
+          bottom: size.height,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+    Object.defineProperty(window, "devicePixelRatio", {
+      value: 1,
+      configurable: true,
+    });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -75,7 +101,10 @@ describe("CircleDitherCanvas", () => {
   it("draws once at screen size, centered, right after the image loads", async () => {
     const canvas = await mount();
     expect([canvas.width, canvas.height]).toEqual([1920, 1080]);
-    expect([canvas.style.width, canvas.style.height]).toEqual(["1920px", "1080px"]);
+    expect([canvas.style.width, canvas.style.height]).toEqual([
+      "1920px",
+      "1080px",
+    ]);
     expect(canvas.className).toContain("-translate-x-1/2");
     expect(getImageData).toHaveBeenCalledTimes(1);
   });
@@ -84,7 +113,12 @@ describe("CircleDitherCanvas", () => {
     const canvas = await mount();
     getImageData.mockClear();
 
-    for (const [width, height] of [[1100, 700], [1500, 900], [1920, 1080], [800, 600]]) {
+    for (const [width, height] of [
+      [1100, 700],
+      [1500, 900],
+      [1920, 1080],
+      [800, 600],
+    ]) {
       size = { width, height };
       act(() => {
         observed?.();

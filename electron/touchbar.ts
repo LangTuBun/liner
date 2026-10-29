@@ -125,23 +125,26 @@ export class TouchBarManager {
   }
 
   private registerIpcHandlers() {
-    ipcMain.on("touchbar:update-state", (_event, state: TouchBarStatePayload) => {
-      this.latestState = state;
+    ipcMain.on(
+      "touchbar:update-state",
+      (_event, state: TouchBarStatePayload) => {
+        this.latestState = state;
 
-      if (process.platform === "darwin" && this.nativeTouchBar) {
-        if (this.nativePlayBtn) {
-          this.nativePlayBtn.label = state.status === "playing" ? "⏸" : "▶";
+        if (process.platform === "darwin" && this.nativeTouchBar) {
+          if (this.nativePlayBtn) {
+            this.nativePlayBtn.label = state.status === "playing" ? "⏸" : "▶";
+          }
+          if (this.nativeTrackLabel) {
+            this.nativeTrackLabel.label = state.track
+              ? `${state.track.title} - ${state.track.artist}`
+              : "Liner";
+          }
+          if (this.nativeLyricsLabel) {
+            this.nativeLyricsLabel.label = state.activeLyricText || "";
+          }
         }
-        if (this.nativeTrackLabel) {
-          this.nativeTrackLabel.label = state.track
-            ? `${state.track.title} - ${state.track.artist}`
-            : "Liner";
-        }
-        if (this.nativeLyricsLabel) {
-          this.nativeLyricsLabel.label = state.activeLyricText || "";
-        }
-      }
-    });
+      },
+    );
 
     ipcMain.on("touchbar:send-action", (_event, action: TouchBarAction) => {
       if (action.type === "restoreMainWindow") {

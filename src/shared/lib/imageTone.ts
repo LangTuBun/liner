@@ -39,7 +39,9 @@ export function toneFromPixels(data: ArrayLike<number>): ImageTone {
   const hasHue = Math.abs(hueX) + Math.abs(hueY) > 1e-6;
   return {
     luminance: luma / pixels,
-    colorfulness: saturatedPixels ? (sat / saturatedPixels) * (saturatedPixels / pixels) : 0,
+    colorfulness: saturatedPixels
+      ? (sat / saturatedPixels) * (saturatedPixels / pixels)
+      : 0,
     hue: hasHue ? (Math.atan2(hueY, hueX) / (Math.PI * 2) + 1) % 1 : undefined,
   };
 }
@@ -75,7 +77,11 @@ export function hueRarity(hue: number | undefined): number {
   return 0.55;
 }
 
-export function strikingness({ luminance, colorfulness, hue }: ImageTone): number {
+export function strikingness({
+  luminance,
+  colorfulness,
+  hue,
+}: ImageTone): number {
   const color = (colorfulness * hueRarity(hue)) / 0.4;
   const darkness = clamp01((0.25 - luminance) / 0.2) * 0.9;
   return Math.max(color, darkness);

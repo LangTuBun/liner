@@ -47,10 +47,22 @@ function tintLikesCoverSvg({ color1, color2 }: FluidColors, t: number): string {
 
   return likesCoverSvg
     .replace(SHADE, `fill="black" fill-opacity="${shade}"`)
-    .replaceAll(STOP_INNER, toHex(h2, s2 * lerp(0.4, 0.85, t), lerp(0.03, 0.2, t)))
-    .replaceAll(STOP_OUTER, toHex(h2, s2 * lerp(0.6, 0.95, t), lerp(0.16, 0.42, t)))
-    .replaceAll(GLOW_BOTTOM, toHex(h2, s2 * lerp(0.8, 1, t), lerp(0.42, 0.58, t)))
-    .replaceAll(GLOW_TOP, toHex(h2 + 0.06, s2 * lerp(0.8, 1, t), lerp(0.4, 0.62, t)))
+    .replaceAll(
+      STOP_INNER,
+      toHex(h2, s2 * lerp(0.4, 0.85, t), lerp(0.03, 0.2, t)),
+    )
+    .replaceAll(
+      STOP_OUTER,
+      toHex(h2, s2 * lerp(0.6, 0.95, t), lerp(0.16, 0.42, t)),
+    )
+    .replaceAll(
+      GLOW_BOTTOM,
+      toHex(h2, s2 * lerp(0.8, 1, t), lerp(0.42, 0.58, t)),
+    )
+    .replaceAll(
+      GLOW_TOP,
+      toHex(h2 + 0.06, s2 * lerp(0.8, 1, t), lerp(0.4, 0.62, t)),
+    )
     .replaceAll(GLOW_LEFT, toHex(h1, Math.max(s1, 0.4), lerp(0.36, 0.5, t)));
 }
 
@@ -63,7 +75,10 @@ const HEART = 'fill="white" fill-opacity="0.7"';
 const LIGHT_SHADE = 'fill="white" fill-opacity="0.15"';
 const LIGHT_HEART = 'fill="white" fill-opacity="0.92"';
 
-export function buildLightLikesCoverSvg({ color1, color2 }: FluidColors = STOCK_COLORS): string {
+export function buildLightLikesCoverSvg({
+  color1,
+  color2,
+}: FluidColors = STOCK_COLORS): string {
   const [h1, s1] = rgbToHsl(...parseRgb(color1));
   const [h2, s2] = rgbToHsl(...parseRgb(color2));
 
@@ -77,7 +92,13 @@ export function buildLightLikesCoverSvg({ color1, color2 }: FluidColors = STOCK_
     .replaceAll(GLOW_LEFT, toHex(h1, Math.max(s1, 0.5), 0.6));
 }
 
-const STOCK_PALETTE = [STOP_INNER, STOP_OUTER, GLOW_BOTTOM, GLOW_TOP, GLOW_LEFT];
+const STOCK_PALETTE = [
+  STOP_INNER,
+  STOP_OUTER,
+  GLOW_BOTTOM,
+  GLOW_TOP,
+  GLOW_LEFT,
+];
 const STOCK_REFERENCE_HUE = rgbToHsl(...hexToRgb(GLOW_LEFT))[0];
 const FULL_COLOUR_SATURATION = 0.45;
 
@@ -89,7 +110,10 @@ function hexToRgb(value: string): [number, number, number] {
 export function buildAccentBackdropSvg({ color2 }: FluidColors): string {
   const [accentHue, accentSaturation] = rgbToHsl(...parseRgb(color2));
   const shift = accentHue - STOCK_REFERENCE_HUE;
-  const saturationScale = Math.min(1, accentSaturation / FULL_COLOUR_SATURATION);
+  const saturationScale = Math.min(
+    1,
+    accentSaturation / FULL_COLOUR_SATURATION,
+  );
   return STOCK_PALETTE.reduce((svg, stock) => {
     const [h, sat, l] = rgbToHsl(...hexToRgb(stock));
     return svg.replaceAll(stock, toHex(h + shift, sat * saturationScale, l));

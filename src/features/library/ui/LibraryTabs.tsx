@@ -10,10 +10,7 @@ interface LibraryTabsProps {
 
 const tabs: LibraryTab[] = ["all", "playlists", "albums", "artists"];
 
-export default function LibraryTabs({
-  activeTab,
-  onChange,
-}: LibraryTabsProps) {
+export default function LibraryTabs({ activeTab, onChange }: LibraryTabsProps) {
   const { t } = useTranslation();
 
   const tabLabels: Record<LibraryTab, string> = {

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { applyWindowVisibility, isWindowVisible, onWindowVisibilityChange } from "./windowVisibility";
+import {
+  applyWindowVisibility,
+  isWindowVisible,
+  onWindowVisibilityChange,
+} from "./windowVisibility";
 
 describe("window visibility", () => {
   it("reports minimize and restore once each and ignores repeats", () => {

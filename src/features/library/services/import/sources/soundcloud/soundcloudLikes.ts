@@ -4,10 +4,11 @@ import {
   type JsonRecord,
   stringValue,
 } from "@/shared/utils/json";
-import { fetchSoundCloudApi } from "@/shared/media/soundcloud";
+import { fetchSoundCloudApi, SOUNDCLOUD_API } from "@/shared/media/soundcloud";
+import { log } from "@/shared/utils/logger";
 import type { SoundCloudCollection } from "./soundcloudCollection";
 
-const MAX_LIKES_PAGES = 20;
+export const MAX_LIKES_PAGES = 500;
 
 export function isSoundCloudUserEntity(
   body: JsonRecord,
@@ -43,11 +44,28 @@ export async function collectSoundCloudLikes(
   collection.description = `Liked tracks from SoundCloud user ${username}`;
 
   let nextUrl: string | null = `/users/${String(body.id)}/likes?limit=50`;
-  let pageCount = 0;
-  while (nextUrl && pageCount < MAX_LIKES_PAGES) {
-    pageCount += 1;
+  const visitedPages = new Set<string>();
+  while (nextUrl) {
+    const pageUrl = new URL(nextUrl, SOUNDCLOUD_API).href;
+    if (visitedPages.has(pageUrl)) break;
+    if (visitedPages.size >= MAX_LIKES_PAGES) {
+      log(
+        "yellow",
+        "import",
+        `soundcloud likes import stopped at ${MAX_LIKES_PAGES} pages with ${collection.rawTracks.length} tracks`,
+      );
+      break;
+    }
+    visitedPages.add(pageUrl);
     const response = await fetchSoundCloudApi(nextUrl, {}, { signal });
-    if (!response.ok) break;
+    if (!response.ok) {
+      log(
+        "yellow",
+        "import",
+        `soundcloud likes import is partial: page ${visitedPages.size} failed with ${response.status}, kept ${collection.rawTracks.length} tracks`,
+      );
+      break;
+    }
     const likesBody = asRecord((await response.json()) as unknown);
     for (const item of asArray(likesBody?.collection)) {
       const track = likedTrack(item);

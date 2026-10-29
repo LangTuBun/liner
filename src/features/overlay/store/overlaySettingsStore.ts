@@ -20,7 +20,10 @@ const DEFAULT_SETTINGS: OverlaySettings = {
 };
 
 function notifyElectron(patch: Partial<OverlaySettings>) {
-  if (typeof window !== "undefined" && window.linerElectron?.updateOverlaySettings) {
+  if (
+    typeof window !== "undefined" &&
+    window.linerElectron?.updateOverlaySettings
+  ) {
     window.linerElectron.updateOverlaySettings(patch);
   }
 }
@@ -38,7 +41,8 @@ export const useOverlaySettingsStore = create<OverlaySettingsState>()(
         notifyElectron({ position });
       },
       setShortcut: (rawShortcut) => {
-        const shortcut = normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SETTINGS.shortcut;
+        const shortcut =
+          normalizeShortcutToEnglish(rawShortcut) || DEFAULT_SETTINGS.shortcut;
         set({ shortcut });
         notifyElectron({ shortcut });
       },
@@ -56,9 +60,11 @@ export const useOverlaySettingsStore = create<OverlaySettingsState>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state?.shortcut) {
-          state.shortcut = normalizeShortcutToEnglish(state.shortcut) || DEFAULT_SETTINGS.shortcut;
+          state.shortcut =
+            normalizeShortcutToEnglish(state.shortcut) ||
+            DEFAULT_SETTINGS.shortcut;
         }
       },
-    }
-  )
+    },
+  ),
 );

@@ -1,41 +1,44 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { api, toClientTrack } from "@/shared/api";
 import type { Track } from "@/shared/types";
-import { shuffled } from "../lib/shuffled";
+import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
 
 const LISTENING_NOW_LIMIT = 10;
-const CACHE_TTL_MS = 60_000;
+const LISTENING_NOW_POLICY = {
+  isFresh: freshFor(5 * 60_000),
+  maxAgeMs: 24 * 60 * 60_000,
+};
 
-let cached: { tracks: Track[]; timestamp: number } | null = null;
+const sessionRank = new Map<string, number>();
+
+function rankOf(id: string): number {
+  let rank = sessionRank.get(id);
+  if (rank === undefined) {
+    rank = Math.random();
+    sessionRank.set(id, rank);
+  }
+  return rank;
+}
 
 export function useListeningNow() {
-  const [tracks, setTracks] = useState<Track[]>(() => cached?.tracks ?? []);
-  const [isLoading, setIsLoading] = useState(() => cached === null);
-
-  useEffect(() => {
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) return;
-
-    let active = true;
-    api
-      .getPopularTracks("12h", LISTENING_NOW_LIMIT)
-      .then((response) => {
-        const next = shuffled(
+  const { data, isLoading } = useCachedResource(
+    "home:listening-now",
+    () =>
+      api
+        .getPopularTracks("12h", LISTENING_NOW_LIMIT)
+        .then((response) =>
           (response.items ?? []).map((entry) => toClientTrack(entry.track)),
-        );
-        cached = { tracks: next, timestamp: Date.now() };
-        if (active) setTracks(next);
-      })
-      .catch(() => {
-        if (active && !cached) setTracks([]);
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+        ),
+    LISTENING_NOW_POLICY,
+  );
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  const tracks = useMemo<Track[]>(
+    () =>
+      [...(data ?? [])]
+        .sort((a, b) => rankOf(a.id) - rankOf(b.id))
+        .slice(0, LISTENING_NOW_LIMIT),
+    [data],
+  );
 
-  return { tracks: tracks.slice(0, LISTENING_NOW_LIMIT), isLoading };
+  return { tracks, isLoading };
 }
