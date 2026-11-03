@@ -42,4 +42,5 @@ export const LOCAL_AUDIO_EXTENSIONS = [
   "opus",
   "wav",
   "webm",
+  "dsf",
 ] as const;

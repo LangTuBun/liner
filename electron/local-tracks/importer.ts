@@ -3,6 +3,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
+import { convertDsfToWav } from "./dsf.js";
 import { audioExtension, readLocalTrackTags } from "./metadata.js";
 import { LOCAL_AUDIO_EXTENSIONS, type LocalTrackRecord } from "./types.js";
 
@@ -27,8 +28,11 @@ export async function importLocalFile(
   if (!stat.isFile()) throw new Error("not a file");
   const id = await hashFile(real);
   if (known.has(id)) return null;
-  const audioFile = `${id}.${extension}`;
-  await fsp.copyFile(real, path.join(root, "audio", audioFile));
+  const isDsd = extension === "dsf";
+  const audioFile = `${id}.${isDsd ? "wav" : extension}`;
+  const audioPath = path.join(root, "audio", audioFile);
+  const converted = isDsd ? await convertDsfToWav(real, audioPath) : null;
+  if (!converted) await fsp.copyFile(real, audioPath);
   const tags = await readLocalTrackTags(real);
   const coverFile = tags.cover ? `${id}.${tags.cover.extension}` : undefined;
   if (tags.cover && coverFile) {
@@ -39,12 +43,16 @@ export async function importLocalFile(
     title: tags.title,
     artist: tags.artist,
     ...(tags.album ? { album: tags.album } : {}),
-    durationMs: tags.durationMs,
+    durationMs:
+      tags.durationMs ||
+      (converted
+        ? Math.round((converted.frames / converted.sampleRate) * 1000)
+        : 0),
     fileName: path.basename(source),
     audioFile,
-    mimeType: tags.mimeType,
+    mimeType: converted ? "audio/wav" : tags.mimeType,
     ...(coverFile ? { coverFile } : {}),
-    byteSize: stat.size,
+    byteSize: converted ? (await fsp.stat(audioPath)).size : stat.size,
     addedAt: Date.now(),
   };
 }

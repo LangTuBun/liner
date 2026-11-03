@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const AUDIO_EXTENSION = /\.(mp3|flac|m4a|aac|ogg|opus|wav|webm)$/i;
+const AUDIO_EXTENSION = /\.(mp3|flac|m4a|aac|ogg|opus|wav|webm|dsf)$/i;
 
 const carriesFiles = (event: DragEvent) =>
   Array.from(event.dataTransfer?.types ?? []).includes("Files");
