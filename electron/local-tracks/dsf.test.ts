@@ -87,6 +87,24 @@ describe("convertDsfToWav", () => {
     expect(rms(1)).toBeLessThan(0.02);
   });
 
+  it("lowers the gain instead of clipping a full-scale signal", async () => {
+    const bytes = Math.round((RATE * SECONDS) / 8);
+    const source = path.join(dir, "loud.dsf");
+    const dest = path.join(dir, "loud.wav");
+    await fs.writeFile(
+      source,
+      dsf(Buffer.alloc(bytes, 0xff), Buffer.alloc(bytes, 0x69)),
+    );
+
+    const { frames } = await convertDsfToWav(source, dest);
+    const wav = await fs.readFile(dest);
+    let max = 0;
+    for (let i = 0; i < frames; i++)
+      max = Math.max(max, Math.abs(wav.readIntLE(44 + i * 6, 3)));
+    expect(max).toBeLessThan(8388607);
+    expect(max).toBeGreaterThan(8388607 * 0.9);
+  });
+
   it("rejects files that are not dsf", async () => {
     const source = path.join(dir, "x.dsf");
     await fs.writeFile(source, Buffer.alloc(200));

@@ -8,7 +8,7 @@ import { setImmediate as yieldToLoop } from "node:timers/promises";
 const DECIMATION = 32;
 
 const HEADER_BYTES = 92;
-const STAGE1_BYTES = 16; // 128-tap table filter, decimates 8 input bits per output
+const STAGE1_BYTES = 32; // 256-tap table filter, decimates 8 input bits per output
 const BLOCKS_PER_READ = 32;
 
 export interface DsfConversion {
@@ -44,9 +44,9 @@ function lowpass(taps: number, cutoff: number, beta = 9): Float64Array {
   return h;
 }
 
-function stage1Table(lsbFirst: boolean): Float32Array {
+function stage1Table(lsbFirst: boolean): Float64Array {
   const h = lowpass(STAGE1_BYTES * 8, 0.3 / 8);
-  const table = new Float32Array(STAGE1_BYTES * 256);
+  const table = new Float64Array(STAGE1_BYTES * 256);
   for (let k = 0; k < STAGE1_BYTES; k++) {
     for (let b = 0; b < 256; b++) {
       let acc = 0;
@@ -62,20 +62,20 @@ function stage1Table(lsbFirst: boolean): Float32Array {
 
 class Channel {
   private bytes: Uint8Array;
-  private pcm: Float32Array;
+  private pcm: Float64Array;
   private next: number;
   private readonly history: number;
 
   constructor(
-    private readonly table: Float32Array,
-    private readonly fir: Float32Array,
+    private readonly table: Float64Array,
+    private readonly fir: Float64Array,
     private readonly step: number,
     private readonly capacity: number,
   ) {
     // 0x69 is the DSD idle pattern, so the filter starts on silence
     this.bytes = new Uint8Array(STAGE1_BYTES - 1 + capacity).fill(0x69);
     this.history = fir.length - 1;
-    this.pcm = new Float32Array(this.history + capacity);
+    this.pcm = new Float64Array(this.history + capacity);
     this.next = this.history;
   }
 
@@ -122,10 +122,24 @@ function wavHeader(frames: number, channels: number, rate: number): Buffer {
   return header;
 }
 
+// DSD can swing past full scale. Decode once; if it clipped, decode again
+// with the gain that puts the loudest sample just under it.
 export async function convertDsfToWav(
   source: string,
   dest: string,
 ): Promise<DsfConversion> {
+  const first = await decode(source, dest, 1);
+  if (first.peak <= HEADROOM) return first;
+  return decode(source, dest, HEADROOM / first.peak);
+}
+
+const HEADROOM = 0.999;
+
+async function decode(
+  source: string,
+  dest: string,
+  gain: number,
+): Promise<DsfConversion & { peak: number }> {
   const input = await fsp.open(source, "r");
   try {
     const head = Buffer.alloc(HEADER_BYTES);
@@ -151,7 +165,7 @@ export async function convertDsfToWav(
     const step = DECIMATION / 8;
 
     const table = stage1Table(lsbFirst);
-    const fir = Float32Array.from(lowpass(24 * step - 1, 0.45 / step));
+    const fir = lowpass(64 * step - 1, 0.45 / step);
     const lanes = Array.from(
       { length: channels },
       () => new Channel(table, fir, step, blockSize),
@@ -162,6 +176,7 @@ export async function convertDsfToWav(
     const temp = `${dest}.part`;
     const output = await fsp.open(temp, "w");
     let frames = 0;
+    let peak = 0;
     try {
       await output.write(wavHeader(0, channels, outRate), 0, 44, 0);
       const chunk = Buffer.alloc(blockSize * channels * BLOCKS_PER_READ);
@@ -186,9 +201,11 @@ export async function convertDsfToWav(
         const pcm = Buffer.alloc(ready * channels * 3);
         for (let i = 0; i < ready; i++) {
           for (let c = 0; c < channels; c++) {
+            const x = lane[c][i];
+            if (Math.abs(x) > peak) peak = Math.abs(x);
             const v = Math.max(
               -8388608,
-              Math.min(8388607, Math.round(lane[c][i] * 8388607)),
+              Math.min(8388607, Math.round(x * gain * 8388607)),
             );
             pcm.writeIntLE(v, (i * channels + c) * 3, 3);
           }
@@ -206,7 +223,7 @@ export async function convertDsfToWav(
     }
     await output.close();
     await fsp.rename(temp, dest);
-    return { frames, sampleRate: outRate };
+    return { frames, sampleRate: outRate, peak };
   } finally {
     await input.close();
   }
