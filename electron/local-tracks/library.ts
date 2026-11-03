@@ -3,11 +3,29 @@ import path from "node:path";
 import { hashFile, importLocalFile } from "./importer.js";
 import type {
   LocalImportResult,
+  LocalLibraryUsage,
   LocalTrackPatch,
   LocalTrackRecord,
 } from "./types.js";
 
 const ID_PATTERN = /^[a-f0-9]{20}$/;
+const LIBRARY_FOLDERS = ["audio", "covers"] as const;
+
+async function folderBytes(folder: string): Promise<number> {
+  try {
+    const entries = await fsp.readdir(folder, { withFileTypes: true });
+    let total = 0;
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      try {
+        total += (await fsp.stat(path.join(folder, entry.name))).size;
+      } catch {}
+    }
+    return total;
+  } catch {
+    return 0;
+  }
+}
 
 export class LocalTrackLibrary {
   private records: LocalTrackRecord[] | null = null;
@@ -195,6 +213,33 @@ export class LocalTrackLibrary {
           });
         }
       }
+    });
+  }
+
+  removeAll(): Promise<number> {
+    return this.serialized(async () => {
+      const count = (await this.load()).length;
+      await this.save([]);
+      for (const folder of LIBRARY_FOLDERS) {
+        await fsp.rm(this.filePath(folder), { recursive: true, force: true });
+      }
+      return count;
+    });
+  }
+
+  usage(): Promise<LocalLibraryUsage> {
+    return this.serialized(async () => {
+      const records = await this.load();
+      let bytes = 0;
+      for (const folder of LIBRARY_FOLDERS) {
+        bytes += await folderBytes(this.filePath(folder));
+      }
+      if (records.length > 0) {
+        try {
+          bytes += (await fsp.stat(this.indexPath)).size;
+        } catch {}
+      }
+      return { count: records.length, bytes };
     });
   }
 

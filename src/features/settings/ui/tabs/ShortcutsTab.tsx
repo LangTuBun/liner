@@ -22,21 +22,35 @@ import {
   ExternalLinkLine,
 } from "@mingcute/react";
 import { useTranslation } from "@/languages";
-import { Dialog, Button, Tooltip, useToast } from "@/shared/ui";
+import { ConfirmPill, useToast } from "@/shared/ui";
 import {
   useShortcutsStore,
   normalizeShortcutToEnglish,
   DEFAULT_SHORTCUTS,
+  OPTIONAL_GLOBAL_ACTIONS,
+  type OptionalGlobalAction,
   type GlobalShortcutsSettings,
   type MainAppShortcutsSettings,
   type MiniplayerShortcutsSettings,
-  ResetIcon,
 } from "@/features/shortcuts";
 import { ShortcutRecorder } from "@/features/shortcuts/ui/ShortcutRecorder";
 
-const font = { fontFamily: "var(--font-inter), sans-serif" } as const;
-
 type ScopeFilter = "mainApp" | "miniplayer" | "global";
+
+const OPTIONAL_GLOBAL_ICONS: Record<
+  OptionalGlobalAction,
+  React.ComponentType<any>
+> = {
+  playPause: Play,
+  nextTrack: SkipNext,
+  prevTrack: SkipPrevious,
+  seekForward: FastForwardLine,
+  seekBackward: FastRewindLine,
+  volumeUp: VolumeLoud,
+  volumeDown: VolumeSmall,
+  toggleMute: VolumeCross,
+  showMainWindow: ExternalLinkLine,
+};
 
 export function ShortcutsTab({
   searchQuery: externalQuery,
@@ -49,7 +63,6 @@ export function ShortcutsTab({
   const [activeScope, setActiveScope] = useState<ScopeFilter>("mainApp");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   useEffect(() => {
     if (!recordingId) return;
@@ -81,7 +94,6 @@ export function ShortcutsTab({
 
   const handleConfirmResetAll = useCallback(() => {
     resetAll();
-    setIsResetModalOpen(false);
     toast(
       isRu ? "Все горячие клавиши сброшены" : "All shortcuts have been reset",
       "info",
@@ -107,6 +119,59 @@ export function ShortcutsTab({
         desc:
           t("settings.shortcuts.quick_like_song_desc") ||
           "Like or unlike current playing track system-wide without focusing the player.",
+      },
+      playPause: {
+        title: t("settings.shortcuts.play_pause") || "Play / Pause",
+        desc:
+          t("settings.shortcuts.play_pause_desc") || "Toggle audio playback.",
+      },
+      nextTrack: {
+        title: t("settings.shortcuts.next_track") || "Next track",
+        desc:
+          t("settings.shortcuts.next_track_desc") ||
+          "Skip to the next song in the queue.",
+      },
+      prevTrack: {
+        title: t("settings.shortcuts.prev_track") || "Previous track",
+        desc:
+          t("settings.shortcuts.prev_track_desc") ||
+          "Return to previous track or track start.",
+      },
+      seekForward: {
+        title: t("settings.shortcuts.seek_forward") || "Seek forward (+5s)",
+        desc:
+          t("settings.shortcuts.seek_forward_desc") ||
+          "Fast forward playback position by 5 seconds.",
+      },
+      seekBackward: {
+        title: t("settings.shortcuts.seek_backward") || "Seek backward (-5s)",
+        desc:
+          t("settings.shortcuts.seek_backward_desc") ||
+          "Rewind playback position by 5 seconds.",
+      },
+      volumeUp: {
+        title: t("settings.shortcuts.volume_up") || "Volume up",
+        desc:
+          t("settings.shortcuts.volume_up_desc") ||
+          "Increase playback volume by 5%.",
+      },
+      volumeDown: {
+        title: t("settings.shortcuts.volume_down") || "Volume down",
+        desc:
+          t("settings.shortcuts.volume_down_desc") ||
+          "Decrease playback volume by 5%.",
+      },
+      toggleMute: {
+        title: t("settings.shortcuts.toggle_mute") || "Mute / Unmute",
+        desc:
+          t("settings.shortcuts.toggle_mute_desc") ||
+          "Toggle audio mute state.",
+      },
+      showMainWindow: {
+        title: t("settings.shortcuts.show_main_window") || "Show Liner",
+        desc:
+          t("settings.shortcuts.show_main_window_desc") ||
+          "Bring the main Liner window to the front.",
       },
     }),
     [t],
@@ -337,6 +402,7 @@ export function ShortcutsTab({
     onChange: (val: string) => void;
     onReset: () => void;
     validateCandidate: (candidate: string) => { conflictWith: string } | null;
+    clearable?: boolean;
   }
 
   const allItems: ShortcutRowItem[] = useMemo(() => {
@@ -622,6 +688,19 @@ export function ShortcutsTab({
         onReset: () => resetShortcut("global", "quickLikeSong"),
         validateCandidate: validateGlobalCandidate("quickLikeSong"),
       },
+      ...OPTIONAL_GLOBAL_ACTIONS.map((action): ShortcutRowItem => ({
+        id: `global-${action}`,
+        scope: "global",
+        title: globalLabels[action].title,
+        desc: globalLabels[action].desc,
+        icon: OPTIONAL_GLOBAL_ICONS[action],
+        value: global[action],
+        defaultValue: DEFAULT_SHORTCUTS.global[action],
+        clearable: true,
+        onChange: (val) => setGlobalShortcut(action, val),
+        onReset: () => resetShortcut("global", action),
+        validateCandidate: validateGlobalCandidate(action),
+      })),
     ];
   }, [
     global,
@@ -682,7 +761,7 @@ export function ShortcutsTab({
       {/* ── Top Bar: Scope Tabs (Left) + Tiny Search Field (Right) ── */}
       <div className="flex items-center justify-between gap-3 mt-[8px] mb-[6px] w-full min-w-0">
         <div
-          className="inline-flex items-center gap-[6px] select-none shrink-0"
+          className="inline-flex h-[34px] items-center rounded-item bg-fill p-[3px] select-none shrink-0"
           role="tablist"
           aria-label="Shortcut filter scopes"
         >
@@ -698,22 +777,21 @@ export function ShortcutsTab({
                   if (localSearchQuery) setLocalSearchQuery("");
                   setActiveScope(tab.value);
                 }}
-                className={`group relative inline-flex h-[34px] items-center justify-center rounded-[10px] ${
-                  isRu ? "px-[13px]" : "px-[14px]"
-                } text-[13px] leading-none transition-colors duration-150 border-0 cursor-pointer select-none active:scale-[0.97] ${
+                className={`group relative inline-flex h-full items-center justify-center rounded-control ${
+                  isRu ? "px-[11px]" : "px-[12px]"
+                } text-body leading-none transition-colors duration-150 border-0 bg-transparent cursor-pointer select-none ${
                   isActive
-                    ? "bg-transparent text-bg-primary"
-                    : "bg-black/[0.05] text-text-primary hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
+                    ? "text-text-primary"
+                    : "text-text-secondary hover:text-text-primary"
                 }`}
                 style={{
-                  fontFamily: "var(--font-inter), sans-serif",
                   fontWeight: 500,
                 }}
               >
                 {isActive && (
                   <motion.div
                     layoutId="shortcutsScopeTab"
-                    className="absolute inset-0 rounded-[10px] bg-text-primary/70"
+                    className="absolute inset-0 rounded-control bg-fill-hover"
                     transition={{
                       type: "spring",
                       stiffness: 500,
@@ -725,9 +803,9 @@ export function ShortcutsTab({
                 <span className="relative z-10 leading-none flex items-center gap-1.5">
                   <span className="leading-none">{tab.label}</span>
                   <span
-                    className={`text-[12px] font-normal tabular-nums leading-none transition-colors ${
+                    className={`text-caption font-normal tabular-nums leading-none transition-colors ${
                       isActive
-                        ? "text-bg-primary/60"
+                        ? "text-text-secondary"
                         : "text-text-tertiary group-hover:text-text-secondary"
                     }`}
                   >
@@ -741,7 +819,7 @@ export function ShortcutsTab({
 
         {/* Right Tools: Search Field + Small Reset Button */}
         <div className="relative flex items-center justify-end flex-1 min-w-0 gap-2">
-          <div className="h-[34px] px-3 rounded-[10px] bg-black/[0.05] dark:bg-white/[0.08] flex items-center gap-2 transition-colors w-full max-w-[220px] min-w-[130px] border-none outline-none ring-0">
+          <div className="h-[34px] px-3 rounded-[10px] bg-fill flex items-center gap-2 transition-colors w-full max-w-[220px] min-w-[130px] border-none outline-none ring-0">
             <Search2Line size={15} className="text-text-tertiary shrink-0" />
             <input
               type="text"
@@ -751,8 +829,7 @@ export function ShortcutsTab({
                 t("settings.shortcuts.search_placeholder") ||
                 "Search shortcuts..."
               }
-              className="w-full bg-transparent border-none outline-none text-[13px] text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
-              style={font}
+              className="w-full bg-transparent border-none outline-none text-body text-text-primary placeholder:text-text-tertiary p-0 min-w-0 truncate"
             />
             {localSearchQuery && (
               <button
@@ -766,26 +843,15 @@ export function ShortcutsTab({
             )}
           </div>
 
-          <Tooltip
-            content={t("settings.shortcuts.reset_all") || "Reset all shortcuts"}
-            side="bottom"
-            sideOffset={6}
-          >
-            <button
-              type="button"
-              onClick={() => setIsResetModalOpen(true)}
-              aria-label={
-                t("settings.shortcuts.reset_all") || "Reset all shortcuts"
-              }
-              className="h-[34px] w-[34px] rounded-[10px] bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 border-0 p-0 active:scale-[0.95]"
-            >
-              <ResetIcon
-                size={14.5}
-                className="-top-[1px]"
-                style={{ top: "-1px" }}
-              />
-            </button>
-          </Tooltip>
+          <ConfirmPill
+            className="h-[34px]"
+            label={t("settings.shortcuts.reset_all_button") || "Reset defaults"}
+            actionLabel={
+              t("settings.shortcuts.reset_all") || "Reset all shortcuts"
+            }
+            confirmLabel={t("common.confirm") || "Confirm"}
+            onConfirm={handleConfirmResetAll}
+          />
         </div>
       </div>
 
@@ -800,10 +866,7 @@ export function ShortcutsTab({
           className="flex flex-wrap gap-[8px] pt-[10px]"
         >
           {filteredItems.length === 0 ? (
-            <div
-              className="w-full py-8 text-center text-text-tertiary text-[13px]"
-              style={font}
-            >
+            <div className="w-full py-8 text-center text-text-tertiary text-body">
               {t("search.no_results") || "No matching shortcuts found"}
             </div>
           ) : (
@@ -819,7 +882,7 @@ export function ShortcutsTab({
                       prev === item.id ? null : item.id,
                     );
                   }}
-                  className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-black/[0.05] py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.1]"
+                  className="inline-flex min-h-[50px] items-center gap-[14px] rounded-[14px] bg-fill py-[8px] pl-[12px] pr-[8px] transition-colors group select-none cursor-pointer hover:bg-fill-hover"
                 >
                   {/* Left: Icon + Title + Scope Badge */}
                   <div className="flex items-center gap-[10px] min-w-0 pointer-events-none">
@@ -827,15 +890,11 @@ export function ShortcutsTab({
                       <Icon size={20} weight="Bold" />
                     </span>
                     <div className="flex flex-col gap-[2px] min-w-0">
-                      <span
-                        className="text-[13.5px] font-[500] leading-tight text-text-primary truncate"
-                        style={font}
-                      >
+                      <span className="text-label font-[500] leading-tight text-text-primary truncate">
                         {item.title}
                       </span>
                       <span
                         className={`text-[11px] font-[500] leading-none ${scopeTagStyles[item.scope]}`}
-                        style={font}
                       >
                         {scopeTagLabels[item.scope]}
                       </span>
@@ -852,6 +911,7 @@ export function ShortcutsTab({
                     }}
                     onReset={item.onReset}
                     isGlobal={item.scope === "global"}
+                    clearable={item.clearable}
                     validateCandidate={item.validateCandidate}
                     isRecording={isRowRecording}
                     onRecordingChange={(rec) =>
@@ -864,61 +924,6 @@ export function ShortcutsTab({
           )}
         </motion.div>
       </AnimatePresence>
-
-      {/* ── Global Reset Confirmation Modal ── */}
-      <Dialog
-        open={isResetModalOpen}
-        onOpenChange={setIsResetModalOpen}
-        maxWidth={310}
-        zIndex={250}
-        className="p-[16px]"
-      >
-        <div className="flex flex-col">
-          {/* Header */}
-          <div className="flex flex-col gap-[3px]">
-            <h3
-              className="text-[15px] font-[600] text-text-primary m-0 leading-tight"
-              style={{
-                fontFamily: "var(--font-inter), sans-serif",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {isRu
-                ? "Все горячие клавиши будут сброшены"
-                : "All shortkeys will be reset"}
-            </h3>
-            <p
-              className="text-[12.5px] text-text-tertiary m-0 mt-[4px] leading-snug"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
-              {isRu
-                ? "Все комбинации клавиш вернутся к значениям по умолчанию. Это действие нельзя отменить."
-                : "All customized shortcut keys will be restored to their factory defaults. This action cannot be undone."}
-            </p>
-          </div>
-
-          {/* Actions: Cancel + Continue */}
-          <div className="flex items-center gap-[8px] mt-[16px]">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsResetModalOpen(false)}
-              className="flex-1 !h-[34px] text-[13px] !rounded-lg"
-            >
-              {t("common.cancel") || (isRu ? "Отмена" : "Cancel")}
-            </Button>
-
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleConfirmResetAll}
-              className="flex-1 !h-[34px] text-[13px] !rounded-lg !bg-accent-secondary !text-bg-primary hover:!opacity-90"
-            >
-              {isRu ? "Продолжить" : "Continue"}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }

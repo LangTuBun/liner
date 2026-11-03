@@ -13,12 +13,7 @@ export function EntityHeroSkeleton({
   subtitle,
 }: EntityHeroSkeletonProps = {}) {
   return (
-    <div
-      className="flex w-full items-stretch gap-[22px]"
-      style={
-        title ? { fontFamily: "var(--font-inter), sans-serif" } : undefined
-      }
-    >
+    <div className="flex w-full items-stretch gap-[22px]">
       <div className="relative h-[168px] w-[168px] shrink-0 overflow-hidden rounded-[10px] bg-border-alpha-14">
         {cover ?? <div className="skeleton-shimmer h-full w-full" />}
       </div>
@@ -29,7 +24,7 @@ export function EntityHeroSkeleton({
         {title ? (
           <h1 className={HERO_TITLE_CLASS}>{title}</h1>
         ) : (
-          <div className="skeleton-shimmer mt-[4px] h-[30px] w-[40%] rounded-[8px]" />
+          <div className="skeleton-shimmer mt-[4px] h-[30px] w-[40%] rounded-control" />
         )}
         {title && subtitle ? (
           <p className={`${HERO_SUBTITLE_CLASS} mt-[4px]`}>{subtitle}</p>

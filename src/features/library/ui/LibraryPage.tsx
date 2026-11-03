@@ -21,8 +21,14 @@ import { useModalStore } from "../store/modalStore";
 import { useImportStore } from "../store/importStore";
 import { usePageBackdrop } from "@/shared/lib";
 import ImportingPlaylistCard from "./ImportingPlaylistCard";
+import OfflineMixCard from "./OfflineMixCard";
 import { LocalFilesCard } from "../local";
 import { MixCards } from "@/features/mix/ui/MixCard";
+import { CachedSongsCard, useCachedTracksStore } from "../cached";
+import { WifiOffLine } from "@mingcute/react";
+import { useOfflineModeStore } from "@/features/connectivity";
+import { goOnline } from "@/features/connectivity/engine/offlineController";
+import { useSavedTracks } from "../saved/hooks/useSavedTracks";
 
 const PAGE_SIZE = 24;
 
@@ -73,10 +79,10 @@ function LikesPlaylistCard({
     return (
       <div
         onClick={onClick}
-        className="w-full flex items-center justify-between rounded-md p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
+        className="w-full flex items-center justify-between rounded-control p-[8px] outline-none transition-colors duration-150 ease-out cursor-pointer hover:bg-border-alpha-14 select-none"
       >
         <div className="flex items-center gap-[16px] min-w-0">
-          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-md">
+          <div className="relative h-[48px] w-[48px] shrink-0 overflow-hidden rounded-control">
             <img
               src={likesCover}
               alt=""
@@ -89,16 +95,14 @@ function LikesPlaylistCard({
             <h3
               className="m-0 max-w-[min(52vw,560px)] overflow-hidden text-ellipsis whitespace-nowrap text-[16px] leading-[1.2] text-text-primary"
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 fontWeight: 400,
               }}
             >
               {t("library.liked_songs")}
             </h3>
             <p
-              className="m-0 flex min-w-0 items-center text-[15px] leading-[1.2] overflow-hidden text-text-secondary"
+              className="m-0 flex min-w-0 items-center text-title leading-[1.2] overflow-hidden text-text-secondary"
               style={{
-                fontFamily: "var(--font-inter), sans-serif",
                 fontWeight: 350,
               }}
             >
@@ -120,7 +124,7 @@ function LikesPlaylistCard({
       className="group flex flex-col gap-[8px] cursor-pointer"
       draggable={false}
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-control">
         <img
           src={likesCover}
           alt=""
@@ -129,13 +133,13 @@ function LikesPlaylistCard({
         />
       </div>
       <div className="flex flex-col gap-[4px]">
-        <span className="truncate text-[14px] font-[500] text-text-primary">
+        <span className="truncate text-label font-[500] text-text-primary">
           {t("library.liked_songs")}
         </span>
         {isLoading || count === undefined ? (
           <div className="h-[13px] w-[56%] animate-pulse rounded bg-border-alpha-14" />
         ) : (
-          <span className="truncate text-[13px] text-text-tertiary">
+          <span className="truncate text-body text-text-tertiary">
             {t("common.songs", { count })}
           </span>
         )}
@@ -144,7 +148,7 @@ function LikesPlaylistCard({
   );
 }
 
-export default function LibraryPage() {
+function OnlineLibraryPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const likesCover = useLikesCover();
@@ -197,6 +201,10 @@ export default function LibraryPage() {
     () => youtubeItems.filter((item) => item.kind === "album"),
     [youtubeItems],
   );
+  const cachedVisibleOnline = useCachedTracksStore(
+    (state) => state.visibleOnline,
+  );
+  const showCachedSongs = cachedVisibleOnline;
   const { data: likedCount, isLoading: likedCountLoading } =
     useLikedTrackCount();
   const openCreatePlaylist = useModalStore((state) => state.openCreatePlaylist);
@@ -389,10 +397,7 @@ export default function LibraryPage() {
       >
         <div className="relative z-20 bg-transparent">
           <div className="px-[12px] pt-[36px] pb-[10px]">
-            <h1
-              className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
-              style={{ fontFamily: "var(--font-inter), sans-serif" }}
-            >
+            <h1 className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight">
               {t("library.title")}
             </h1>
           </div>
@@ -421,7 +426,7 @@ export default function LibraryPage() {
 
         <div className="px-[12px] pt-[4px] pb-[20px]">
           {activeTab === "playlists" && playlistsError ? (
-            <div className="mb-[10px] text-[12px] text-accent-secondary">
+            <div className="mb-[10px] text-caption text-accent-secondary">
               {t("playlist.error_loading")}
             </div>
           ) : null}
@@ -456,6 +461,14 @@ export default function LibraryPage() {
                               navigate("/library/playlist?id=likes")
                             }
                           />,
+                          ...(showCachedSongs
+                            ? [
+                                <CachedSongsCard
+                                  key="cached-songs-card"
+                                  viewMode={viewMode}
+                                />,
+                              ]
+                            : []),
                           <LocalFilesCard
                             key="local-files-card"
                             viewMode={viewMode}
@@ -481,4 +494,76 @@ export default function LibraryPage() {
       </div>
     </div>
   );
+}
+
+function OfflineLibraryPage() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const likesCover = useLikesCover();
+  usePageBackdrop(likesCover, { blur: 56, dim: 0.22 });
+  const source = useOfflineModeStore((state) => state.source);
+  const checking = useOfflineModeStore((state) => state.checking);
+  const { tracks: savedLikes, isLoading: savedLoading } = useSavedTracks();
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-y-auto bg-transparent pb-(--page-inset-bottom)">
+        <div className="px-[12px] pt-[36px] pb-[10px]">
+          <h1
+            className="text-[26px] font-bold text-text-primary tracking-tight m-0 leading-tight"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            {t("library.title")}
+          </h1>
+          <div
+            className="mt-[10px] flex flex-wrap items-center gap-[10px] text-body text-text-secondary"
+            style={{ fontFamily: "var(--font-inter), sans-serif" }}
+          >
+            <span className="flex items-center gap-[8px]">
+              <WifiOffLine size={15} className="text-text-tertiary" />
+              {t(
+                source === "manual"
+                  ? "offline.library_status_manual"
+                  : "offline.library_status_auto",
+              )}
+            </span>
+            <button
+              type="button"
+              disabled={checking}
+              onClick={() => void goOnline()}
+              className="h-[28px] rounded-[9px] border-0 bg-fill-hover px-[12px] text-[12.5px] font-[500] text-text-primary transition-colors hover:bg-black/[0.1] disabled:cursor-default disabled:opacity-60 dark:hover:bg-white/[0.15] cursor-pointer"
+            >
+              {checking
+                ? t("connectivity.retrying")
+                : t(
+                    source === "manual"
+                      ? "offline.go_online"
+                      : "offline.reconnect",
+                  )}
+            </button>
+          </div>
+        </div>
+
+        <div className="px-[12px] pt-[14px] pb-[20px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(165px,1fr))] gap-[24px] pb-[24px]">
+            <OfflineMixCard />
+            {savedLikes.length > 0 || savedLoading ? (
+              <LikesPlaylistCard
+                count={savedLikes.length}
+                isLoading={savedLoading}
+                onClick={() => navigate("/library/saved")}
+              />
+            ) : null}
+            <CachedSongsCard />
+            <LocalFilesCard />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LibraryPage() {
+  const offline = useOfflineModeStore((state) => state.offline);
+  return offline ? <OfflineLibraryPage /> : <OnlineLibraryPage />;
 }

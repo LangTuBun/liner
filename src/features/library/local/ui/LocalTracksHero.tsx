@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { AddLine, MusicLine, PlayFill } from "@mingcute/react";
-import { LuShuffle } from "react-icons/lu";
+import { LuShuffle, LuTrash2 } from "react-icons/lu";
 import { useTranslation } from "@/languages";
 import {
   EntityHero,
   HERO_BUTTON_CLASS,
   HERO_CHIP_CLASS,
   HERO_GLASS_BUTTON_CLASS,
-  HERO_SUBTITLE_CLASS,
+  HeroSubtitle,
   HERO_TITLE_CLASS,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
@@ -23,6 +23,7 @@ interface LocalTracksHeroProps {
   onPlayAll: () => void;
   onShuffle: () => void;
   onAddFiles: () => void;
+  onRemoveAll: () => void;
 }
 
 export default function LocalTracksHero({
@@ -33,6 +34,7 @@ export default function LocalTracksHero({
   onPlayAll,
   onShuffle,
   onAddFiles,
+  onRemoveAll,
 }: LocalTracksHeroProps) {
   const { t } = useTranslation();
   const empty = tracks.length === 0;
@@ -45,9 +47,7 @@ export default function LocalTracksHero({
     <EntityHero
       cover={<LocalFilesCover className="absolute inset-0" />}
       title={<h1 className={HERO_TITLE_CLASS}>{t("library.local.title")}</h1>}
-      subtitle={
-        <p className={HERO_SUBTITLE_CLASS}>{t("library.local.subtitle")}</p>
-      }
+      subtitle={<HeroSubtitle text={t("library.local.subtitle")} />}
       meta={
         <div className={HERO_CHIP_CLASS}>
           <MusicLine size={13} className="shrink-0 text-text-secondary" />
@@ -89,6 +89,18 @@ export default function LocalTracksHero({
         <>
           {search}
           {sort}
+          {!empty && (
+            <Button
+              variant="secondary"
+              onClick={onRemoveAll}
+              disabled={importing}
+              className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} !w-[52px] !p-0 text-text-primary`}
+              title={t("library.local.remove_all")}
+              aria-label={t("library.local.remove_all")}
+            >
+              <LuTrash2 size={17} />
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={onAddFiles}

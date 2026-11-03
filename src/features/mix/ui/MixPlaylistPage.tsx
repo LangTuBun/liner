@@ -11,9 +11,9 @@ import {
   HERO_GLASS_BUTTON_CLASS,
   HERO_SUBTITLE_CLASS,
   HERO_TITLE_CLASS,
+  ListPanel,
 } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
-import { useClassicSurfaces } from "@/features/settings/store/customizationStore";
 import { SongCardWithMenu, playerEngine } from "@/features/player";
 import { usePlayerStore } from "@/features/player/store/playerStore";
 import { useMixStore } from "../store/mixStore";
@@ -44,7 +44,6 @@ export default function MixPlaylistPage() {
   const rename = useMixStore((state) => state.rename);
   const removeMix = useMixStore((state) => state.remove);
   const removeTrack = useMixStore((state) => state.removeTrack);
-  const classicSurfaces = useClassicSurfaces();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -163,16 +162,7 @@ export default function MixPlaylistPage() {
           />
         </div>
 
-        <div
-          className={cn(
-            "mx-[4px] mt-[20px] shrink-0 grow overflow-hidden rounded-t-[14px] bg-black/[0.03] px-[8px] pt-[8px] dark:bg-white/[0.04]",
-            !classicSurfaces && "backdrop-blur-xl",
-          )}
-          style={{
-            marginBottom: "calc(var(--page-inset-bottom) * -1)",
-            paddingBottom: "calc(var(--page-inset-bottom) + 16px)",
-          }}
-        >
+        <ListPanel>
           {empty ? (
             <p className="m-0 p-[24px] text-center text-[14px] text-text-secondary">
               {t("mix.empty_mix")}
@@ -206,7 +196,7 @@ export default function MixPlaylistPage() {
               />
             ))
           )}
-        </div>
+        </ListPanel>
       </div>
     </div>
   );

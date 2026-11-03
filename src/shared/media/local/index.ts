@@ -8,5 +8,6 @@ export {
 export {
   localRecordToTrack,
   type LocalImportResult,
+  type LocalLibraryUsage,
   type LocalTrackRecord,
 } from "./localTrack";

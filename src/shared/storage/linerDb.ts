@@ -1,4 +1,4 @@
-import type { Track } from "@/shared/types";
+import type { Track, TrackArtist } from "@/shared/types";
 import type {
   LyricsCandidate,
   LyricsSyncLevel,
@@ -14,6 +14,8 @@ export interface CachedTrackRecord {
   id: string;
   title: string;
   artists: string;
+  artistId?: string;
+  artistList?: TrackArtist[];
   albumTitle?: string;
   albumId?: string;
   coverUrl?: string;
@@ -29,6 +31,11 @@ export interface CachedAudioRecord {
   savedAt: number;
   lastPlayedAt?: number;
 }
+
+export type CachedAudioEntry = Pick<
+  CachedAudioRecord,
+  "trackId" | "byteSize" | "savedAt" | "lastPlayedAt"
+>;
 
 export interface CachedLyricsRecord {
   trackId: string;
@@ -245,6 +252,8 @@ class LinerDb {
       id: track.id,
       title: track.title,
       artists: track.artists,
+      artistId: track.artistId,
+      artistList: track.artistList?.map(({ id, name }) => ({ id, name })),
       albumTitle: track.album?.title,
       albumId: track.album?.id,
       coverUrl: track.coverUrl,
@@ -391,6 +400,33 @@ class LinerDb {
       (a, b) => (a.lastPlayedAt ?? a.savedAt) - (b.lastPlayedAt ?? b.savedAt),
     );
     return memList;
+  }
+
+  async listAudioEntries(): Promise<CachedAudioEntry[]> {
+    const result = await this.runTransaction("audio", "readonly", (store) => {
+      return new Promise<CachedAudioEntry[]>((resolve) => {
+        const entries: CachedAudioEntry[] = [];
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            const record = cursor.value as CachedAudioRecord;
+            entries.push({
+              trackId: record.trackId,
+              byteSize: record.byteSize,
+              savedAt: record.savedAt,
+              lastPlayedAt: record.lastPlayedAt,
+            });
+            cursor.continue();
+          } else {
+            resolve(entries);
+          }
+        };
+        req.onerror = () => resolve([]);
+      });
+    });
+
+    return result ?? [];
   }
 
   async hasAudio(trackId: string): Promise<boolean> {
@@ -678,44 +714,6 @@ class LinerDb {
       return new Promise<void>((resolve) => {
         const req = store.clear();
         req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
-      });
-    });
-  }
-
-  async deleteLyrics(trackIds: string[]): Promise<void> {
-    if (trackIds.length === 0) return;
-    for (const id of trackIds) this.memLyrics.delete(id);
-    await this.runTransaction("lyrics", "readwrite", (store) =>
-      Promise.all(
-        trackIds.map(
-          (id) =>
-            new Promise<void>((resolve) => {
-              const req = store.delete(id);
-              req.onsuccess = () => resolve();
-              req.onerror = () => resolve();
-            }),
-        ),
-      ).then(() => undefined),
-    );
-  }
-
-  async clearCachedLyrics(keep: (trackId: string) => boolean): Promise<void> {
-    for (const id of this.memLyrics.keys()) {
-      if (!keep(id)) this.memLyrics.delete(id);
-    }
-    await this.runTransaction("lyrics", "readwrite", (store) => {
-      return new Promise<void>((resolve) => {
-        const req = store.openCursor();
-        req.onsuccess = () => {
-          const cursor = req.result;
-          if (!cursor) {
-            resolve();
-            return;
-          }
-          if (!keep(String(cursor.key))) cursor.delete();
-          cursor.continue();
-        };
         req.onerror = () => resolve();
       });
     });

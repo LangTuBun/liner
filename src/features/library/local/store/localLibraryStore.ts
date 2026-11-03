@@ -6,8 +6,15 @@ import {
   type LocalImportResult,
   type LocalTrackRecord,
 } from "@/shared/media/local";
-import { linerDb } from "@/shared/storage/linerDb";
-import { lyricsCache } from "@/features/lyrics";
+import { playerEngine } from "@/features/player/engine/playerEngine";
+
+async function releasePlayingTrack(fileIds: string[] | "all") {
+  const current = playerEngine.getSnapshot().currentTrack?.id;
+  if (!current || !isLocalTrackId(current)) return;
+  const removed =
+    fileIds === "all" || fileIds.map(toLocalTrackId).includes(current);
+  if (removed) await playerEngine.stopAndClear().catch(() => {});
+}
 import type { Track } from "@/shared/types";
 import { recordMatchKey, trackMatchKey } from "../lib/downloadMatch";
 
@@ -24,6 +31,7 @@ interface LocalLibraryState {
   importPaths: (paths: string[]) => Promise<LocalImportResult | null>;
   pickFiles: () => Promise<LocalImportResult | null>;
   remove: (fileIds: string[]) => Promise<void>;
+  removeAll: () => Promise<number>;
 }
 
 const newestFirst = (records: LocalTrackRecord[]) =>
@@ -104,10 +112,8 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       if (get().loadState === "loading") return;
       set({ loadState: "loading" });
       try {
-        set({
-          ...withTracks(await bridge.localTracksList()),
-          loadState: "ready",
-        });
+        const records = await bridge.localTracksList();
+        set({ ...withTracks(records), loadState: "ready" });
       } catch {
         set({ loadState: "ready" });
       }
@@ -132,10 +138,16 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       set(
         withTracks(get().records.filter((record) => !removing.has(record.id))),
       );
+      await releasePlayingTrack(fileIds);
       await bridge.localTracksRemove(fileIds);
-      const trackIds = fileIds.map(toLocalTrackId);
-      for (const trackId of trackIds) lyricsCache.delete(trackId);
-      await linerDb.deleteLyrics(trackIds);
+    },
+
+    removeAll: async () => {
+      const bridge = window.linerElectron;
+      if (!bridge) return 0;
+      set(withTracks([]));
+      await releasePlayingTrack("all");
+      return bridge.localTracksRemoveAll();
     },
   };
 });

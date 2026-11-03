@@ -78,11 +78,11 @@ export default function WindowControls({
   const onDarkGlass = isFullscreen || !bare;
 
   const buttonClass = cn(
-    "flex items-center justify-center rounded-md border-0 bg-transparent p-0 cursor-pointer select-none pointer-events-auto transition-[background-color,color,opacity] duration-150 active:scale-95",
+    "flex items-center justify-center rounded-control border-0 bg-transparent p-0 cursor-pointer select-none pointer-events-auto transition-[background-color,color,opacity] duration-150 active:scale-95",
     isFullscreen
       ? "w-[26px] h-[26px]"
       : bare
-        ? "w-[30px] h-[30px]"
+        ? "w-[26px] h-[26px]"
         : "w-[34px] h-[34px]",
     onDarkGlass
       ? "text-white opacity-70 hover:opacity-100 hover:bg-white/12"
@@ -152,7 +152,7 @@ export default function WindowControls({
         "flex items-center gap-[2px] select-none pointer-events-auto",
         isFullscreen
           ? cn(ISLAND_SURFACE, "h-[32px] px-[3px]")
-          : "h-[46px] px-[6px] rounded-xl apple-glass-pill",
+          : "h-[46px] px-[6px] rounded-item apple-glass-pill",
       )}
     >
       {buttons}

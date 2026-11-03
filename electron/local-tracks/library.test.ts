@@ -113,6 +113,22 @@ describe("LocalTrackLibrary", () => {
     expect(await library.update("missing", { hiRes: "hires" })).toBeNull();
   });
 
+  it("removes every track with its files and reports the space they used", async () => {
+    const library = new LocalTrackLibrary(root);
+    await library.importFiles([
+      await source("One - A.mp3", "aaaa"),
+      await source("Two - B.mp3", "bbbbbb"),
+    ]);
+    const usage = await library.usage();
+    expect(usage.count).toBe(2);
+    expect(usage.bytes).toBeGreaterThanOrEqual(10);
+
+    expect(await library.removeAll()).toBe(2);
+    expect(await library.list()).toEqual([]);
+    await expect(fs.access(path.join(root, "audio"))).rejects.toThrow();
+    expect(await library.usage()).toEqual({ count: 0, bytes: 0 });
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

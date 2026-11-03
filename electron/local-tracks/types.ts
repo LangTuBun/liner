@@ -22,6 +22,10 @@ export type LocalTrackPatch = Partial<
     "source" | "matchKey" | "hiRes" | "title" | "artist" | "addedAt"
   >
 >;
+export interface LocalLibraryUsage {
+  count: number;
+  bytes: number;
+}
 
 export interface LocalImportResult {
   added: LocalTrackRecord[];

@@ -4,6 +4,7 @@ import { localTrackCoverUrl, toLocalTrackId } from "./localTrackIds";
 
 export type {
   LocalImportResult,
+  LocalLibraryUsage,
   LocalTrackRecord,
 } from "../../../../electron/local-tracks/types";
 

@@ -7,6 +7,7 @@ import {
 } from "@/shared/media/soundcloud";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
+import { withSoundCloudTracks } from "./catalogSearch";
 import type {
   AlbumDetails,
   ArtistDetails,
@@ -80,10 +81,14 @@ export const clientCatalog = {
   ): Promise<SearchResponse> {
     if (isSoundCloudUrl(query))
       return { items: await resolveSoundCloudUrl(query, type).catch(() => []) };
-    return preferClient(
-      "search",
-      async () => ({ items: await innertubeCatalog.search(query, type) }),
-      server,
+    return withSoundCloudTracks(
+      query,
+      type,
+      preferClient(
+        "search",
+        async () => ({ items: await innertubeCatalog.search(query, type) }),
+        server,
+      ),
     );
   },
 
@@ -95,17 +100,9 @@ export const clientCatalog = {
     return preferClient("track", () => innertubeCatalog.getTrack(id), server);
   },
 
-  getRadio(
-    id: string,
-    k: number | undefined,
-    server: () => Promise<RadioResponse>,
-  ): Promise<RadioResponse> {
+  getRadio(id: string, k: number | undefined): Promise<RadioResponse> {
     if (isSoundCloudCatalogId(id)) return soundcloudCatalog.getRadio(id, k);
-    return preferClient(
-      "radio",
-      () => innertubeCatalog.getRadio(id, { k }),
-      server,
-    );
+    return innertubeCatalog.getRadio(id, { k });
   },
 
   getAlbum(

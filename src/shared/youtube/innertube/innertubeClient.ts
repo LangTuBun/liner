@@ -30,9 +30,17 @@ export const WEB_REMIX_PROFILE: InnertubeProfile = {
   origin: "https://music.youtube.com",
 };
 
+export const WEB_PROFILE: InnertubeProfile = {
+  clientName: "WEB",
+  clientVersion: "2.20260910.00.00",
+  clientIdHeader: "1",
+  origin: "https://www.youtube.com",
+};
+
 export { USER_AGENT_HEADER_OVERRIDE };
 
 const SESSION_REJECTED = new Set([401, 403]);
+const INNERTUBE_TIMEOUT_MS = 12_000;
 
 export class InnertubeError extends Error {
   constructor(
@@ -120,7 +128,12 @@ export async function postInnertube(
         method: "POST",
         headers: buildHeaders(profile, visitorData, authorization),
         body: JSON.stringify(payload),
-        signal: options.signal,
+        signal: options.signal
+          ? AbortSignal.any([
+              options.signal,
+              AbortSignal.timeout(INNERTUBE_TIMEOUT_MS),
+            ])
+          : AbortSignal.timeout(INNERTUBE_TIMEOUT_MS),
       });
     } catch (error) {
       if (options.signal?.aborted) throw error;

@@ -3,6 +3,7 @@ import { BrowserWindow, app, dialog, ipcMain } from "electron";
 import { LocalTrackLibrary } from "./library.js";
 import { probeLocalAudio } from "./metadata.js";
 import { handleLocalTrackScheme } from "./protocol.js";
+import type { SavedTrackLibrary } from "../saved-tracks/library.js";
 import { LOCAL_AUDIO_EXTENSIONS } from "./types.js";
 
 const stringList = (value: unknown): string[] =>
@@ -12,11 +13,11 @@ const stringList = (value: unknown): string[] =>
       )
     : [];
 
-export function setupLocalTracks() {
+export function setupLocalTracks(saved: SavedTrackLibrary) {
   const library = new LocalTrackLibrary(
     path.join(app.getPath("userData"), "local-tracks"),
   );
-  handleLocalTrackScheme(library);
+  handleLocalTrackScheme(library, saved);
 
   ipcMain.handle("local-tracks:list", () => library.list());
 
@@ -45,5 +46,10 @@ export function setupLocalTracks() {
       typeof id === "string" ? await library.locate("audio", id) : null;
     return found ? probeLocalAudio(found.path).catch(() => null) : null;
   });
+
+  ipcMain.handle("local-tracks:remove-all", () => library.removeAll());
+
+  ipcMain.handle("local-tracks:usage", () => library.usage());
+
   return library;
 }
