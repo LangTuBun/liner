@@ -3,6 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LocalTrackLibrary } from "./library";
+import { wavHeader } from "./wav";
+import { vi } from "vitest";
+import * as loudnessWav from "./loudnessWav";
 
 describe("LocalTrackLibrary", () => {
   let root: string;
@@ -150,6 +153,70 @@ describe("LocalTrackLibrary", () => {
   });
 
   describe("upgrades", () => {
+    it("stores loudness once and recomputes after replacing the audio", async () => {
+      const spy = vi.spyOn(loudnessWav, "measureWav");
+      try {
+        const library = new LocalTrackLibrary(root);
+        const makeTone = async (folder: string, bits: 16 | 24, db: number) => {
+          const rate = 44100;
+          const data = Buffer.alloc((rate * 2 * bits) / 8);
+          for (let i = 0; i < rate; i++) {
+            const sample = Math.round(
+              Math.sin((2 * Math.PI * 997 * i) / rate) *
+                10 ** (db / 20) *
+                (2 ** (bits - 1) - 1),
+            );
+            for (let c = 0; c < 2; c++)
+              data.writeIntLE(sample, ((i * 2 + c) * bits) / 8, bits / 8);
+          }
+          const dir = path.join(sources, folder);
+          await fs.mkdir(dir);
+          const file = path.join(dir, "Artist - Song.wav");
+          await fs.writeFile(
+            file,
+            Buffer.concat([wavHeader(rate, 2, rate, bits), data]),
+          );
+          return file;
+        };
+        const original = await makeTone("original", 16, -23);
+        const {
+          added: [first],
+        } = await library.importFiles([original]);
+        await library.measureLoudness();
+        const measured = (await library.list())[0];
+        expect(measured.loudnessLufs).toBeCloseTo(-23, 1);
+        expect(measured.peakDb).toBeCloseTo(-23, 2);
+        const stored = JSON.parse(
+          await fs.readFile(path.join(root, "library.json"), "utf8"),
+        );
+        expect(stored[0].loudnessLufs).toBe(measured.loudnessLufs);
+        await new LocalTrackLibrary(root).measureLoudness();
+        await library.measureLoudness();
+        expect(spy).toHaveBeenCalledTimes(1);
+        const better = await makeTone("better", 24, -20);
+        await library.importFiles([better], { upgrade: true });
+        expect((await library.list())[0].id).toBe(first.id);
+        expect((await library.list())[0].loudnessLufs).toBeUndefined();
+        expect(
+          await library.storeLoudness(
+            first.id,
+            first.audioFile,
+            first.contentHash,
+            { loudnessLufs: -23, peakDb: -23 },
+          ),
+        ).toBe(false);
+        await library.measureLoudness();
+        expect((await library.list())[0].loudnessLufs).toBeCloseTo(-20, 1);
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(
+          await fs.readFile(
+            path.join(root, "audio", (await library.list())[0].audioFile),
+          ),
+        ).toEqual(await fs.readFile(better));
+      } finally {
+        spy.mockRestore();
+      }
+    });
     const wav = (bits: number, rate: number) => {
       const frames = Math.round(rate * 0.1);
       const data = Buffer.alloc(frames * 2 * (bits / 8));
@@ -331,6 +398,8 @@ describe("LocalTrackLibrary", () => {
         fileName: "tone.m4a",
         audioFile: `${id}.m4a`,
         mimeType: "audio/mp4",
+        loudnessLufs: -23,
+        peakDb: -20,
         byteSize: 1,
         addedAt: 1,
       };
@@ -343,6 +412,8 @@ describe("LocalTrackLibrary", () => {
       expect(await library.repairAlac()).toBe(1);
 
       const [record] = await library.list();
+      expect(record.loudnessLufs).toBeUndefined();
+      expect(record.peakDb).toBeUndefined();
       expect(record).toMatchObject({
         id,
         audioFile: `${id}.wav`,

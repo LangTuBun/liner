@@ -86,11 +86,13 @@ export async function findDownloadedTrackId(track: {
 }
 
 let loadPromise: Promise<void> | null = null;
+let reloadPending = false;
 
 export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
   // tracks the main process adds on its own (the riff migration)
   if (typeof window !== "undefined")
     window.linerElectron?.onLocalTracksChanged?.(() => {
+      if (loadPromise) reloadPending = true;
       if (get().loadState !== "idle") void get().load();
     });
 
@@ -100,12 +102,11 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
     set({ importing: true });
     try {
       const result = await request();
-      if (result && (result.upgraded?.length ?? 0) > 0) {
-        const records = await window.linerElectron?.localTracksList();
-        if (records) set(withTracks(records));
-      } else if (result && result.added.length > 0) {
-        set(withTracks([...get().records, ...result.added]));
-      }
+      if (
+        result &&
+        (result.added.length > 0 || (result.upgraded?.length ?? 0) > 0)
+      )
+        await get().load();
       return result;
     } finally {
       set({ importing: false });
@@ -137,6 +138,10 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
         }
       })().finally(() => {
         loadPromise = null;
+        if (reloadPending) {
+          reloadPending = false;
+          void get().load();
+        }
       });
       return loadPromise;
     },

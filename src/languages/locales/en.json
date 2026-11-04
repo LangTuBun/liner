@@ -855,6 +855,10 @@
       "title": "Autoplay similar tracks",
       "description": "Automatically add similar songs when your queue ends."
     },
+    "volume_match": {
+      "title": "Match song volumes",
+      "description": "Only changes playback level, never your audio files."
+    },
     "track_double_click": {
       "title": "Double-click on track",
       "description": "Choose what happens when you double-click a song card.",
@@ -1347,6 +1351,7 @@
     "processing": "Processing in the path",
     "chip": {
       "clean": "Nothing changes the signal",
+      "volume_match": "Volume match {db} dB",
       "volume": "Volume {db} dB",
       "eq": "Equalizer",
       "preamp": "EQ preamp {db} dB",

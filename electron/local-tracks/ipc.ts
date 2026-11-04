@@ -5,6 +5,7 @@ import { probeLocalAudio } from "./metadata.js";
 import { handleLocalTrackScheme } from "./protocol.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
 import { LOCAL_AUDIO_EXTENSIONS, type LocalStamp } from "./types.js";
+import type { LoudnessMeasurement } from "./loudness.js";
 
 const stringList = (value: unknown): string[] =>
   Array.isArray(value)
@@ -14,10 +15,41 @@ const stringList = (value: unknown): string[] =>
     : [];
 
 export function setupLocalTracks(saved: SavedTrackLibrary) {
+  let measurementTimer: ReturnType<typeof setTimeout> | undefined;
+  const changed = () => {
+    for (const window of BrowserWindow.getAllWindows())
+      window.webContents.send("local-tracks:changed");
+    if (measurementTimer) clearTimeout(measurementTimer);
+    measurementTimer = setTimeout(() => {
+      measurementTimer = undefined;
+      void library.measureLoudness().catch(() => undefined);
+    }, 100);
+  };
   const library = new LocalTrackLibrary(
     path.join(app.getPath("userData"), "local-tracks"),
+    changed,
   );
+  void library.measureLoudness().catch(() => undefined);
   handleLocalTrackScheme(library, saved);
+
+  ipcMain.handle(
+    "local-tracks:loudness",
+    (
+      _event,
+      id: unknown,
+      audioFile: unknown,
+      contentHash: unknown,
+      measurement: LoudnessMeasurement,
+    ) => {
+      if (
+        typeof id !== "string" ||
+        typeof audioFile !== "string" ||
+        (contentHash !== undefined && typeof contentHash !== "string")
+      )
+        return false;
+      return library.storeLoudness(id, audioFile, contentHash, measurement);
+    },
+  );
 
   ipcMain.handle("local-tracks:list", () => library.list());
 

@@ -6,6 +6,8 @@ export interface LocalTrackQuality {
 }
 
 export interface LocalTrackRecord extends LocalTrackQuality {
+  loudnessLufs?: number | null;
+  peakDb?: number | null;
   id: string;
   title: string;
   artist: string;

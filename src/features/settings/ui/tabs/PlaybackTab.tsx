@@ -10,6 +10,10 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const autoplaySimilar = usePlayerStore((state) => state.autoplaySimilar);
+  const matchSongVolumes = usePlayerStore((state) => state.matchSongVolumes);
+  const setMatchSongVolumes = usePlayerStore(
+    (state) => state.setMatchSongVolumes,
+  );
   const setAutoplaySimilar = usePlayerStore(
     (state) => state.setAutoplaySimilar,
   );
@@ -38,6 +42,19 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
 
   return (
     <SettingSection>
+      <SettingRow
+        title={t("settings.volume_match.title")}
+        description={t("settings.volume_match.description")}
+        titleKey="settings.volume_match.title"
+        descKey="settings.volume_match.description"
+        searchQuery={searchQuery}
+        control={
+          <ToggleSwitch
+            checked={matchSongVolumes}
+            onChange={setMatchSongVolumes}
+          />
+        }
+      />
       <SettingRow
         title={t("settings.autoplay_similar.title")}
         description={t("settings.autoplay_similar.description")}

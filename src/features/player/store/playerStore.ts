@@ -73,6 +73,7 @@ export interface SessionState {
   isReverbEnabled: boolean;
   reverbLevel: number;
   isEqEnabled: boolean;
+  matchSongVolumes: boolean;
   eqGains: number[];
   eqCustomPresets: EqCustomPreset[];
 }
@@ -130,6 +131,7 @@ export interface PlayerStore extends PlayerState {
   setIsReverbEnabled: (enabled: boolean) => void;
   setReverbLevel: (level: number) => void;
   setIsEqEnabled: (enabled: boolean) => void;
+  setMatchSongVolumes: (enabled: boolean) => void;
   setEqGains: (gains: number[]) => void;
   setEqCustomPresets: (presets: EqCustomPreset[]) => void;
   resetSpeedAndPitch: () => void;
@@ -202,6 +204,7 @@ export const usePlayerStore = create<PlayerStore>()(
       isReverbEnabled: false,
       reverbLevel: 0.35,
       isEqEnabled: false,
+      matchSongVolumes: false,
       eqGains: FLAT_EQ,
       eqCustomPresets: [],
 
@@ -258,6 +261,8 @@ export const usePlayerStore = create<PlayerStore>()(
       setReverbLevel: (reverbLevel: number) =>
         set({ reverbLevel: Math.max(0, Math.min(1, reverbLevel)) }),
       setIsEqEnabled: (isEqEnabled: boolean) => set({ isEqEnabled }),
+      setMatchSongVolumes: (matchSongVolumes: boolean) =>
+        set({ matchSongVolumes }),
       setEqGains: (eqGains: number[]) =>
         set({ eqGains: normalizeEqGains(eqGains) }),
       setEqCustomPresets: (eqCustomPresets: EqCustomPreset[]) =>
@@ -368,6 +373,8 @@ export const usePlayerStore = create<PlayerStore>()(
           if (typeof state.isEqEnabled !== "boolean") {
             state.isEqEnabled = false;
           }
+          if (typeof state.matchSongVolumes !== "boolean")
+            state.matchSongVolumes = false;
           state.eqGains = normalizeEqGains(state.eqGains);
           state.eqCustomPresets = normalizeEqCustomPresets(
             state.eqCustomPresets,
@@ -403,6 +410,7 @@ export const usePlayerStore = create<PlayerStore>()(
         isReverbEnabled: state.isReverbEnabled,
         reverbLevel: state.reverbLevel,
         isEqEnabled: state.isEqEnabled,
+        matchSongVolumes: state.matchSongVolumes,
         eqGains: state.eqGains,
         eqCustomPresets: state.eqCustomPresets,
       }),

@@ -273,6 +273,32 @@ describe("audio effects graph idle cost", () => {
     });
   });
 
+  it("ramps volume matching separately from EQ and returns exactly to unity", async () => {
+    await start();
+    const graph = (window as any).__liner_pitch_graph;
+    const ramp = vi.spyOn(
+      graph.volumeMatchGain.gain,
+      "linearRampToValueAtTime",
+    );
+    const hold = vi.spyOn(graph.volumeMatchGain.gain, "cancelAndHoldAtTime");
+    controller.update({ volumeMatchDb: 3.2 });
+    expect(hold).toHaveBeenCalled();
+    expect(ramp).toHaveBeenLastCalledWith(
+      10 ** (3.2 / 20),
+      graph.ctx.currentTime + 0.05,
+    );
+    expect(controller.getVolumeMatchDb()).toBeCloseTo(3.2);
+    expect(graph.eqPreamp.gain.value).toBe(1);
+    expect(graph.masterOutputGain.outputs.has(graph.volumeMatchGain)).toBe(
+      true,
+    );
+    expect(graph.volumeMatchGain.outputs.has(graph.eqBypassGain)).toBe(true);
+    controller.update({});
+    expect(graph.volumeMatchGain.gain.value).toBe(1);
+    expect(controller.getVolumeMatchDb()).toBe(0);
+    expect(measure()).toMatchObject({ convolvers: 0, biquads: 0, delays: 0 });
+  });
+
   it("neutral paused suspends the context after the fade", async () => {
     await start();
     pause();

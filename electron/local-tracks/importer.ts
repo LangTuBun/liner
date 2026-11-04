@@ -173,6 +173,8 @@ export async function upgradedRecord(
     stale.push(path.join(root, "covers", fresh.coverFile));
   const record: LocalTrackRecord = {
     ...existing,
+    loudnessLufs: undefined,
+    peakDb: undefined,
     audioFile: fresh.audioFile,
     mimeType: fresh.mimeType,
     byteSize: fresh.byteSize,

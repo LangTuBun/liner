@@ -1,5 +1,7 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
+import { measureWav } from "./loudnessWav.js";
+import type { LoudnessMeasurement } from "./loudness.js";
 import {
   commitLocalFile,
   expandAudioPaths,
@@ -60,7 +62,87 @@ export class LocalTrackLibrary {
   private aliases: Record<string, string> | null = null;
   private queue: Promise<unknown> = Promise.resolve();
 
-  constructor(private readonly root: string) {}
+  private measuring: Promise<void> | null = null;
+  private readonly attemptedMeasurements = new Set<string>();
+
+  constructor(
+    private readonly root: string,
+    private readonly onChanged?: () => void,
+  ) {}
+
+  measureLoudness(): Promise<void> {
+    if (this.measuring) return this.measuring;
+    this.measuring = (async () => {
+      for (;;) {
+        const record = [...(await this.list())]
+          .sort((a, b) => b.addedAt - a.addedAt)
+          .find(
+            (r) =>
+              r.audioFile.endsWith(".wav") &&
+              r.loudnessLufs === undefined &&
+              !this.attemptedMeasurements.has(
+                `${r.id}|${r.audioFile}|${r.contentHash}`,
+              ),
+          );
+        if (!record) break;
+        this.attemptedMeasurements.add(
+          `${record.id}|${record.audioFile}|${record.contentHash}`,
+        );
+        try {
+          const measurement = await measureWav(
+            this.filePath("audio", record.audioFile),
+          );
+          await this.storeLoudness(
+            record.id,
+            record.audioFile,
+            record.contentHash,
+            measurement,
+          );
+        } catch {
+          // An unsupported or damaged file must remain playable and importable.
+        }
+      }
+    })().finally(() => {
+      this.measuring = null;
+    });
+    return this.measuring;
+  }
+
+  storeLoudness(
+    id: string,
+    audioFile: string,
+    contentHash: string | undefined,
+    measurement: LoudnessMeasurement,
+  ): Promise<boolean> {
+    return this.serialized(async () => {
+      const valid = (v: unknown) =>
+        v === null ||
+        (typeof v === "number" && Number.isFinite(v) && v >= -200 && v <= 24);
+      if (!valid(measurement?.loudnessLufs) || !valid(measurement?.peakDb))
+        return false;
+      const records = await this.load();
+      const record = records.find((r) => r.id === id);
+      if (
+        !record ||
+        record.audioFile !== audioFile ||
+        record.contentHash !== contentHash ||
+        record.loudnessLufs !== undefined
+      )
+        return false;
+      await this.save(
+        records.map((r) =>
+          r === record
+            ? {
+                ...r,
+                loudnessLufs: measurement.loudnessLufs,
+                peakDb: measurement.peakDb,
+              }
+            : r,
+        ),
+      );
+      return true;
+    });
+  }
 
   private get indexPath() {
     return path.join(this.root, "library.json");
@@ -97,6 +179,7 @@ export class LocalTrackLibrary {
     await fsp.writeFile(temp, JSON.stringify(records));
     await fsp.rename(temp, this.indexPath);
     this.records = records;
+    this.onChanged?.();
   }
 
   // removed copy -> the copy that stayed, so old playlist and queue entries
@@ -392,6 +475,8 @@ export class LocalTrackLibrary {
           records[i] = {
             ...record,
             audioFile: wavName,
+            loudnessLufs: undefined,
+            peakDb: undefined,
             mimeType: "audio/wav",
             byteSize: (await fsp.stat(this.filePath("audio", wavName))).size,
             lossless: true,

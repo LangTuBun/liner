@@ -8,7 +8,7 @@ import {
 
 const GRAIN_PERIOD = 0.038;
 const NUM_TAPS = 4;
-const GRAPH_VERSION = 2;
+const GRAPH_VERSION = 3;
 const BRANCH_TEARDOWN_MS = 200;
 const IDLE_SUSPEND_MS = 400;
 const REVERB_TAIL_SUSPEND_MS = 3000;
@@ -222,6 +222,7 @@ interface AudioEffectsGraph {
   shifter: HannPitchShifter | null;
   masterDryGain: GainNode;
   masterOutputGain: GainNode;
+  volumeMatchGain: GainNode;
   reverbSendGain: GainNode;
   convolver: ConvolverNode;
   reverbHighpass: BiquadFilterNode;
@@ -242,6 +243,7 @@ export interface AudioEffectsParams {
   reverbLevel?: number;
   isEqEnabled?: boolean;
   eqGains?: number[];
+  volumeMatchDb?: number;
 }
 
 function cancelTeardown(graph: AudioEffectsGraph, branch: BranchName): void {
@@ -342,7 +344,7 @@ function setEqStage(
   if (active) {
     cancelTeardown(graph, "eq");
     if (!graph.eqConnected) {
-      graph.masterOutputGain.connect(graph.eqPreamp);
+      graph.volumeMatchGain.connect(graph.eqPreamp);
       graph.eqChainGain.connect(graph.ctx.destination);
       graph.eqConnected = true;
     }
@@ -363,7 +365,7 @@ function setEqStage(
   scheduleTeardown(graph, "eq", () => {
     if (!graph.eqConnected) return;
     graph.eqConnected = false;
-    graph.masterOutputGain.disconnect(graph.eqPreamp);
+    graph.volumeMatchGain.disconnect(graph.eqPreamp);
     graph.eqChainGain.disconnect(graph.ctx.destination);
   });
 }
@@ -384,6 +386,7 @@ function disposeStaleGraph(graph: any): void {
     graph.pitchStageOutput?.disconnect();
     graph.masterDryGain?.disconnect();
     graph.masterOutputGain?.disconnect();
+    graph.volumeMatchGain?.disconnect();
     graph.reverbSendGain?.disconnect();
     graph.convolver?.disconnect();
     graph.reverbHighpass?.disconnect();
@@ -404,6 +407,9 @@ function buildGraph(
   const pitchStageOutput = ctx.createGain();
   const masterDryGain = ctx.createGain();
   const masterOutputGain = ctx.createGain();
+  const volumeMatchGain = ctx.createGain();
+  volumeMatchGain.gain.value = 1;
+  masterOutputGain.connect(volumeMatchGain);
 
   pitchDryGain.gain.value = 1.0;
   pitchWetGain.gain.value = 0.0;
@@ -460,7 +466,7 @@ function buildGraph(
   }
   eqTail.connect(eqChainGain);
 
-  masterOutputGain.connect(eqBypassGain);
+  volumeMatchGain.connect(eqBypassGain);
   eqBypassGain.connect(ctx.destination);
 
   return {
@@ -473,6 +479,7 @@ function buildGraph(
     shifter: null,
     masterDryGain,
     masterOutputGain,
+    volumeMatchGain,
     reverbSendGain,
     convolver,
     reverbHighpass,
@@ -684,6 +691,11 @@ export class PitchShifterController {
     return this.isConnected;
   }
 
+  public getVolumeMatchDb(): number {
+    const value = this.graph?.volumeMatchGain.gain.value ?? 1;
+    return 20 * Math.log10(value);
+  }
+
   public resumeContext(): void {
     this.clearSuspendTimer();
     if (this.context && this.context.state === "suspended") {
@@ -794,6 +806,11 @@ export class PitchShifterController {
 
     const isPitchActive = !isPitchLinked && Math.abs(semitones) >= 0.05;
     const now = this.context.currentTime;
+
+    const matchDb = typeof arg1 === "object" ? (arg1.volumeMatchDb ?? 0) : 0;
+    const gain = this.graph.volumeMatchGain.gain;
+    gain.cancelAndHoldAtTime(now);
+    gain.linearRampToValueAtTime(10 ** (matchDb / 20), now + 0.05);
 
     setPitchStage(this.graph, isPitchActive, semitones, now);
 

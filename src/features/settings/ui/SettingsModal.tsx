@@ -69,6 +69,11 @@ const SETTING_ITEMS: { tabId: TabId; titleKey: string; descKey?: string }[] = [
   },
   {
     tabId: "Playback",
+    titleKey: "settings.volume_match.title",
+    descKey: "settings.volume_match.description",
+  },
+  {
+    tabId: "Playback",
     titleKey: "settings.track_double_click.title",
     descKey: "settings.track_double_click.description",
   },

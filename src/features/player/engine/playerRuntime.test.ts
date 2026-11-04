@@ -10,6 +10,9 @@ import { playerRuntime, PlayerRuntime } from "./playerRuntime";
 import { usePlayerStore } from "../store/playerStore";
 import { linerDb } from "@/shared/storage";
 import type { Track } from "@/shared/types";
+import { useLocalLibraryStore } from "@/features/library/local/store/localLibraryStore";
+import { pitchShifter } from "./pitchShifter";
+import type { LocalTrackRecord } from "@/shared/media/local";
 
 const urlStream = {
   url: "https://rr1.googlevideo.com/videoplayback?itag=251",
@@ -34,6 +37,60 @@ function setAudioPaused(value: boolean) {
     configurable: true,
   });
 }
+
+describe("volume matching uses the attached local source", () => {
+  afterEach(() => {
+    usePlayerStore.setState({ matchSongVolumes: false });
+    useLocalLibraryStore.setState({ records: [] });
+    (playerRuntime as any).attachedSource = null;
+    vi.restoreAllMocks();
+  });
+
+  it("matches local and catalog rows, handles toggles, and leaves streams alone", () => {
+    vi.spyOn(pitchShifter, "attach").mockImplementation(() => {});
+    vi.spyOn(pitchShifter, "isAttached").mockReturnValue(true);
+    const update = vi
+      .spyOn(pitchShifter, "update")
+      .mockImplementation(() => {});
+    useLocalLibraryStore.setState({
+      records: [
+        { id: "file", loudnessLufs: -20.2, peakDb: -4.2 } as LocalTrackRecord,
+      ],
+    });
+    usePlayerStore.setState({ matchSongVolumes: true });
+    for (const source of [
+      { origin: "local", trackId: "local:file" },
+      { origin: "local", trackId: "catalog-song", localId: "local:file" },
+    ]) {
+      (playerRuntime as any).attachedSource = source;
+      playerRuntime!.refreshVolumeMatch();
+      expect(update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ volumeMatchDb: 3.2 }),
+      );
+    }
+    usePlayerStore.getState().setMatchSongVolumes(false);
+    expect(update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ volumeMatchDb: 0 }),
+    );
+    usePlayerStore.getState().setMatchSongVolumes(true);
+    (playerRuntime as any).attachedSource = {
+      origin: "youtube",
+      trackId: "catalog-song",
+    };
+    playerRuntime!.refreshVolumeMatch();
+    expect(update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ volumeMatchDb: 0 }),
+    );
+    (playerRuntime as any).attachedSource = {
+      origin: "local",
+      trackId: "local:unmeasured",
+    };
+    playerRuntime!.refreshVolumeMatch();
+    expect(update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ volumeMatchDb: 0 }),
+    );
+  });
+});
 
 describe("PlayerRuntime — status must always match the real audio state", () => {
   beforeEach(() => {

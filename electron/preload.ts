@@ -216,6 +216,12 @@ export interface LinerElectronApi {
     values: string[],
   ) => Promise<YoutubeSolveResult>;
   localTracksList: () => Promise<LocalTrackRecord[]>;
+  localTracksLoudness: (
+    id: string,
+    audioFile: string,
+    contentHash: string | undefined,
+    measurement: { loudnessLufs: number | null; peakDb: number | null },
+  ) => Promise<boolean>;
   localTracksImport: (paths: string[]) => Promise<LocalImportResult>;
   localTracksPick: () => Promise<LocalImportResult | null>;
   localTracksPickFolder: () => Promise<LocalImportResult | null>;
@@ -519,6 +525,14 @@ const api: LinerElectronApi = {
   youtubeSolveN: (playerId, values) =>
     ipcRenderer.invoke("youtube:solve-n", { playerId, values }),
   localTracksList: () => ipcRenderer.invoke("local-tracks:list"),
+  localTracksLoudness: (id, audioFile, contentHash, measurement) =>
+    ipcRenderer.invoke(
+      "local-tracks:loudness",
+      id,
+      audioFile,
+      contentHash,
+      measurement,
+    ),
   localTracksImport: (paths) =>
     ipcRenderer.invoke("local-tracks:import", paths),
   localTracksPick: () => ipcRenderer.invoke("local-tracks:pick"),

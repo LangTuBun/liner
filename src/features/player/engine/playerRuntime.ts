@@ -6,12 +6,16 @@ import { linerDb, audioCache } from "@/shared/storage";
 import { isStandaloneAudioFile } from "@/shared/storage/audioFormat";
 import type { Track } from "@/shared/types";
 import { markLinerStreamFailed } from "@/shared/media/liner/linerPlayback";
-import { isLocalTrackId } from "@/shared/media/local";
+import { isLocalTrackId, localFileId } from "@/shared/media/local";
 import { isSavedTrack } from "@/shared/media/saved";
 import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
-import { findDownloadedTrackId } from "@/features/library/local/store/localLibraryStore";
+import {
+  findDownloadedTrackId,
+  useLocalLibraryStore,
+} from "@/features/library/local/store/localLibraryStore";
+import { volumeMatchDb } from "../../../../electron/local-tracks/loudness";
 import type { AttachedSourceInfo } from "./playbackStream";
 import { logNowPlaying } from "./nowPlayingLog";
 import {
@@ -106,6 +110,7 @@ export class PlayerRuntime {
         state.isReverbEnabled !== prevState.isReverbEnabled ||
         state.reverbLevel !== prevState.reverbLevel ||
         state.isEqEnabled !== prevState.isEqEnabled ||
+        state.matchSongVolumes !== prevState.matchSongVolumes ||
         state.eqGains !== prevState.eqGains
       ) {
         const rate = state.playbackRate ?? 1;
@@ -145,6 +150,22 @@ export class PlayerRuntime {
     } catch {
       // ignore unsupported environments
     }
+  }
+
+  public refreshVolumeMatch() {
+    this.applyPlaybackRateAndPitch();
+  }
+
+  private volumeMatchDb(): number {
+    const info = this.attachedSource;
+    if (!info || !usePlayerStore.getState().matchSongVolumes) return 0;
+    const id =
+      info.localId ?? (isLocalTrackId(info.trackId) ? info.trackId : null);
+    if (info.origin !== "local" || !id) return 0;
+    const record = useLocalLibraryStore
+      .getState()
+      .records.find((r) => r.id === localFileId(id));
+    return volumeMatchDb(true, record);
   }
 
   private setupMediaSession() {
@@ -507,7 +528,9 @@ export class PlayerRuntime {
       const reverbLevel = store.reverbLevel ?? 0.35;
       const isEqEnabled = store.isEqEnabled ?? false;
       const eqGains = store.eqGains ?? FLAT_EQ;
+      const matchDb = this.volumeMatchDb();
       const needsEffects =
+        matchDb !== 0 ||
         isReverbEnabled ||
         isEqActive(isEqEnabled, eqGains) ||
         (!isPitchLinked && Math.abs(pitchSemitones) >= 0.05);
@@ -520,6 +543,7 @@ export class PlayerRuntime {
         reverbLevel,
         isEqEnabled,
         eqGains,
+        volumeMatchDb: matchDb,
       });
     } catch (err) {
       console.error("[PlayerRuntime] applyPlaybackRateAndPitch error:", err);

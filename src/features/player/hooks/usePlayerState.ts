@@ -31,6 +31,7 @@ const EMPTY_STATE: PlayerState = {
   isReverbEnabled: false,
   reverbLevel: 0.35,
   isEqEnabled: false,
+  matchSongVolumes: false,
   eqGains: FLAT_EQ,
   eqCustomPresets: [],
 };

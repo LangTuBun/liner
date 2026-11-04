@@ -37,6 +37,7 @@ interface EngineInfo {
 }
 
 interface Snapshot {
+  volumeMatchDb: number;
   source: SourceSummary | null;
   playing: boolean;
   engine: EngineInfo | null;
@@ -242,6 +243,7 @@ function AudioQualityPanel() {
           ? matchEndpoint(deviceLabel, endpoints.list)
           : null;
       setSnapshot({
+        volumeMatchDb: pitchShifter.getVolumeMatchDb(),
         source: summarizeSource(info, localProbe.current.format, durationSec),
         playing: Boolean(audio && !audio.paused),
         engine: ctx
@@ -495,6 +497,13 @@ function AudioQualityPanel() {
   const pitchActive = !isPitchLinked && Math.abs(pitchSemitones) >= 0.05;
   const eqActive = isEqActive(isEqEnabled, eqGains);
   const chips: Array<{ text: string; tone?: "warn" | "ok" }> = [];
+  const matchDb = snapshot?.volumeMatchDb ?? 0;
+  if (Math.abs(matchDb) > 0.0001)
+    chips.push({
+      text: t("audio_quality.chip.volume_match", {
+        db: `${matchDb > 0 ? "+" : ""}${matchDb.toFixed(1)}`,
+      }),
+    });
   if (volume < 0.999)
     chips.push({
       text: t("audio_quality.chip.volume", { db: toDb(volume).toFixed(1) }),
