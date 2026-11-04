@@ -1,5 +1,6 @@
 import fsp from "node:fs/promises";
 import { setImmediate as yieldToLoop } from "node:timers/promises";
+import { wavHeader } from "./wav.js";
 
 // Chromium cannot play DSD, so a .dsf is decoded to 24-bit PCM on import.
 // Output rate is the DSD rate / 32: DSD64 88.2 kHz, DSD128 176.4 kHz,
@@ -14,6 +15,7 @@ const BLOCKS_PER_READ = 32;
 export interface DsfConversion {
   frames: number;
   sampleRate: number;
+  bitDepth: number;
 }
 
 function besselI0(x: number): number {
@@ -104,24 +106,6 @@ class Channel {
   }
 }
 
-function wavHeader(frames: number, channels: number, rate: number): Buffer {
-  const dataBytes = frames * channels * 3;
-  const header = Buffer.alloc(44);
-  header.write("RIFF", 0);
-  header.writeUInt32LE(36 + dataBytes, 4);
-  header.write("WAVEfmt ", 8);
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20);
-  header.writeUInt16LE(channels, 22);
-  header.writeUInt32LE(rate, 24);
-  header.writeUInt32LE(rate * channels * 3, 28);
-  header.writeUInt16LE(channels * 3, 32);
-  header.writeUInt16LE(24, 34);
-  header.write("data", 36);
-  header.writeUInt32LE(dataBytes, 40);
-  return header;
-}
-
 // DSD can swing past full scale. Decode once; if it clipped, decode again
 // with the gain that puts the loudest sample just under it.
 export async function convertDsfToWav(
@@ -178,7 +162,7 @@ async function decode(
     let frames = 0;
     let peak = 0;
     try {
-      await output.write(wavHeader(0, channels, outRate), 0, 44, 0);
+      await output.write(wavHeader(0, channels, outRate, 24), 0, 44, 0);
       const chunk = Buffer.alloc(blockSize * channels * BLOCKS_PER_READ);
       const lane: number[][] = lanes.map(() => []);
       for (let first = 0; first < blocks; first += BLOCKS_PER_READ) {
@@ -215,7 +199,7 @@ async function decode(
         frames += ready;
         await yieldToLoop(); // keep the main process responsive
       }
-      await output.write(wavHeader(frames, channels, outRate), 0, 44, 0);
+      await output.write(wavHeader(frames, channels, outRate, 24), 0, 44, 0);
     } catch (error) {
       await output.close();
       await fsp.rm(temp, { force: true });
@@ -223,7 +207,7 @@ async function decode(
     }
     await output.close();
     await fsp.rename(temp, dest);
-    return { frames, sampleRate: outRate, peak };
+    return { frames, sampleRate: outRate, bitDepth: 24, peak };
   } finally {
     await input.close();
   }

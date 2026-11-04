@@ -224,7 +224,10 @@ function AudioQualityPanel() {
     const slowTick = () => {
       const audio = audioElement();
       const info = playerRuntime?.getAttachedSource() ?? null;
-      if (info && isLocalTrackId(info.trackId)) probeLocal(info.trackId);
+      const deviceFile =
+        info?.localId ??
+        (info && isLocalTrackId(info.trackId) ? info.trackId : null);
+      if (deviceFile) probeLocal(deviceFile);
       const key = info ? `${info.trackId}|${info.origin}` : "";
       if (key !== live.key) {
         live = emptyLive(key);

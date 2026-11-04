@@ -172,6 +172,7 @@ async function resolveStream(
       log("cyan", "playback", `playing downloaded file for "${track.title}"`);
     return {
       url: localTrackAudioUrl(localId),
+      localId,
       source: "local",
       expiresAtMs: null,
       mimeType: "",

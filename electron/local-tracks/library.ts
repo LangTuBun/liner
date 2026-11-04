@@ -9,6 +9,7 @@ import {
   upgradedRecord,
   type IncomingFile,
 } from "./importer.js";
+import { alacFormat, convertAlacToWav } from "./alac.js";
 import { probeLocalAudio } from "./metadata.js";
 import { recordMatchKey, trackMatchKey } from "./matchKey.js";
 import { compareCopies, pairKind } from "./pairing.js";
@@ -367,6 +368,44 @@ export class LocalTrackLibrary {
       for (const file of stale)
         await fsp.rm(file, { force: true }).catch(() => undefined);
       return removed;
+    });
+  }
+
+  // An earlier build kept Apple Lossless files as they were, and Chromium
+  // cannot play those. Each is decoded to WAV under the same id, so playlists
+  // and lyrics are untouched; the .m4a goes only once the WAV is saved.
+  repairAlac(): Promise<number> {
+    return this.serialized(async () => {
+      const records = [...(await this.load())];
+      let fixed = 0;
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        if (record.mimeType !== "audio/mp4") continue;
+        const old = this.filePath("audio", record.audioFile);
+        if (!(await alacFormat(old))) continue;
+        const wavName = `${record.id}.wav`;
+        try {
+          const done = await convertAlacToWav(
+            old,
+            this.filePath("audio", wavName),
+          );
+          records[i] = {
+            ...record,
+            audioFile: wavName,
+            mimeType: "audio/wav",
+            byteSize: (await fsp.stat(this.filePath("audio", wavName))).size,
+            lossless: true,
+            bitDepth: done.bitDepth,
+            sampleRate: done.sampleRate,
+          };
+          await this.save(records);
+          await fsp.rm(old, { force: true }).catch(() => undefined);
+          fixed += 1;
+        } catch {
+          // leave the original in place; the next start tries again
+        }
+      }
+      return fixed;
     });
   }
 

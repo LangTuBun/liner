@@ -289,7 +289,8 @@ function createWindow() {
   });
 
   // the custom window controls replace the native traffic lights
-  if (process.platform === "darwin") mainWindow.setWindowButtonVisibility(false);
+  if (process.platform === "darwin")
+    mainWindow.setWindowButtonVisibility(false);
 
   // sync window state changes to renderer
   const broadcastWindowState = () => {
@@ -572,6 +573,11 @@ if (!gotTheLock) {
     )
       .then(() => localLibrary.shrinkCovers(shrinkPicture, MAX_COVER_BYTES))
       .then(notifyLocalTracks)
+      .catch(() => undefined);
+    // Apple Lossless files an earlier build kept as they were cannot be played
+    void localLibrary
+      .repairAlac()
+      .then((fixed) => (fixed > 0 ? notifyLocalTracks() : undefined))
       .catch(() => undefined);
     setupAudioQuality();
     lossless = setupLossless(localLibrary);

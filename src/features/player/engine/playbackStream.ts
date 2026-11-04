@@ -18,6 +18,8 @@ interface PlaybackStreamFormat {
   bitrate: number;
   contentLength?: number;
   origin?: PlaybackOrigin;
+  // the file on this device that is playing, when the row is a catalog song
+  localId?: string;
   itag?: number;
   source?: PlaybackSource;
   standIn?: boolean;
@@ -49,6 +51,7 @@ export type PlaybackStream = UrlPlaybackStream | BufferedPlaybackStream;
 export interface AttachedSourceInfo {
   trackId: string;
   origin: PlaybackOrigin | "cache";
+  localId?: string;
   mimeType: string;
   codec: string;
   bitrate: number;

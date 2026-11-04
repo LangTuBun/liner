@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CloseLine, DeleteLine, MusicLine, PlayFill } from "@mingcute/react";
 import { LuShuffle } from "react-icons/lu";
@@ -46,6 +46,14 @@ export default function MixPlaylistPage() {
   const removeTrack = useMixStore((state) => state.removeTrack);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Disarm by time, not by blur: the app blurs every button as it is pressed,
+  // which cancelled the confirmation before the second click could land.
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const timer = setTimeout(() => setConfirmDelete(false), 4000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete]);
 
   const play = useCallback(
     (startAt = 0) => {
@@ -150,7 +158,6 @@ export default function MixPlaylistPage() {
                   removeMix(mix.id);
                   navigate("/library");
                 }}
-                onBlur={() => setConfirmDelete(false)}
                 className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} px-[22px]`}
               >
                 <DeleteLine size={16} />

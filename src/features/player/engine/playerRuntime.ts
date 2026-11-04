@@ -918,6 +918,7 @@ export class PlayerRuntime {
       this.attachedSource = {
         trackId: track.id,
         origin: stream.origin ?? "youtube",
+        localId: stream.localId,
         mimeType: stream.mimeType,
         codec: stream.codec,
         bitrate: stream.bitrate,

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
+import { alacFormat, convertAlacToWav } from "./alac.js";
 import { convertDsfToWav } from "./dsf.js";
 import {
   audioExtension,
@@ -57,6 +58,7 @@ export interface IncomingFile {
   size: number;
   tags: LocalTrackTags;
   quality: LocalTrackQuality;
+  alac: boolean;
 }
 
 export async function inspectLocalFile(
@@ -83,7 +85,21 @@ export async function inspectLocalFile(
             : {}),
         }
       : tags.quality;
-  return { real, source, extension, id, size: stat.size, tags, quality };
+  // Chromium cannot play Apple Lossless, so it is decoded on import too
+  const alac =
+    extension === "m4a" && tags.codec?.toLowerCase() === "alac"
+      ? await alacFormat(real)
+      : null;
+  return {
+    real,
+    source,
+    extension,
+    id,
+    size: stat.size,
+    tags,
+    quality: alac ? { lossless: true, ...alac } : quality,
+    alac: Boolean(alac),
+  };
 }
 
 export async function commitLocalFile(
@@ -91,10 +107,15 @@ export async function commitLocalFile(
   root: string,
 ): Promise<LocalTrackRecord> {
   const { id, tags, extension } = file;
-  const isDsd = extension === "dsf";
-  const audioFile = `${id}.${isDsd ? "wav" : extension}`;
+  const decodes = extension === "dsf" || file.alac;
+  const audioFile = `${id}.${decodes ? "wav" : extension}`;
   const audioPath = path.join(root, "audio", audioFile);
-  const converted = isDsd ? await convertDsfToWav(file.real, audioPath) : null;
+  const converted =
+    extension === "dsf"
+      ? await convertDsfToWav(file.real, audioPath)
+      : file.alac
+        ? await convertAlacToWav(file.real, audioPath)
+        : null;
   if (!converted) await fsp.copyFile(file.real, audioPath);
   const coverFile = tags.cover ? `${id}.${tags.cover.extension}` : undefined;
   if (tags.cover && coverFile) {
@@ -120,7 +141,11 @@ export async function commitLocalFile(
     byteSize: converted ? (await fsp.stat(audioPath)).size : file.size,
     addedAt: Date.now(),
     ...(converted
-      ? { ...file.quality, sampleRate: converted.sampleRate }
+      ? {
+          ...file.quality,
+          sampleRate: converted.sampleRate,
+          bitDepth: converted.bitDepth,
+        }
       : file.quality),
   };
 }

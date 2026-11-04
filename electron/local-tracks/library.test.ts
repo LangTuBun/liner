@@ -295,6 +295,96 @@ describe("LocalTrackLibrary", () => {
     });
   });
 
+  describe("apple lossless", () => {
+    const fixture = path.join(__dirname, "fixtures", "tone.alac.m4a");
+
+    it("decodes an ALAC file on import, because Chromium cannot play it", async () => {
+      const library = new LocalTrackLibrary(root);
+      const file = path.join(sources, "Artist - Tone.m4a");
+      await fs.copyFile(fixture, file);
+
+      const result = await library.importFiles([file]);
+
+      expect(result.failed).toEqual([]);
+      const [record] = result.added;
+      expect(record).toMatchObject({
+        mimeType: "audio/wav",
+        lossless: true,
+        bitDepth: 16,
+        sampleRate: 44100,
+      });
+      expect(record.audioFile).toBe(`${record.id}.wav`);
+      await expect(
+        fs.access(path.join(root, "audio", record.audioFile)),
+      ).resolves.toBeUndefined();
+    });
+
+    it("repairs an ALAC file kept as it was, under the same id", async () => {
+      const id = "abcdef0123456789abcd";
+      await fs.mkdir(path.join(root, "audio"), { recursive: true });
+      await fs.copyFile(fixture, path.join(root, "audio", `${id}.m4a`));
+      const stored = {
+        id,
+        title: "Tone",
+        artist: "Artist",
+        durationMs: 500,
+        fileName: "tone.m4a",
+        audioFile: `${id}.m4a`,
+        mimeType: "audio/mp4",
+        byteSize: 1,
+        addedAt: 1,
+      };
+      await fs.writeFile(
+        path.join(root, "library.json"),
+        JSON.stringify([stored]),
+      );
+      const library = new LocalTrackLibrary(root);
+
+      expect(await library.repairAlac()).toBe(1);
+
+      const [record] = await library.list();
+      expect(record).toMatchObject({
+        id,
+        audioFile: `${id}.wav`,
+        mimeType: "audio/wav",
+        lossless: true,
+        bitDepth: 16,
+      });
+      await expect(
+        fs.access(path.join(root, "audio", `${id}.m4a`)),
+      ).rejects.toThrow();
+      expect(await library.repairAlac()).toBe(0);
+    });
+
+    it("leaves an m4a that is not ALAC alone", async () => {
+      const id = "0123456789abcdef0123";
+      await fs.mkdir(path.join(root, "audio"), { recursive: true });
+      await fs.writeFile(
+        path.join(root, "audio", `${id}.m4a`),
+        "aac, not alac",
+      );
+      await fs.writeFile(
+        path.join(root, "library.json"),
+        JSON.stringify([
+          {
+            id,
+            title: "T",
+            artist: "A",
+            durationMs: 1,
+            fileName: "t.m4a",
+            audioFile: `${id}.m4a`,
+            mimeType: "audio/mp4",
+            byteSize: 1,
+            addedAt: 1,
+          },
+        ]),
+      );
+      const library = new LocalTrackLibrary(root);
+      expect(await library.repairAlac()).toBe(0);
+      expect((await library.list())[0].audioFile).toBe(`${id}.m4a`);
+    });
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

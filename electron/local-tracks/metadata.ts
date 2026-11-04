@@ -11,6 +11,7 @@ export interface LocalTrackTags {
   trackNo?: number;
   discNo?: number;
   quality: LocalTrackQuality;
+  codec?: string;
   cover?: { data: Uint8Array; extension: string };
 }
 
@@ -86,6 +87,7 @@ export async function readLocalTrackTags(
       mimeType,
       ...(positive(common.track.no) ? { trackNo: common.track.no! } : {}),
       ...(positive(common.disk.no) ? { discNo: common.disk.no! } : {}),
+      ...(format.codec ? { codec: format.codec } : {}),
       quality: {
         ...(format.lossless === undefined ? {} : { lossless: format.lossless }),
         ...(positive(format.bitsPerSample)
