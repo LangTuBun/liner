@@ -38,6 +38,18 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     return library.importFiles(picked.filePaths);
   });
 
+  ipcMain.handle("local-tracks:pick-folder", async (event) => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const options: Electron.OpenDialogOptions = {
+      properties: ["openDirectory"],
+    };
+    const picked = owner
+      ? await dialog.showOpenDialog(owner, options)
+      : await dialog.showOpenDialog(options);
+    if (picked.canceled || picked.filePaths.length === 0) return null;
+    return library.importFiles(picked.filePaths);
+  });
+
   ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>
     library.remove(stringList(ids)),
   );

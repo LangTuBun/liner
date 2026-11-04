@@ -23,6 +23,7 @@ interface LocalTracksHeroProps {
   onPlayAll: () => void;
   onShuffle: () => void;
   onAddFiles: () => void;
+  onAddFolder: () => void;
   onRemoveAll: () => void;
 }
 
@@ -34,6 +35,7 @@ export default function LocalTracksHero({
   onPlayAll,
   onShuffle,
   onAddFiles,
+  onAddFolder,
   onRemoveAll,
 }: LocalTracksHeroProps) {
   const { t } = useTranslation();
@@ -101,6 +103,14 @@ export default function LocalTracksHero({
               <LuTrash2 size={17} />
             </Button>
           )}
+          <Button
+            variant="secondary"
+            onClick={onAddFolder}
+            disabled={importing}
+            className={`${HERO_BUTTON_CLASS} ${HERO_GLASS_BUTTON_CLASS} px-[22px]`}
+          >
+            <span className="truncate">{t("library.local.add_folder")}</span>
+          </Button>
           <Button
             variant="secondary"
             onClick={onAddFiles}

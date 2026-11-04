@@ -9,14 +9,51 @@ describe("downloadMatch", () => {
     );
   });
 
+  it("builds a readable key", () => {
+    expect(trackMatchKey("Lover Girl (Official Audio)", "Lauv")).toBe(
+      "lauv\u0000lover girl",
+    );
+  });
+
   it("ignores case and youtube topic channels", () => {
     expect(trackMatchKey("lover girl", "LAUV - Topic")).toBe(
       trackMatchKey("Lover Girl", "Lauv"),
     );
   });
 
-  it("has no key for a row without a title", () => {
+  it("has no key for a row without a title or an artist", () => {
     expect(trackMatchKey("", "Lauv")).toBeNull();
+    expect(trackMatchKey("Lover Girl", "")).toBeNull();
+  });
+
+  it("meets across accents, punctuation, ampersands and remaster labels", () => {
+    expect(trackMatchKey("love.", "wave to earth")).toBe(
+      trackMatchKey("Love", "Wave To Earth"),
+    );
+    expect(trackMatchKey("Déjà Vu", "Beyoncé")).toBe(
+      trackMatchKey("Deja Vu", "Beyonce"),
+    );
+    expect(trackMatchKey("Dreams - 2004 Remaster", "Fleetwood Mac")).toBe(
+      trackMatchKey("Dreams (Remastered)", "Fleetwood Mac"),
+    );
+    expect(trackMatchKey("Closer - Single", "The Chainsmokers")).toBe(
+      trackMatchKey("Closer", "The Chainsmokers"),
+    );
+  });
+
+  it("keeps live and remix recordings apart from the studio song", () => {
+    expect(trackMatchKey("Lover Girl (Live)", "Lauv")).not.toBe(
+      trackMatchKey("Lover Girl", "Lauv"),
+    );
+  });
+
+  it("folds the downloader's stamped key the same way", () => {
+    const record = {
+      title: "x",
+      artist: "y",
+      matchKey: "wave to earth\u0000love.",
+    } as LocalTrackRecord;
+    expect(recordMatchKey(record)).toBe(trackMatchKey("Love", "wave to earth"));
   });
 
   it("prefers the key stamped by the downloader", () => {

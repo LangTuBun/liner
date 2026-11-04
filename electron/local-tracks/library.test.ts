@@ -129,6 +129,26 @@ describe("LocalTrackLibrary", () => {
     expect(await library.usage()).toEqual({ count: 0, bytes: 0 });
   });
 
+  it("imports a folder's audio in name order, nested too, and saves as it goes", async () => {
+    const album = path.join(sources, "Album");
+    await fs.mkdir(path.join(album, "CD2"), { recursive: true });
+    await fs.writeFile(path.join(album, "10 - Ten.mp3"), "ten");
+    await fs.writeFile(path.join(album, "2 - Two.mp3"), "two");
+    await fs.writeFile(path.join(album, "cover.jpg"), "not audio");
+    await fs.writeFile(path.join(album, "CD2", "1 - Three.flac"), "three");
+
+    const library = new LocalTrackLibrary(root);
+    const result = await library.importFiles([album]);
+
+    expect(result.failed).toEqual([]);
+    expect(result.added.map((r) => r.fileName)).toEqual([
+      "2 - Two.mp3",
+      "10 - Ten.mp3",
+      "1 - Three.flac",
+    ]);
+    expect(await library.list()).toHaveLength(3);
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

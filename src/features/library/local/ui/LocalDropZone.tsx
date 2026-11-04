@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "@/languages";
 import { showToast } from "@/shared/ui";
-import { isAudioFile, useAudioFileDrop } from "../hooks/useAudioFileDrop";
+import { useAudioFileDrop } from "../hooks/useAudioFileDrop";
 import { useLocalImport } from "../hooks/useLocalImport";
 import LocalDropStack from "./LocalDropStack";
 
@@ -14,13 +14,11 @@ export default function LocalDropZone() {
 
   const handleDrop = useCallback(
     (files: File[]) => {
-      const audio = files.filter(isAudioFile);
-      if (audio.length === 0) {
-        if (files.length > 0)
-          showToast(t("library.local.unsupported"), "error");
+      if (files.length === 0) {
+        showToast(t("library.local.unsupported"), "error");
         return;
       }
-      void importFiles(audio);
+      void importFiles(files);
     },
     [importFiles, t],
   );

@@ -30,6 +30,7 @@ interface LocalLibraryState {
   load: () => Promise<void>;
   importPaths: (paths: string[]) => Promise<LocalImportResult | null>;
   pickFiles: () => Promise<LocalImportResult | null>;
+  pickFolder: () => Promise<LocalImportResult | null>;
   remove: (fileIds: string[]) => Promise<void>;
   removeAll: () => Promise<number>;
 }
@@ -70,9 +71,12 @@ export async function findDownloadedTrackId(track: {
   const key = downloadedTrackKey(track);
   if (!key) return null;
   const state = useLocalLibraryStore.getState();
-  if (state.loadState === "idle") await state.load();
+  if (state.loadState === "idle" || state.loadState === "loading")
+    await state.load();
   return useLocalLibraryStore.getState().downloadIndex.get(key) ?? null;
 }
+
+let loadPromise: Promise<void> | null = null;
 
 export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
   // tracks the main process adds on its own (the riff migration)
@@ -103,20 +107,26 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
     loadState: "idle",
     importing: false,
 
-    load: async () => {
+    // one shared in-flight load, so a play that starts mid-load waits for it
+    load: () => {
+      if (loadPromise) return loadPromise;
       const bridge = window.linerElectron;
       if (!bridge) {
         set({ loadState: "unavailable" });
-        return;
+        return Promise.resolve();
       }
-      if (get().loadState === "loading") return;
       set({ loadState: "loading" });
-      try {
-        const records = await bridge.localTracksList();
-        set({ ...withTracks(records), loadState: "ready" });
-      } catch {
-        set({ loadState: "ready" });
-      }
+      loadPromise = (async () => {
+        try {
+          const records = await bridge.localTracksList();
+          set({ ...withTracks(records), loadState: "ready" });
+        } catch {
+          set({ loadState: "ready" });
+        }
+      })().finally(() => {
+        loadPromise = null;
+      });
+      return loadPromise;
     },
 
     importPaths: (paths) => {
@@ -129,6 +139,12 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       const bridge = window.linerElectron;
       if (!bridge) return Promise.resolve(null);
       return runImport(() => bridge.localTracksPick());
+    },
+
+    pickFolder: () => {
+      const bridge = window.linerElectron;
+      if (!bridge) return Promise.resolve(null);
+      return runImport(() => bridge.localTracksPickFolder());
     },
 
     remove: async (fileIds) => {

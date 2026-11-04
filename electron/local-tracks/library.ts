@@ -1,6 +1,6 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { hashFile, importLocalFile } from "./importer.js";
+import { expandAudioPaths, hashFile, importLocalFile } from "./importer.js";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
@@ -85,7 +85,7 @@ export class LocalTrackLibrary {
       };
       await fsp.mkdir(this.filePath("audio"), { recursive: true });
       await fsp.mkdir(this.filePath("covers"), { recursive: true });
-      for (const source of paths) {
+      for (const source of await expandAudioPaths(paths)) {
         try {
           const record = await importLocalFile(source, this.root, known);
           if (!record) result.duplicates += 1;
@@ -93,12 +93,13 @@ export class LocalTrackLibrary {
             known.add(record.id);
             records.push(record);
             result.added.push(record);
+            // a long album import keeps what is done if it is interrupted
+            await this.save(records);
           }
         } catch {
           result.failed.push(path.basename(source));
         }
       }
-      if (result.added.length > 0) await this.save(records);
       return result;
     });
   }

@@ -216,6 +216,7 @@ export interface LinerElectronApi {
   localTracksList: () => Promise<LocalTrackRecord[]>;
   localTracksImport: (paths: string[]) => Promise<LocalImportResult>;
   localTracksPick: () => Promise<LocalImportResult | null>;
+  localTracksPickFolder: () => Promise<LocalImportResult | null>;
   localTracksRemove: (ids: string[]) => Promise<void>;
   localTracksProbe: (id: string) => Promise<LocalAudioFormat | null>;
   audioOutputEndpoints: () => Promise<OutputEndpoints>;
@@ -516,6 +517,7 @@ const api: LinerElectronApi = {
   localTracksImport: (paths) =>
     ipcRenderer.invoke("local-tracks:import", paths),
   localTracksPick: () => ipcRenderer.invoke("local-tracks:pick"),
+  localTracksPickFolder: () => ipcRenderer.invoke("local-tracks:pick-folder"),
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
   localTracksProbe: (id) => ipcRenderer.invoke("local-tracks:probe", id),
   audioOutputEndpoints: () => ipcRenderer.invoke("audio-quality:endpoints"),

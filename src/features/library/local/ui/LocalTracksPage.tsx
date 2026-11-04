@@ -21,7 +21,7 @@ export default function LocalTracksPage() {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { tracks, isLoading } = useLocalTracks();
-  const { chooseFiles, importing } = useLocalImport();
+  const { chooseFiles, chooseFolder, importing } = useLocalImport();
   const [removeAllOpen, setRemoveAllOpen] = useState(false);
 
   const sort = useTrackSort(tracks, PAGE_KEY);
@@ -68,6 +68,7 @@ export default function LocalTracksPage() {
             onPlayAll={playAll}
             onShuffle={shuffle}
             onAddFiles={() => void chooseFiles()}
+            onAddFolder={() => void chooseFolder()}
             onRemoveAll={() => setRemoveAllOpen(true)}
             search={
               <TrackSearchField
@@ -87,6 +88,7 @@ export default function LocalTracksPage() {
             <LocalTracksEmpty
               importing={importing}
               onAddFiles={() => void chooseFiles()}
+              onAddFolder={() => void chooseFolder()}
             />
           ) : search.matches && search.matches.length === 0 ? (
             <TrackSearchEmpty

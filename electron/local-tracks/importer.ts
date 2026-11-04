@@ -15,6 +15,30 @@ export async function hashFile(filePath: string): Promise<string> {
   return hash.digest("hex").slice(0, 20);
 }
 
+// A dropped or picked folder becomes its audio files, album order by name.
+// Symlinked entries are skipped so a link cannot pull in files from elsewhere.
+export async function expandAudioPaths(paths: string[]): Promise<string[]> {
+  const found: string[] = [];
+  const walk = async (dir: string) => {
+    const entries = await fsp.readdir(dir, { withFileTypes: true });
+    entries.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full);
+      else if (entry.isFile() && SUPPORTED.has(audioExtension(full)))
+        found.push(full);
+    }
+  };
+  for (const source of paths) {
+    const stat = await fsp.lstat(source).catch(() => null);
+    if (stat?.isDirectory()) await walk(source).catch(() => undefined);
+    else found.push(source);
+  }
+  return found;
+}
+
 export async function importLocalFile(
   source: string,
   root: string,

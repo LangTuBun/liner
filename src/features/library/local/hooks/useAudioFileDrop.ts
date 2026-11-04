@@ -47,7 +47,19 @@ export function useAudioFileDrop(onDrop: (files: File[]) => void) {
       event.preventDefault();
       depth.current = 0;
       setDragging(false);
-      onDropRef.current(Array.from(event.dataTransfer?.files ?? []));
+      // a dropped folder arrives as an extensionless File; the main process
+      // expands it, so keep it next to the audio files
+      const folders = new Set(
+        Array.from(event.dataTransfer?.items ?? [])
+          .map((item) => item.webkitGetAsEntry?.())
+          .filter((entry) => entry?.isDirectory)
+          .map((entry) => entry!.name),
+      );
+      onDropRef.current(
+        Array.from(event.dataTransfer?.files ?? []).filter(
+          (file) => isAudioFile(file) || folders.has(file.name),
+        ),
+      );
     };
 
     window.addEventListener("dragenter", enter);

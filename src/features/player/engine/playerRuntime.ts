@@ -11,6 +11,7 @@ import { isSavedTrack } from "@/shared/media/saved";
 import { pitchShifter } from "./pitchShifter";
 import { FLAT_EQ, isEqActive } from "./equalizer";
 import { resolvePlaybackStream, type PlaybackStream } from "./streamResolver";
+import { findDownloadedTrackId } from "@/features/library/local/store/localLibraryStore";
 import type { AttachedSourceInfo } from "./playbackStream";
 import { logNowPlaying } from "./nowPlayingLog";
 import {
@@ -683,6 +684,7 @@ export class PlayerRuntime {
     if (isLocalTrackId(track.id) || isSavedTrack(track.id)) return;
     if (this.currentTrackId === track.id) return;
     if (this.preloadingTrackId === track.id) return;
+    if (await findDownloadedTrackId(track)) return;
 
     const cached = await linerDb.getAudio(track.id);
     if (cached) return;
@@ -696,7 +698,7 @@ export class PlayerRuntime {
     const promise = (async () => {
       try {
         const stream = await resolvePlaybackStream(track, controller.signal);
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || stream.origin === "local") return;
 
         const blob = await this.downloadAudioBlob(stream, controller.signal);
         if (!blob || controller.signal.aborted) return;
@@ -808,8 +810,11 @@ export class PlayerRuntime {
     this.pauseForTransition();
 
     try {
+      // a file on this device beats audio cached from an earlier online play
       const cachedAudio =
-        bypassCache || isSavedTrack(track.id)
+        bypassCache ||
+        isSavedTrack(track.id) ||
+        (await findDownloadedTrackId(track))
           ? null
           : await linerDb.getAudio(track.id);
       if (epoch !== this.loadEpoch || controller.signal.aborted) {
@@ -1194,6 +1199,7 @@ export class PlayerRuntime {
     signal: AbortSignal,
   ) {
     if (isLocalTrackId(track.id) || isSavedTrack(track.id)) return;
+    if (stream.origin === "local") return;
     if (track.durationMs && track.durationMs > 20 * 60 * 1000) return;
     const generation = audioCache.currentGeneration();
     void (async () => {

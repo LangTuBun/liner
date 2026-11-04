@@ -6,11 +6,13 @@ import Button from "@/shared/ui/Button";
 interface LocalTracksEmptyProps {
   importing: boolean;
   onAddFiles: () => void;
+  onAddFolder: () => void;
 }
 
 export default function LocalTracksEmpty({
   importing,
   onAddFiles,
+  onAddFolder,
 }: LocalTracksEmptyProps) {
   const { t } = useTranslation();
   return (
@@ -24,6 +26,14 @@ export default function LocalTracksEmpty({
           {t("library.local.empty_subtitle")}
         </p>
       </div>
+      <Button
+        variant="secondary"
+        onClick={onAddFolder}
+        disabled={importing}
+        className={`${HERO_BUTTON_CLASS} px-[22px]`}
+      >
+        {t("library.local.add_folder")}
+      </Button>
       <Button
         variant="primary"
         onClick={onAddFiles}

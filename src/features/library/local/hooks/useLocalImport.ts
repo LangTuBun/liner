@@ -40,6 +40,7 @@ export function useLocalImport() {
   const { t } = useTranslation();
   const importPaths = useLocalLibraryStore((state) => state.importPaths);
   const pickFiles = useLocalLibraryStore((state) => state.pickFiles);
+  const pickFolder = useLocalLibraryStore((state) => state.pickFolder);
   const importing = useLocalLibraryStore((state) => state.importing);
 
   const importFiles = useCallback(
@@ -58,5 +59,9 @@ export function useLocalImport() {
     announce(await pickFiles(), t);
   }, [pickFiles, t]);
 
-  return { importFiles, chooseFiles, importing };
+  const chooseFolder = useCallback(async () => {
+    announce(await pickFolder(), t);
+  }, [pickFolder, t]);
+
+  return { importFiles, chooseFiles, chooseFolder, importing };
 }
