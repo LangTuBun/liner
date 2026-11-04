@@ -4,6 +4,7 @@ import { localTrackCoverUrl, toLocalTrackId } from "./localTrackIds";
 
 export type {
   LocalImportResult,
+  LocalImportProgress,
   LocalLibraryUsage,
   LocalStamp,
   LocalTrackRecord,

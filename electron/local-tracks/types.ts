@@ -55,6 +55,12 @@ export interface LocalLibraryUsage {
   bytes: number;
 }
 
+export interface LocalImportProgress {
+  done: number;
+  total: number;
+  current: string;
+}
+
 export interface LocalImportResult {
   added: LocalTrackRecord[];
   duplicates: number;

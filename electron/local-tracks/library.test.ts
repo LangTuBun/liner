@@ -6,6 +6,15 @@ import { LocalTrackLibrary } from "./library";
 import { wavHeader } from "./wav";
 import { vi } from "vitest";
 import * as loudnessWav from "./loudnessWav";
+import { runLocalTrackTask } from "./workerTask.js";
+
+vi.mock("./workerPool.js", () => ({
+  localTrackWorkers: {
+    size: 2,
+    run: (task: Parameters<typeof runLocalTrackTask>[0]) =>
+      runLocalTrackTask(task),
+  },
+}));
 
 describe("LocalTrackLibrary", () => {
   let root: string;
@@ -278,6 +287,24 @@ describe("LocalTrackLibrary", () => {
       ).resolves.toBeUndefined();
     });
 
+    it("remembers replaced content hashes throughout a batch", async () => {
+      const library = new LocalTrackLibrary(root);
+      await library.importFiles([await song("original", 16, 44100)]);
+      const previous = await song("previous", 24, 48000);
+      await library.importFiles([previous], { upgrade: true });
+      const latest = await song("latest", 24, 96000);
+
+      const result = await library.importFiles([latest, latest, previous], {
+        upgrade: true,
+      });
+
+      expect(result.upgraded).toHaveLength(1);
+      expect(result.duplicates).toBe(2);
+      expect(result.kept).toBeUndefined();
+      expect(result.failed).toEqual([]);
+      expect(await library.list()).toHaveLength(1);
+    });
+
     it("keeps the stored copy when the new one is worse, and says so", async () => {
       const library = new LocalTrackLibrary(root);
       await library.importFiles([await song("a", 24, 96000)], {
@@ -454,6 +481,25 @@ describe("LocalTrackLibrary", () => {
       expect(await library.repairAlac()).toBe(0);
       expect((await library.list())[0].audioFile).toBe(`${id}.m4a`);
     });
+  });
+
+  it("clears staging folders an interrupted import left behind, and only those", async () => {
+    await fs.mkdir(path.join(root, ".import-stale", "0", "audio"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(root, ".import-stale", "0", "audio", "x.wav"),
+      "half",
+    );
+    await fs.mkdir(path.join(root, "audio"), { recursive: true });
+    await fs.writeFile(path.join(root, "audio", "keep.wav"), "mine");
+
+    await new LocalTrackLibrary(root).clearStaging();
+
+    await expect(fs.access(path.join(root, ".import-stale"))).rejects.toThrow();
+    await expect(
+      fs.readFile(path.join(root, "audio", "keep.wav"), "utf8"),
+    ).resolves.toBe("mine");
   });
 
   it("refuses ids that could escape the library folder", async () => {

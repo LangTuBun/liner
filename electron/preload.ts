@@ -18,6 +18,7 @@ import type {
 } from "./lossless/types";
 import type {
   LocalImportResult,
+  LocalImportProgress,
   LocalLibraryUsage,
   LocalStamp,
   LocalTrackRecord,
@@ -261,6 +262,9 @@ export interface LinerElectronApi {
   }) => Promise<{ localId: string }>;
   onLosslessChanged: (cb: (snapshot: LosslessSnapshot) => void) => () => void;
   onLocalTracksChanged: (cb: () => void) => () => void;
+  onLocalTracksProgress: (
+    cb: (progress: LocalImportProgress) => void,
+  ) => () => void;
   localTracksRemoveAll: () => Promise<number>;
   localTracksUsage: () => Promise<LocalLibraryUsage>;
   savedTracksList: () => Promise<SavedTrackRecord[]>;
@@ -576,6 +580,14 @@ const api: LinerElectronApi = {
     return () => {
       ipcRenderer.removeListener("local-tracks:changed", listener);
     };
+  },
+  onLocalTracksProgress: (cb) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: LocalImportProgress,
+    ) => cb(progress);
+    ipcRenderer.on("local-tracks:progress", listener);
+    return () => ipcRenderer.removeListener("local-tracks:progress", listener);
   },
   localTracksRemoveAll: () => ipcRenderer.invoke("local-tracks:remove-all"),
   localTracksUsage: () => ipcRenderer.invoke("local-tracks:usage"),

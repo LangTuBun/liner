@@ -14,6 +14,7 @@ import Button from "@/shared/ui/Button";
 import type { Track } from "@/shared/types";
 import { formatTotalDuration } from "../lib/formatLocalDurations";
 import LocalFilesCover from "./LocalFilesCover";
+import { useLocalLibraryStore } from "../store/localLibraryStore";
 
 interface LocalTracksHeroProps {
   tracks: Track[];
@@ -39,6 +40,7 @@ export default function LocalTracksHero({
   onRemoveAll,
 }: LocalTracksHeroProps) {
   const { t } = useTranslation();
+  const progress = useLocalLibraryStore((state) => state.importProgress);
   const empty = tracks.length === 0;
   const totalMs = tracks.reduce(
     (sum, track) => sum + (track.durationMs || 0),
@@ -123,7 +125,12 @@ export default function LocalTracksHero({
             />
             <span className="truncate">
               {importing
-                ? t("library.local.importing")
+                ? progress
+                  ? t("library.local.import_progress", {
+                      done: progress.done,
+                      total: progress.total,
+                    })
+                  : t("library.local.importing")
                 : t("library.local.add_files")}
             </span>
           </Button>

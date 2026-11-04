@@ -28,7 +28,14 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
   const library = new LocalTrackLibrary(
     path.join(app.getPath("userData"), "local-tracks"),
     changed,
+    {
+      onProgress: (progress) => {
+        for (const window of BrowserWindow.getAllWindows())
+          window.webContents.send("local-tracks:progress", progress);
+      },
+    },
   );
+  void library.clearStaging();
   void library.measureLoudness().catch(() => undefined);
   handleLocalTrackScheme(library, saved);
 

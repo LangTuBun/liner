@@ -287,6 +287,7 @@
       "add_files": "Add files",
       "add_folder": "Add folder",
       "importing": "Adding…",
+      "import_progress": "Adding {done} of {total}",
       "empty_title": "No local files yet",
       "empty_subtitle": "Add MP3, FLAC, M4A, OGG, OPUS, WAV or DSF files, or a whole album folder, or drop them anywhere in the window.",
       "drop_title": "Drop to add to Liner",

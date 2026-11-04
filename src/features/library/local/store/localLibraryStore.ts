@@ -4,6 +4,7 @@ import {
   localRecordToTrack,
   toLocalTrackId,
   type LocalImportResult,
+  type LocalImportProgress,
   type LocalStamp,
   type LocalTrackRecord,
   type TidyGroup,
@@ -29,6 +30,7 @@ interface LocalLibraryState {
   downloadIndex: Map<string, string>;
   loadState: LoadState;
   importing: boolean;
+  importProgress: LocalImportProgress | null;
   load: () => Promise<void>;
   importPaths: (paths: string[]) => Promise<LocalImportResult | null>;
   pickFiles: () => Promise<LocalImportResult | null>;
@@ -99,7 +101,10 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
   const runImport = async (
     request: () => Promise<LocalImportResult | null>,
   ): Promise<LocalImportResult | null> => {
-    set({ importing: true });
+    set({ importing: true, importProgress: null });
+    const unsubscribe = window.linerElectron?.onLocalTracksProgress?.(
+      (importProgress) => set({ importProgress }),
+    );
     try {
       const result = await request();
       if (
@@ -109,7 +114,8 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
         await get().load();
       return result;
     } finally {
-      set({ importing: false });
+      unsubscribe?.();
+      set({ importing: false, importProgress: null });
     }
   };
 
@@ -119,6 +125,7 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
     downloadIndex: new Map(),
     loadState: "idle",
     importing: false,
+    importProgress: null,
 
     // one shared in-flight load, so a play that starts mid-load waits for it
     load: () => {

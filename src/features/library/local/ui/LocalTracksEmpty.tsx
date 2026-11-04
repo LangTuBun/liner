@@ -2,6 +2,7 @@ import { FileMusicLine } from "@mingcute/react";
 import { useTranslation } from "@/languages";
 import { HERO_BUTTON_CLASS } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
+import { useLocalLibraryStore } from "../store/localLibraryStore";
 
 interface LocalTracksEmptyProps {
   importing: boolean;
@@ -15,6 +16,7 @@ export default function LocalTracksEmpty({
   onAddFolder,
 }: LocalTracksEmptyProps) {
   const { t } = useTranslation();
+  const progress = useLocalLibraryStore((state) => state.importProgress);
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-[14px] text-center">
       <FileMusicLine size={40} className="text-border-alpha-33" />
@@ -41,7 +43,12 @@ export default function LocalTracksEmpty({
         className={`${HERO_BUTTON_CLASS} px-[22px]`}
       >
         {importing
-          ? t("library.local.importing")
+          ? progress
+            ? t("library.local.import_progress", {
+                done: progress.done,
+                total: progress.total,
+              })
+            : t("library.local.importing")
           : t("library.local.add_files")}
       </Button>
     </div>

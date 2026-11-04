@@ -11,6 +11,43 @@ describe("local library measurement notifications", () => {
     Reflect.deleteProperty(window, "linerElectron");
   });
 
+  it("subscribes to import progress and clears it after completion", async () => {
+    let progress = (_value: {
+      done: number;
+      total: number;
+      current: string;
+    }) => {};
+    let finish!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const unsubscribe = vi.fn();
+    Object.defineProperty(window, "linerElectron", {
+      configurable: true,
+      value: {
+        onLocalTracksProgress: (callback: typeof progress) => {
+          progress = callback;
+          return unsubscribe;
+        },
+        localTracksImport: async () => {
+          await pending;
+          return { added: [], duplicates: 0, failed: [] };
+        },
+      },
+    });
+    const { useLocalLibraryStore } = await import("./localLibraryStore");
+    const importing = useLocalLibraryStore.getState().importPaths(["song.dsf"]);
+    const value = { done: 4, total: 21, current: "song.dsf" };
+    progress(value);
+    expect(useLocalLibraryStore.getState().importProgress).toEqual(value);
+    expect(useLocalLibraryStore.getState().importing).toBe(true);
+    finish();
+    await importing;
+    expect(unsubscribe).toHaveBeenCalledOnce();
+    expect(useLocalLibraryStore.getState().importProgress).toBeNull();
+    expect(useLocalLibraryStore.getState().importing).toBe(false);
+  });
+
   it("reloads a measurement notification received during an existing load", async () => {
     let changed = () => {};
     let resolveFirst!: (records: LocalTrackRecord[]) => void;

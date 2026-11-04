@@ -5,6 +5,7 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { alacFormat, convertAlacToWav } from "./alac.js";
 import { convertDsfToWav } from "./dsf.js";
+import type { PreparedLocalFile } from "./workerTask.js";
 import {
   audioExtension,
   readLocalTrackTags,
@@ -105,7 +106,24 @@ export async function inspectLocalFile(
 export async function commitLocalFile(
   file: IncomingFile,
   root: string,
+  prepared?: PreparedLocalFile,
 ): Promise<LocalTrackRecord> {
+  if (prepared) {
+    if (!prepared.record)
+      throw new Error(prepared.error ?? "File preparation failed");
+    for (const folder of ["audio", "covers"] as const) {
+      const name =
+        folder === "audio"
+          ? prepared.record.audioFile
+          : prepared.record.coverFile;
+      if (name)
+        await fsp.rename(
+          path.join(prepared.root, folder, name),
+          path.join(root, folder, name),
+        );
+    }
+    return { ...prepared.record, addedAt: Date.now() };
+  }
   const { id, tags, extension } = file;
   const decodes = extension === "dsf" || file.alac;
   const audioFile = `${id}.${decodes ? "wav" : extension}`;
@@ -166,8 +184,9 @@ export async function upgradedRecord(
   file: IncomingFile,
   root: string,
   existing: LocalTrackRecord,
+  prepared?: PreparedLocalFile,
 ): Promise<{ record: LocalTrackRecord; stale: string[] }> {
-  const fresh = await commitLocalFile(file, root);
+  const fresh = await commitLocalFile(file, root, prepared);
   const stale = [path.join(root, "audio", existing.audioFile)];
   if (existing.coverFile && fresh.coverFile)
     stale.push(path.join(root, "covers", fresh.coverFile));

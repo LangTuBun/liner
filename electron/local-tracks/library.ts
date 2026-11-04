@@ -1,13 +1,12 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { measureWav } from "./loudnessWav.js";
+import { localTrackWorkers, type LocalTrackWorkerPool } from "./workerPool.js";
 import type { LoudnessMeasurement } from "./loudness.js";
 import {
   commitLocalFile,
   expandAudioPaths,
   hashFile,
   importLocalFile,
-  inspectLocalFile,
   upgradedRecord,
   type IncomingFile,
 } from "./importer.js";
@@ -18,6 +17,7 @@ import { compareCopies, pairKind } from "./pairing.js";
 import { compareLocalQuality } from "./quality.js";
 import type {
   LocalImportResult,
+  LocalImportProgress,
   LocalLibraryUsage,
   LocalStamp,
   LocalTrackPatch,
@@ -61,6 +61,7 @@ export class LocalTrackLibrary {
   private records: LocalTrackRecord[] | null = null;
   private aliases: Record<string, string> | null = null;
   private queue: Promise<unknown> = Promise.resolve();
+  private importing: Promise<unknown> = Promise.resolve();
 
   private measuring: Promise<void> | null = null;
   private readonly attemptedMeasurements = new Set<string>();
@@ -68,7 +69,25 @@ export class LocalTrackLibrary {
   constructor(
     private readonly root: string,
     private readonly onChanged?: () => void,
+    private readonly imports: {
+      workers?: LocalTrackWorkerPool;
+      onProgress?: (progress: LocalImportProgress) => void;
+    } = {},
   ) {}
+
+  // An import converts into a staging folder first. A crash or kill leaves
+  // it behind, full of half-made WAVs; imports run one after another, so
+  // anything named like that is stale whenever this is called.
+  async clearStaging(): Promise<void> {
+    const entries = await fsp
+      .readdir(this.root, { withFileTypes: true })
+      .catch(() => []);
+    for (const entry of entries)
+      if (entry.isDirectory() && entry.name.startsWith(".import-"))
+        await fsp
+          .rm(this.filePath(entry.name), { recursive: true, force: true })
+          .catch(() => undefined);
+  }
 
   measureLoudness(): Promise<void> {
     if (this.measuring) return this.measuring;
@@ -89,9 +108,12 @@ export class LocalTrackLibrary {
           `${record.id}|${record.audioFile}|${record.contentHash}`,
         );
         try {
-          const measurement = await measureWav(
-            this.filePath("audio", record.audioFile),
-          );
+          const measurement = await (
+            this.imports.workers ?? localTrackWorkers
+          ).run({
+            kind: "measure",
+            source: this.filePath("audio", record.audioFile),
+          });
           await this.storeLoudness(
             record.id,
             record.audioFile,
@@ -303,72 +325,132 @@ export class LocalTrackLibrary {
     paths: string[],
     options: { upgrade?: boolean } = {},
   ): Promise<LocalImportResult> {
-    return this.serialized(async () => {
-      const records = [...(await this.load())];
-      const known = knownHashes(records);
+    const run = async () => {
+      const workers = this.imports.workers ?? localTrackWorkers;
+      const sources = await expandAudioPaths(paths);
+      const known = knownHashes(await this.list());
       const result: LocalImportResult = {
         added: [],
         duplicates: 0,
         failed: [],
       };
-      await fsp.mkdir(this.filePath("audio"), { recursive: true });
-      await fsp.mkdir(this.filePath("covers"), { recursive: true });
-      for (const source of await expandAudioPaths(paths)) {
-        try {
-          const file = await inspectLocalFile(source, known);
-          if (!file) {
-            result.duplicates += 1;
-            continue;
+      await fsp.mkdir(this.root, { recursive: true });
+      await this.clearStaging();
+      const staging = await fsp.mkdtemp(this.filePath(".import-"));
+      const pending = new Map<number, ReturnType<typeof prepare>>();
+      const prepare = (index: number) =>
+        workers
+          .run({
+            kind: "prepare",
+            source: sources[index],
+            root: path.join(staging, String(index)),
+            known: [...known],
+          })
+          .then(
+            (value) => ({ value }),
+            () => ({ value: null, failed: true }),
+          );
+      const progress = (done: number) =>
+        this.imports.onProgress?.({
+          done,
+          total: sources.length,
+          current: path.basename(sources[done] ?? ""),
+        });
+      progress(0);
+      for (let i = 0; i < Math.min(workers.size, sources.length); i++)
+        pending.set(i, prepare(i));
+      try {
+        for (const [index, source] of sources.entries()) {
+          try {
+            const prepared = await pending.get(index)!;
+            pending.delete(index);
+            if ("failed" in prepared)
+              throw new Error("File preparation failed");
+            await this.serialized(async () => {
+              const records = [...(await this.load())];
+              const file = prepared.value?.file;
+              if (
+                !file ||
+                known.has(file.id) ||
+                knownHashes(records).has(file.id)
+              ) {
+                result.duplicates += 1;
+                return;
+              }
+              await fsp.mkdir(this.filePath("audio"), { recursive: true });
+              await fsp.mkdir(this.filePath("covers"), { recursive: true });
+              const decision: Decision = options.upgrade
+                ? await this.decide(records, file)
+                : { kind: "new" };
+              if (decision.kind === "keep") {
+                result.kept = (result.kept ?? 0) + 1;
+              } else if (decision.kind === "upgrade") {
+                const { record, stale } = await upgradedRecord(
+                  file,
+                  this.root,
+                  records[decision.index],
+                  prepared.value!,
+                );
+                let next = records.map((entry, i) =>
+                  i === decision.index ? record : entry,
+                );
+                if (decision.drop.length > 0) {
+                  const aliases = await this.loadAliases();
+                  const out = this.retire(
+                    next,
+                    record.id,
+                    new Set(decision.drop.map((i) => records[i].id)),
+                    aliases,
+                  );
+                  next = out.records;
+                  stale.push(...out.stale);
+                  await this.saveAliases(aliases);
+                }
+                records.splice(0, records.length, ...next);
+                await this.save(records);
+                known.add(file.id);
+                // the index no longer names these, so a failed delete only leaks
+                for (const old of stale)
+                  await fsp.rm(old, { force: true }).catch(() => undefined);
+                (result.upgraded ??= []).push(
+                  records.find((entry) => entry.id === record.id) ?? record,
+                );
+              } else {
+                const record = await commitLocalFile(
+                  file,
+                  this.root,
+                  prepared.value!,
+                );
+                records.push(record);
+                result.added.push(record);
+                // a long album import keeps what is done if it is interrupted
+                await this.save(records);
+                known.add(file.id);
+              }
+            });
+          } catch {
+            result.failed.push(path.basename(source));
+          } finally {
+            await fsp.rm(path.join(staging, String(index)), {
+              recursive: true,
+              force: true,
+            });
+            const next = index + workers.size;
+            if (next < sources.length) pending.set(next, prepare(next));
+            progress(index + 1);
           }
-          const decision: Decision = options.upgrade
-            ? await this.decide(records, file)
-            : { kind: "new" };
-          if (decision.kind === "keep") {
-            result.kept = (result.kept ?? 0) + 1;
-          } else if (decision.kind === "upgrade") {
-            const { record, stale } = await upgradedRecord(
-              file,
-              this.root,
-              records[decision.index],
-            );
-            let next = records.map((entry, i) =>
-              i === decision.index ? record : entry,
-            );
-            if (decision.drop.length > 0) {
-              const aliases = await this.loadAliases();
-              const out = this.retire(
-                next,
-                record.id,
-                new Set(decision.drop.map((i) => records[i].id)),
-                aliases,
-              );
-              next = out.records;
-              stale.push(...out.stale);
-              await this.saveAliases(aliases);
-            }
-            records.splice(0, records.length, ...next);
-            known.add(file.id);
-            await this.save(records);
-            // the index no longer names these, so a failed delete only leaks
-            for (const old of stale)
-              await fsp.rm(old, { force: true }).catch(() => undefined);
-            (result.upgraded ??= []).push(
-              records.find((entry) => entry.id === record.id) ?? record,
-            );
-          } else {
-            const record = await commitLocalFile(file, this.root);
-            known.add(record.id);
-            records.push(record);
-            result.added.push(record);
-            // a long album import keeps what is done if it is interrupted
-            await this.save(records);
-          }
-        } catch {
-          result.failed.push(path.basename(source));
         }
+        return result;
+      } finally {
+        await Promise.all(pending.values());
+        await fsp.rm(staging, { recursive: true, force: true });
       }
-      return result;
-    });
+    };
+    // Imports keep their order without blocking reads, playback, or other edits
+    // while the next files decode. Every commit reloads the current index.
+    const next = this.importing.then(run, run);
+    this.importing = next.catch(() => undefined);
+    return next;
   }
 
   // Songs that exist more than once. The best copy of each is the one that

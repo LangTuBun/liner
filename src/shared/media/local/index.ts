@@ -8,6 +8,7 @@ export {
 export {
   localRecordToTrack,
   type LocalImportResult,
+  type LocalImportProgress,
   type LocalLibraryUsage,
   type LocalStamp,
   type LocalTrackRecord,
