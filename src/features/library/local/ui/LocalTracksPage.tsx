@@ -8,8 +8,12 @@ import {
 import { TrackSortMenu, useTrackSort } from "../../ui/TrackSort";
 import { useTranslation } from "@/languages";
 import { HERO_GLASS_CLASS, ListPanel } from "@/shared/ui";
+import Button from "@/shared/ui/Button";
 import { useLocalImport } from "../hooks/useLocalImport";
 import { useLocalTracks } from "../hooks/useLocalTracks";
+import { groupLocalAlbums } from "../lib/albums";
+import { useLocalLibraryStore } from "../store/localLibraryStore";
+import LocalAlbumList from "./LocalAlbumList";
 import LocalTrackList from "./LocalTrackList";
 import LocalTracksEmpty from "./LocalTracksEmpty";
 import LocalTracksHero from "./LocalTracksHero";
@@ -23,6 +27,9 @@ export default function LocalTracksPage() {
   const { tracks, isLoading } = useLocalTracks();
   const { chooseFiles, chooseFolder, importing } = useLocalImport();
   const [removeAllOpen, setRemoveAllOpen] = useState(false);
+  const [view, setView] = useState<"songs" | "albums">("songs");
+  const records = useLocalLibraryStore((state) => state.records);
+  const albums = useMemo(() => groupLocalAlbums(records), [records]);
 
   const sort = useTrackSort(tracks, PAGE_KEY);
   const search = useTrackSearch(sort.sorted, PAGE_KEY);
@@ -84,7 +91,23 @@ export default function LocalTracksPage() {
         </div>
 
         <ListPanel>
-          {isLoading ? null : tracks.length === 0 ? (
+          {tracks.length > 0 && (
+            <div className="flex gap-[6px] pb-[8px]">
+              {(["songs", "albums"] as const).map((option) => (
+                <Button
+                  key={option}
+                  variant={view === option ? "primary" : "secondary"}
+                  onClick={() => setView(option)}
+                  className="px-[14px]"
+                >
+                  {t(`library.local.view_${option}`)}
+                </Button>
+              ))}
+            </div>
+          )}
+          {isLoading ? null : view === "albums" && tracks.length > 0 ? (
+            <LocalAlbumList albums={albums} />
+          ) : tracks.length === 0 ? (
             <LocalTracksEmpty
               importing={importing}
               onAddFiles={() => void chooseFiles()}

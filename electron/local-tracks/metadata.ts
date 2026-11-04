@@ -1,5 +1,6 @@
 import path from "node:path";
 import { parseFile } from "music-metadata";
+import type { LocalTrackQuality } from "./types.js";
 
 export interface LocalTrackTags {
   title: string;
@@ -7,6 +8,9 @@ export interface LocalTrackTags {
   album?: string;
   durationMs: number;
   mimeType: string;
+  trackNo?: number;
+  discNo?: number;
+  quality: LocalTrackQuality;
   cover?: { data: Uint8Array; extension: string };
 }
 
@@ -20,6 +24,11 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   wav: "audio/wav",
   webm: "audio/webm",
 };
+
+const positive = (value: number | null | undefined) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value
+    : undefined;
 
 const EXTENSION_BY_IMAGE_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -75,12 +84,24 @@ export async function readLocalTrackTags(
       ...(common.album?.trim() ? { album: common.album.trim() } : {}),
       durationMs: Math.round((format.duration ?? 0) * 1000),
       mimeType,
+      ...(positive(common.track.no) ? { trackNo: common.track.no! } : {}),
+      ...(positive(common.disk.no) ? { discNo: common.disk.no! } : {}),
+      quality: {
+        ...(format.lossless === undefined ? {} : { lossless: format.lossless }),
+        ...(positive(format.bitsPerSample)
+          ? { bitDepth: format.bitsPerSample! }
+          : {}),
+        ...(positive(format.sampleRate)
+          ? { sampleRate: format.sampleRate! }
+          : {}),
+        ...(positive(format.bitrate) ? { bitrate: format.bitrate! } : {}),
+      },
       ...(picture && coverExtension
         ? { cover: { data: picture.data, extension: coverExtension } }
         : {}),
     };
   } catch {
-    return { ...fallback, durationMs: 0, mimeType };
+    return { ...fallback, durationMs: 0, mimeType, quality: {} };
   }
 }
 
@@ -96,11 +117,6 @@ export interface LocalAudioFormat {
   durationSec: number | null;
 }
 
-const positive = (value: number | undefined) =>
-  typeof value === "number" && Number.isFinite(value) && value > 0
-    ? value
-    : null;
-
 export async function probeLocalAudio(
   filePath: string,
 ): Promise<LocalAudioFormat> {
@@ -114,10 +130,10 @@ export async function probeLocalAudio(
     codec: format.codec ?? "",
     codecProfile: format.codecProfile ?? "",
     lossless,
-    sampleRate: positive(format.sampleRate),
-    bitDepth: lossless ? positive(format.bitsPerSample) : null,
-    channels: positive(format.numberOfChannels),
-    bitrate: positive(format.bitrate),
-    durationSec: positive(format.duration),
+    sampleRate: positive(format.sampleRate) ?? null,
+    bitDepth: lossless ? (positive(format.bitsPerSample) ?? null) : null,
+    channels: positive(format.numberOfChannels) ?? null,
+    bitrate: positive(format.bitrate) ?? null,
+    durationSec: positive(format.duration) ?? null,
   };
 }

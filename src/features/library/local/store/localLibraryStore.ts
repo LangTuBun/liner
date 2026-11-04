@@ -91,7 +91,10 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
     set({ importing: true });
     try {
       const result = await request();
-      if (result && result.added.length > 0) {
+      if (result && (result.upgraded?.length ?? 0) > 0) {
+        const records = await window.linerElectron?.localTracksList();
+        if (records) set(withTracks(records));
+      } else if (result && result.added.length > 0) {
         set(withTracks([...get().records, ...result.added]));
       }
       return result;

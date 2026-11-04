@@ -149,6 +149,87 @@ describe("LocalTrackLibrary", () => {
     expect(await library.list()).toHaveLength(3);
   });
 
+  describe("upgrades", () => {
+    const wav = (bits: number, rate: number) => {
+      const frames = Math.round(rate * 0.1);
+      const data = Buffer.alloc(frames * 2 * (bits / 8));
+      const head = Buffer.alloc(44);
+      head.write("RIFF", 0);
+      head.writeUInt32LE(36 + data.length, 4);
+      head.write("WAVEfmt ", 8);
+      head.writeUInt32LE(16, 16);
+      head.writeUInt16LE(1, 20);
+      head.writeUInt16LE(2, 22);
+      head.writeUInt32LE(rate, 24);
+      head.writeUInt32LE(rate * 2 * (bits / 8), 28);
+      head.writeUInt16LE(2 * (bits / 8), 32);
+      head.writeUInt16LE(bits, 34);
+      head.write("data", 36);
+      head.writeUInt32LE(data.length, 40);
+      return Buffer.concat([head, data]);
+    };
+    const song = async (folder: string, bits: number, rate: number) => {
+      const dir = path.join(sources, folder);
+      await fs.mkdir(dir, { recursive: true });
+      const file = path.join(dir, "Artist - Song.wav");
+      await fs.writeFile(file, wav(bits, rate));
+      return file;
+    };
+
+    it("swaps a better copy in under the same id, and drops the old file", async () => {
+      const library = new LocalTrackLibrary(root);
+      const first = await library.importFiles([await song("a", 16, 44100)], {
+        upgrade: true,
+      });
+      const [old] = first.added;
+
+      const second = await library.importFiles([await song("b", 24, 96000)], {
+        upgrade: true,
+      });
+
+      expect(second.added).toEqual([]);
+      expect(second.upgraded).toHaveLength(1);
+      const list = await library.list();
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({
+        id: old.id,
+        bitDepth: 24,
+        sampleRate: 96000,
+        addedAt: old.addedAt,
+      });
+      expect(list[0].audioFile).not.toBe(old.audioFile);
+      await expect(
+        fs.access(path.join(root, "audio", old.audioFile)),
+      ).rejects.toThrow();
+      await expect(
+        fs.access(path.join(root, "audio", list[0].audioFile)),
+      ).resolves.toBeUndefined();
+    });
+
+    it("keeps the stored copy when the new one is worse, and says so", async () => {
+      const library = new LocalTrackLibrary(root);
+      await library.importFiles([await song("a", 24, 96000)], {
+        upgrade: true,
+      });
+
+      const again = await library.importFiles([await song("b", 16, 44100)], {
+        upgrade: true,
+      });
+
+      expect(again.added).toEqual([]);
+      expect(again.upgraded).toBeUndefined();
+      expect(again.kept).toBe(1);
+      expect(await library.list()).toHaveLength(1);
+    });
+
+    it("adds a second copy when upgrades are off, as the downloader does", async () => {
+      const library = new LocalTrackLibrary(root);
+      await library.importFiles([await song("a", 16, 44100)]);
+      await library.importFiles([await song("b", 24, 96000)]);
+      expect(await library.list()).toHaveLength(2);
+    });
+  });
+
   it("refuses ids that could escape the library folder", async () => {
     const library = new LocalTrackLibrary(root);
     expect(await library.locate("audio", "../../etc/passwd")).toBeNull();

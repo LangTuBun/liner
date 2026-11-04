@@ -1,6 +1,17 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { expandAudioPaths, hashFile, importLocalFile } from "./importer.js";
+import {
+  commitLocalFile,
+  expandAudioPaths,
+  hashFile,
+  importLocalFile,
+  inspectLocalFile,
+  upgradedRecord,
+  type IncomingFile,
+} from "./importer.js";
+import { probeLocalAudio } from "./metadata.js";
+import { recordMatchKey, trackMatchKey } from "./matchKey.js";
+import { compareLocalQuality } from "./quality.js";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
@@ -26,6 +37,16 @@ async function folderBytes(folder: string): Promise<number> {
     return 0;
   }
 }
+
+const knownHashes = (records: LocalTrackRecord[]) =>
+  new Set(
+    records.flatMap((record) =>
+      record.contentHash ? [record.id, record.contentHash] : [record.id],
+    ),
+  );
+
+type Decision =
+  { kind: "new" } | { kind: "keep" } | { kind: "upgrade"; index: number };
 
 export class LocalTrackLibrary {
   private records: LocalTrackRecord[] | null = null;
@@ -74,10 +95,60 @@ export class LocalTrackLibrary {
     return this.serialized(() => this.load());
   }
 
-  importFiles(paths: string[]): Promise<LocalImportResult> {
+  // quality of a stored track; older records never saved it, so read the file
+  private async qualityOf(records: LocalTrackRecord[], index: number) {
+    const record = records[index];
+    if (record.lossless !== undefined) return record;
+    try {
+      const probed = await probeLocalAudio(
+        this.filePath("audio", record.audioFile),
+      );
+      records[index] = {
+        ...record,
+        lossless: probed.lossless,
+        ...(probed.bitDepth ? { bitDepth: probed.bitDepth } : {}),
+        ...(probed.sampleRate ? { sampleRate: probed.sampleRate } : {}),
+        ...(probed.bitrate ? { bitrate: probed.bitrate } : {}),
+      };
+    } catch {}
+    return records[index];
+  }
+
+  // Replace only when exactly one stored song is the same recording and the
+  // new file is clearly better. Worse or equal is left out; mixed evidence is
+  // added as its own track, as before.
+  private async decide(
+    records: LocalTrackRecord[],
+    file: IncomingFile,
+  ): Promise<Decision> {
+    const key = trackMatchKey(file.tags.title, file.tags.artist);
+    if (!key) return { kind: "new" };
+    const sameLength = (record: LocalTrackRecord) =>
+      !record.durationMs ||
+      !file.tags.durationMs ||
+      Math.abs(record.durationMs - file.tags.durationMs) <= 2000;
+    const hits = records
+      .map((record, index) => ({ record, index }))
+      .filter(
+        ({ record }) => recordMatchKey(record) === key && sameLength(record),
+      );
+    if (hits.length !== 1) return { kind: "new" };
+    const existing = await this.qualityOf(records, hits[0].index);
+    const verdict = compareLocalQuality(
+      { ...file.quality, mimeType: file.tags.mimeType },
+      existing,
+    );
+    if (verdict === "better") return { kind: "upgrade", index: hits[0].index };
+    return verdict === "unknown" ? { kind: "new" } : { kind: "keep" };
+  }
+
+  importFiles(
+    paths: string[],
+    options: { upgrade?: boolean } = {},
+  ): Promise<LocalImportResult> {
     return this.serialized(async () => {
       const records = [...(await this.load())];
-      const known = new Set(records.map((record) => record.id));
+      const known = knownHashes(records);
       const result: LocalImportResult = {
         added: [],
         duplicates: 0,
@@ -87,9 +158,30 @@ export class LocalTrackLibrary {
       await fsp.mkdir(this.filePath("covers"), { recursive: true });
       for (const source of await expandAudioPaths(paths)) {
         try {
-          const record = await importLocalFile(source, this.root, known);
-          if (!record) result.duplicates += 1;
-          else {
+          const file = await inspectLocalFile(source, known);
+          if (!file) {
+            result.duplicates += 1;
+            continue;
+          }
+          const decision: Decision = options.upgrade
+            ? await this.decide(records, file)
+            : { kind: "new" };
+          if (decision.kind === "keep") {
+            result.kept = (result.kept ?? 0) + 1;
+          } else if (decision.kind === "upgrade") {
+            const { record, stale } = await upgradedRecord(
+              file,
+              this.root,
+              records[decision.index],
+            );
+            records[decision.index] = record;
+            known.add(file.id);
+            await this.save(records);
+            // the index no longer names these, so a failed delete only leaks
+            for (const old of stale) await fsp.rm(old, { force: true });
+            (result.upgraded ??= []).push(record);
+          } else {
+            const record = await commitLocalFile(file, this.root);
             known.add(record.id);
             records.push(record);
             result.added.push(record);
@@ -139,7 +231,7 @@ export class LocalTrackLibrary {
   }> {
     return this.serialized(async () => {
       const records = [...(await this.load())];
-      const known = new Set(records.map((record) => record.id));
+      const known = knownHashes(records);
       const tally = {
         imported: 0,
         updated: 0,

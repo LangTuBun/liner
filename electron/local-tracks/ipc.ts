@@ -22,7 +22,7 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
   ipcMain.handle("local-tracks:list", () => library.list());
 
   ipcMain.handle("local-tracks:import", (_event, paths: unknown) =>
-    library.importFiles(stringList(paths)),
+    library.importFiles(stringList(paths), { upgrade: true }),
   );
 
   ipcMain.handle("local-tracks:pick", async (event) => {
@@ -35,7 +35,7 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
       ? await dialog.showOpenDialog(owner, options)
       : await dialog.showOpenDialog(options);
     if (picked.canceled || picked.filePaths.length === 0) return null;
-    return library.importFiles(picked.filePaths);
+    return library.importFiles(picked.filePaths, { upgrade: true });
   });
 
   ipcMain.handle("local-tracks:pick-folder", async (event) => {
@@ -47,7 +47,7 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
       ? await dialog.showOpenDialog(owner, options)
       : await dialog.showOpenDialog(options);
     if (picked.canceled || picked.filePaths.length === 0) return null;
-    return library.importFiles(picked.filePaths);
+    return library.importFiles(picked.filePaths, { upgrade: true });
   });
 
   ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>

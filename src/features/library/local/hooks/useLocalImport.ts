@@ -8,7 +8,19 @@ type Translate = ReturnType<typeof useTranslation>["t"];
 
 function announce(result: LocalImportResult | null, t: Translate) {
   if (!result) return;
-  const { added, duplicates, failed } = result;
+  const { added, duplicates, failed, upgraded = [], kept = 0 } = result;
+  if (upgraded.length > 0) {
+    showToast(
+      t("library.local.upgraded", { count: upgraded.length }),
+      "checkmark",
+      {
+        description:
+          kept > 0 ? t("library.local.kept", { count: kept }) : undefined,
+      },
+    );
+  } else if (kept > 0 && added.length === 0) {
+    showToast(t("library.local.kept", { count: kept }), "info");
+  }
   if (added.length > 0) {
     showToast(
       t("library.local.imported", { count: added.length }),
@@ -22,7 +34,12 @@ function announce(result: LocalImportResult | null, t: Translate) {
               : undefined,
       },
     );
-  } else if (duplicates > 0 && failed.length === 0) {
+  } else if (
+    duplicates > 0 &&
+    failed.length === 0 &&
+    upgraded.length === 0 &&
+    kept === 0
+  ) {
     showToast(t("library.local.already_added"), "info");
   }
   if (failed.length > 0) {

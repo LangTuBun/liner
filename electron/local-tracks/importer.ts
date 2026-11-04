@@ -4,8 +4,16 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { convertDsfToWav } from "./dsf.js";
-import { audioExtension, readLocalTrackTags } from "./metadata.js";
-import { LOCAL_AUDIO_EXTENSIONS, type LocalTrackRecord } from "./types.js";
+import {
+  audioExtension,
+  readLocalTrackTags,
+  type LocalTrackTags,
+} from "./metadata.js";
+import {
+  LOCAL_AUDIO_EXTENSIONS,
+  type LocalTrackQuality,
+  type LocalTrackRecord,
+} from "./types.js";
 
 const SUPPORTED = new Set<string>(LOCAL_AUDIO_EXTENSIONS);
 
@@ -39,11 +47,22 @@ export async function expandAudioPaths(paths: string[]): Promise<string[]> {
   return found;
 }
 
-export async function importLocalFile(
+// A file that passed the checks and is hashed, but is not copied yet, so the
+// library can decide first whether it is new, a better copy, or not wanted.
+export interface IncomingFile {
+  real: string;
+  source: string;
+  extension: string;
+  id: string;
+  size: number;
+  tags: LocalTrackTags;
+  quality: LocalTrackQuality;
+}
+
+export async function inspectLocalFile(
   source: string,
-  root: string,
   known: Set<string>,
-): Promise<LocalTrackRecord | null> {
+): Promise<IncomingFile | null> {
   const real = await fsp.realpath(source);
   const extension = audioExtension(real);
   if (!SUPPORTED.has(extension) || audioExtension(source) !== extension)
@@ -52,31 +71,100 @@ export async function importLocalFile(
   if (!stat.isFile()) throw new Error("not a file");
   const id = await hashFile(real);
   if (known.has(id)) return null;
+  const tags = await readLocalTrackTags(real);
+  // a .dsf is played as the 24-bit PCM it is decoded to (rate / 32)
+  const quality: LocalTrackQuality =
+    extension === "dsf"
+      ? {
+          lossless: true,
+          bitDepth: 24,
+          ...(tags.quality.sampleRate
+            ? { sampleRate: tags.quality.sampleRate / 32 }
+            : {}),
+        }
+      : tags.quality;
+  return { real, source, extension, id, size: stat.size, tags, quality };
+}
+
+export async function commitLocalFile(
+  file: IncomingFile,
+  root: string,
+): Promise<LocalTrackRecord> {
+  const { id, tags, extension } = file;
   const isDsd = extension === "dsf";
   const audioFile = `${id}.${isDsd ? "wav" : extension}`;
   const audioPath = path.join(root, "audio", audioFile);
-  const converted = isDsd ? await convertDsfToWav(real, audioPath) : null;
-  if (!converted) await fsp.copyFile(real, audioPath);
-  const tags = await readLocalTrackTags(real);
+  const converted = isDsd ? await convertDsfToWav(file.real, audioPath) : null;
+  if (!converted) await fsp.copyFile(file.real, audioPath);
   const coverFile = tags.cover ? `${id}.${tags.cover.extension}` : undefined;
   if (tags.cover && coverFile) {
     await fsp.writeFile(path.join(root, "covers", coverFile), tags.cover.data);
   }
   return {
     id,
+    contentHash: id,
     title: tags.title,
     artist: tags.artist,
     ...(tags.album ? { album: tags.album } : {}),
+    ...(tags.trackNo ? { trackNo: tags.trackNo } : {}),
+    ...(tags.discNo ? { discNo: tags.discNo } : {}),
     durationMs:
       tags.durationMs ||
       (converted
         ? Math.round((converted.frames / converted.sampleRate) * 1000)
         : 0),
-    fileName: path.basename(source),
+    fileName: path.basename(file.source),
     audioFile,
     mimeType: converted ? "audio/wav" : tags.mimeType,
     ...(coverFile ? { coverFile } : {}),
-    byteSize: converted ? (await fsp.stat(audioPath)).size : stat.size,
+    byteSize: converted ? (await fsp.stat(audioPath)).size : file.size,
     addedAt: Date.now(),
+    ...(converted
+      ? { ...file.quality, sampleRate: converted.sampleRate }
+      : file.quality),
   };
+}
+
+export async function importLocalFile(
+  source: string,
+  root: string,
+  known: Set<string>,
+): Promise<LocalTrackRecord | null> {
+  const file = await inspectLocalFile(source, known);
+  return file ? commitLocalFile(file, root) : null;
+}
+
+// The existing record keeps its id (playlists, mixes, the queue and the lyrics
+// cache all point at it) and takes the new audio. The old file and the
+// duplicate cover are the caller's to remove once the index is saved.
+export async function upgradedRecord(
+  file: IncomingFile,
+  root: string,
+  existing: LocalTrackRecord,
+): Promise<{ record: LocalTrackRecord; stale: string[] }> {
+  const fresh = await commitLocalFile(file, root);
+  const stale = [path.join(root, "audio", existing.audioFile)];
+  if (existing.coverFile && fresh.coverFile)
+    stale.push(path.join(root, "covers", fresh.coverFile));
+  const record: LocalTrackRecord = {
+    ...existing,
+    audioFile: fresh.audioFile,
+    mimeType: fresh.mimeType,
+    byteSize: fresh.byteSize,
+    durationMs: fresh.durationMs || existing.durationMs,
+    fileName: fresh.fileName,
+    contentHash: fresh.contentHash,
+    lossless: fresh.lossless,
+    bitDepth: fresh.bitDepth,
+    sampleRate: fresh.sampleRate,
+    bitrate: fresh.bitrate,
+    coverFile: existing.coverFile ?? fresh.coverFile,
+    album: existing.album ?? fresh.album,
+    trackNo: existing.trackNo ?? fresh.trackNo,
+    discNo: existing.discNo ?? fresh.discNo,
+    // now a file of the owner's own, not a download
+    source: undefined,
+    hiRes: undefined,
+  };
+  return { record, stale };
 }

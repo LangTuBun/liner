@@ -1,4 +1,11 @@
-export interface LocalTrackRecord {
+export interface LocalTrackQuality {
+  lossless?: boolean;
+  bitDepth?: number;
+  sampleRate?: number;
+  bitrate?: number;
+}
+
+export interface LocalTrackRecord extends LocalTrackQuality {
   id: string;
   title: string;
   artist: string;
@@ -8,6 +15,10 @@ export interface LocalTrackRecord {
   audioFile: string;
   mimeType: string;
   coverFile?: string;
+  trackNo?: number;
+  discNo?: number;
+  // hash of the file last imported; id stays put when a better copy replaces it
+  contentHash?: string;
   byteSize: number;
   addedAt: number;
   // set on lossless downloads from soulseek
@@ -31,6 +42,9 @@ export interface LocalImportResult {
   added: LocalTrackRecord[];
   duplicates: number;
   failed: string[];
+  // tracks whose file was swapped for a better copy, and copies left out
+  upgraded?: LocalTrackRecord[];
+  kept?: number;
 }
 
 export const LOCAL_AUDIO_EXTENSIONS = [
