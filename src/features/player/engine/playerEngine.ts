@@ -18,6 +18,7 @@ import {
   type RecordPlaybackEventRequest,
 } from "@/shared/api";
 import { toClientTrack } from "@/shared/api/track";
+import { findYoutubeStandIn } from "./youtubeStandIn";
 import { log } from "@/shared/utils/logger";
 import {
   parseRawLyrics,
@@ -1388,7 +1389,7 @@ class PlayerEngine {
     }
 
     if (!lyricsCache.has(nextTrack.id)) {
-      void this.prefetchLyrics(nextTrack.id, lyricsHint(nextTrack));
+      void this.prefetchLyrics(nextTrack);
     }
     void loadAmbientScript(nextTrack.id);
 
@@ -1399,11 +1400,22 @@ class PlayerEngine {
     }
   }
 
-  private async prefetchLyrics(
-    trackId: string,
-    hint?: LyricsHint,
-  ): Promise<void> {
-    if (!trackId || isLocalTrackId(trackId)) return;
+  // Where to ask for a track's lyrics. A file on this device has no catalog
+  // id, so it borrows the YouTube match of the same song; its own id still
+  // keys the cache and the per-track offset.
+  private async lyricsLookup(
+    track: Track,
+    signal?: AbortSignal,
+  ): Promise<{ id: string; hint: LyricsHint } | null> {
+    if (!isLocalTrackId(track.id))
+      return { id: track.id, hint: lyricsHint(track) };
+    const id = await findYoutubeStandIn(track, signal);
+    return id ? { id, hint: lyricsHint(track) } : null;
+  }
+
+  private async prefetchLyrics(track: Track): Promise<void> {
+    const trackId = track.id;
+    if (!trackId) return;
 
     if (lyricsCache.has(trackId)) return;
     if (this.inFlightLyricsPrefetches.has(trackId)) {
@@ -1429,10 +1441,15 @@ class PlayerEngine {
         }[] = [];
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
+        const lookup = await this.lyricsLookup(track, controller.signal);
+        if (!lookup) {
+          clearTimeout(timeout);
+          return;
+        }
         for await (const event of api.streamLyrics(
-          trackId,
+          lookup.id,
           controller.signal,
-          hint,
+          lookup.hint,
         )) {
           if (event.type === "provider" && event.status === "found") {
             const candidate = event.candidate;
@@ -1506,22 +1523,6 @@ class PlayerEngine {
     });
   }
 
-  private showNoLyrics(trackId: string, lyricsError: string | null): void {
-    useLyricsStore.getState().setLyricsState({
-      lyricsLoading: false,
-      lyricsError,
-      rawLyrics: null,
-      rawFormat: null,
-      braccatoLyrics: [],
-      syncedLines: [],
-      plainLyrics: null,
-      lyricsQuality: 0,
-      currentLyricsTrackId: trackId,
-      activeProvider: null,
-      availableProviders: [],
-    });
-  }
-
   private async fetchLyricsForTrack(track: Track | null): Promise<void> {
     const lyricsStore = useLyricsStore.getState();
 
@@ -1538,15 +1539,6 @@ class PlayerEngine {
     ) {
       return;
     }
-    if (isLocalTrackId(trackId)) {
-      this.currentLyricsTrackId = trackId;
-      ++this.lyricsLoadToken;
-      this.lyricsAbort?.abort();
-      this.lyricsAbort = null;
-      this.showNoLyrics(trackId, null);
-      return;
-    }
-
     this.currentLyricsTrackId = trackId;
     const token = ++this.lyricsLoadToken;
     this.lyricsAbort?.abort();
@@ -1669,10 +1661,15 @@ class PlayerEngine {
     log("cyan", "lyrics", `fetching for "${track.title}"`);
 
     try {
+      const lookup = await this.lyricsLookup(track, controller.signal);
+      if (!lookup) {
+        log("yellow", "lyrics", `no catalog match for "${track.title}"`);
+        return;
+      }
       for await (const event of api.streamLyrics(
-        trackId,
+        lookup.id,
         controller.signal,
-        lyricsHint(track),
+        lookup.hint,
       )) {
         if (token !== this.lyricsLoadToken || controller.signal.aborted) break;
 
