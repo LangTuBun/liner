@@ -75,6 +75,25 @@ describe("groupLocalAlbums", () => {
     expect(albums[0].tracks.map((t) => t.title)).toEqual(["Earlier", "Later"]);
   });
 
+  it("keeps one album together when guests change the credited artist", () => {
+    const albums = groupLocalAlbums([
+      record({ id: "1".padEnd(20, "0"), album: "99%", artist: "RPT MCK" }),
+      record({
+        id: "2".padEnd(20, "0"),
+        album: "99%",
+        artist: "RPT MCK & Trung Trần",
+      }),
+      record({
+        id: "3".padEnd(20, "0"),
+        album: "99%",
+        artist: "RPT MCK & tlinh",
+      }),
+    ]);
+    expect(albums).toHaveLength(1);
+    expect(albums[0].artist).toBe("RPT MCK");
+    expect(albums[0].tracks).toHaveLength(3);
+  });
+
   it("keeps two artists' albums with the same title apart", () => {
     const albums = groupLocalAlbums([
       record({ id: "f".padEnd(20, "0"), album: "Greatest Hits" }),

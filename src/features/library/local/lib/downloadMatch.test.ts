@@ -41,6 +41,12 @@ describe("downloadMatch", () => {
     );
   });
 
+  it("folds the stroke of Đ, which is not an accent", () => {
+    expect(trackMatchKey("Đao Của Anh Vừa", "RPT MCK")).toBe(
+      trackMatchKey("DAO CUA ANH VUA", "rpt mck"),
+    );
+  });
+
   it("keeps live and remix recordings apart from the studio song", () => {
     expect(trackMatchKey("Lover Girl (Live)", "Lauv")).not.toBe(
       trackMatchKey("Lover Girl", "Lauv"),

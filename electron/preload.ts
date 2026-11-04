@@ -19,7 +19,9 @@ import type {
 import type {
   LocalImportResult,
   LocalLibraryUsage,
+  LocalStamp,
   LocalTrackRecord,
+  TidyGroup,
 } from "./local-tracks/types";
 import type {
   SavedLibraryUsage,
@@ -217,6 +219,9 @@ export interface LinerElectronApi {
   localTracksImport: (paths: string[]) => Promise<LocalImportResult>;
   localTracksPick: () => Promise<LocalImportResult | null>;
   localTracksPickFolder: () => Promise<LocalImportResult | null>;
+  localTracksTidyPlan: () => Promise<TidyGroup[]>;
+  localTracksTidyApply: (ids: string[]) => Promise<number>;
+  localTracksStamp: (stamps: LocalStamp[]) => Promise<number>;
   localTracksRemove: (ids: string[]) => Promise<void>;
   localTracksProbe: (id: string) => Promise<LocalAudioFormat | null>;
   audioOutputEndpoints: () => Promise<OutputEndpoints>;
@@ -518,6 +523,11 @@ const api: LinerElectronApi = {
     ipcRenderer.invoke("local-tracks:import", paths),
   localTracksPick: () => ipcRenderer.invoke("local-tracks:pick"),
   localTracksPickFolder: () => ipcRenderer.invoke("local-tracks:pick-folder"),
+  localTracksTidyPlan: () => ipcRenderer.invoke("local-tracks:tidy-plan"),
+  localTracksTidyApply: (ids) =>
+    ipcRenderer.invoke("local-tracks:tidy-apply", ids),
+  localTracksStamp: (stamps) =>
+    ipcRenderer.invoke("local-tracks:stamp", stamps),
   localTracksRemove: (ids) => ipcRenderer.invoke("local-tracks:remove", ids),
   localTracksProbe: (id) => ipcRenderer.invoke("local-tracks:probe", id),
   audioOutputEndpoints: () => ipcRenderer.invoke("audio-quality:endpoints"),

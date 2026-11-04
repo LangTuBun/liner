@@ -18,6 +18,7 @@ import LocalTrackList from "./LocalTrackList";
 import LocalTracksEmpty from "./LocalTracksEmpty";
 import LocalTracksHero from "./LocalTracksHero";
 import RemoveAllLocalDialog from "./RemoveAllLocalDialog";
+import TidyDuplicatesDialog from "./TidyDuplicatesDialog";
 
 const PAGE_KEY = "local";
 
@@ -28,6 +29,7 @@ export default function LocalTracksPage() {
   const { chooseFiles, chooseFolder, importing } = useLocalImport();
   const [removeAllOpen, setRemoveAllOpen] = useState(false);
   const [view, setView] = useState<"songs" | "albums">("songs");
+  const [tidyOpen, setTidyOpen] = useState(false);
   const records = useLocalLibraryStore((state) => state.records);
   const albums = useMemo(() => groupLocalAlbums(records), [records]);
 
@@ -103,6 +105,13 @@ export default function LocalTracksPage() {
                   {t(`library.local.view_${option}`)}
                 </Button>
               ))}
+              <Button
+                variant="secondary"
+                onClick={() => setTidyOpen(true)}
+                className="ml-auto px-[14px]"
+              >
+                {t("library.local.tidy_button")}
+              </Button>
             </div>
           )}
           {isLoading ? null : view === "albums" && tracks.length > 0 ? (
@@ -128,6 +137,10 @@ export default function LocalTracksPage() {
           )}
         </ListPanel>
       </div>
+      <TidyDuplicatesDialog
+        open={tidyOpen}
+        onClose={() => setTidyOpen(false)}
+      />
       <RemoveAllLocalDialog
         open={removeAllOpen}
         onClose={() => setRemoveAllOpen(false)}

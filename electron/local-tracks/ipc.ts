@@ -4,7 +4,7 @@ import { LocalTrackLibrary } from "./library.js";
 import { probeLocalAudio } from "./metadata.js";
 import { handleLocalTrackScheme } from "./protocol.js";
 import type { SavedTrackLibrary } from "../saved-tracks/library.js";
-import { LOCAL_AUDIO_EXTENSIONS } from "./types.js";
+import { LOCAL_AUDIO_EXTENSIONS, type LocalStamp } from "./types.js";
 
 const stringList = (value: unknown): string[] =>
   Array.isArray(value)
@@ -49,6 +49,25 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     if (picked.canceled || picked.filePaths.length === 0) return null;
     return library.importFiles(picked.filePaths, { upgrade: true });
   });
+
+  ipcMain.handle("local-tracks:tidy-plan", () => library.tidyPlan());
+
+  ipcMain.handle("local-tracks:tidy-apply", (_event, ids: unknown) =>
+    library.tidyApply(stringList(ids)),
+  );
+
+  ipcMain.handle("local-tracks:stamp", (_event, stamps: unknown) =>
+    library.stamp(
+      (Array.isArray(stamps) ? stamps : []).filter(
+        (item): item is LocalStamp =>
+          typeof item?.id === "string" &&
+          /^[a-f0-9]{20}$/.test(item.id) &&
+          typeof item.matchKey === "string" &&
+          item.matchKey.length > 0 &&
+          item.matchKey.length < 500,
+      ),
+    ),
+  );
 
   ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>
     library.remove(stringList(ids)),

@@ -33,6 +33,21 @@ export type LocalTrackPatch = Partial<
     "source" | "matchKey" | "hiRes" | "title" | "artist" | "addedAt"
   >
 >;
+// copies of one song, the best first; the owner decides which others go
+export interface TidyGroup {
+  winner: LocalTrackRecord;
+  losers: {
+    record: LocalTrackRecord;
+    reason: "same" | "artist-name" | "longer-video";
+    certainty: "sure" | "maybe";
+  }[];
+}
+
+export interface LocalStamp {
+  id: string;
+  matchKey: string;
+}
+
 export interface LocalLibraryUsage {
   count: number;
   bytes: number;

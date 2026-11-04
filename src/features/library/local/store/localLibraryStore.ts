@@ -4,7 +4,9 @@ import {
   localRecordToTrack,
   toLocalTrackId,
   type LocalImportResult,
+  type LocalStamp,
   type LocalTrackRecord,
+  type TidyGroup,
 } from "@/shared/media/local";
 import { playerEngine } from "@/features/player/engine/playerEngine";
 
@@ -33,6 +35,9 @@ interface LocalLibraryState {
   pickFolder: () => Promise<LocalImportResult | null>;
   remove: (fileIds: string[]) => Promise<void>;
   removeAll: () => Promise<number>;
+  tidyPlan: () => Promise<TidyGroup[]>;
+  tidyApply: (ids: string[]) => Promise<number>;
+  stamp: (stamps: LocalStamp[]) => Promise<void>;
 }
 
 const newestFirst = (records: LocalTrackRecord[]) =>
@@ -42,9 +47,13 @@ const withTracks = (records: LocalTrackRecord[]) => {
   const sorted = newestFirst(records);
   const downloadIndex = new Map<string, string>();
   for (const record of sorted) {
-    const key = recordMatchKey(record);
-    if (key && !downloadIndex.has(key))
-      downloadIndex.set(key, toLocalTrackId(record.id));
+    // a stamped song is found by the catalog's spelling and by its own
+    for (const key of new Set([
+      recordMatchKey(record),
+      trackMatchKey(record.title, record.artist),
+    ]))
+      if (key && !downloadIndex.has(key))
+        downloadIndex.set(key, toLocalTrackId(record.id));
   }
   return {
     records: sorted,
@@ -159,6 +168,23 @@ export const useLocalLibraryStore = create<LocalLibraryState>((set, get) => {
       );
       await releasePlayingTrack(fileIds);
       await bridge.localTracksRemove(fileIds);
+    },
+
+    tidyPlan: async () =>
+      (await window.linerElectron?.localTracksTidyPlan?.()) ?? [],
+
+    tidyApply: async (ids) => {
+      const bridge = window.linerElectron;
+      if (!bridge || ids.length === 0) return 0;
+      const removed = await bridge.localTracksTidyApply(ids);
+      if (removed > 0) await get().load();
+      return removed;
+    },
+
+    stamp: async (stamps) => {
+      const bridge = window.linerElectron;
+      if (!bridge || stamps.length === 0) return;
+      if ((await bridge.localTracksStamp(stamps)) > 0) await get().load();
     },
 
     removeAll: async () => {

@@ -168,10 +168,15 @@ describe("LocalTrackLibrary", () => {
       head.writeUInt32LE(data.length, 40);
       return Buffer.concat([head, data]);
     };
-    const song = async (folder: string, bits: number, rate: number) => {
+    const song = async (
+      folder: string,
+      bits: number,
+      rate: number,
+      name = "Artist - Song.wav",
+    ) => {
       const dir = path.join(sources, folder);
       await fs.mkdir(dir, { recursive: true });
-      const file = path.join(dir, "Artist - Song.wav");
+      const file = path.join(dir, name);
       await fs.writeFile(file, wav(bits, rate));
       return file;
     };
@@ -220,6 +225,66 @@ describe("LocalTrackLibrary", () => {
       expect(again.upgraded).toBeUndefined();
       expect(again.kept).toBe(1);
       expect(await library.list()).toHaveLength(1);
+    });
+
+    it("removes the other copies a better file outranks, and keeps their ids working", async () => {
+      const library = new LocalTrackLibrary(root);
+      const first = await library.importFiles([await song("a", 16, 44100)]);
+      const second = await library.importFiles([await song("b", 16, 48000)]);
+      const [slower] = first.added;
+      const [faster] = second.added;
+
+      const better = await library.importFiles([await song("c", 24, 96000)], {
+        upgrade: true,
+      });
+
+      expect(better.upgraded).toHaveLength(1);
+      const list = await library.list();
+      expect(list).toHaveLength(1);
+      expect(list[0].id).toBe(faster.id);
+      await expect(
+        fs.access(path.join(root, "audio", slower.audioFile)),
+      ).rejects.toThrow();
+      const found = await library.locate("audio", slower.id);
+      expect(found?.record.id).toBe(faster.id);
+    });
+
+    it("plans copies of one song, best first, and removes only approved ones", async () => {
+      const library = new LocalTrackLibrary(root);
+      const low = await library.importFiles([await song("a", 16, 44100)]);
+      const high = await library.importFiles([await song("b", 24, 96000)]);
+      const [loser] = low.added;
+      const [winner] = high.added;
+
+      const groups = await library.tidyPlan();
+      expect(groups).toHaveLength(1);
+      expect(groups[0].winner.id).toBe(winner.id);
+      expect(groups[0].losers).toMatchObject([
+        { reason: "same", certainty: "sure", record: { id: loser.id } },
+      ]);
+
+      expect(await library.tidyApply([winner.id])).toBe(0);
+      expect(await library.list()).toHaveLength(2);
+
+      expect(await library.tidyApply([loser.id])).toBe(1);
+      expect((await library.list()).map((r) => r.id)).toEqual([winner.id]);
+      expect((await library.locate("audio", loser.id))?.record.id).toBe(
+        winner.id,
+      );
+    });
+
+    it("asks before treating another artist spelling as the same song", async () => {
+      const library = new LocalTrackLibrary(root);
+      await library.importFiles([
+        await song("a", 16, 44100, "MCK - Song.wav"),
+        await song("b", 24, 96000, "RPT MCK - Song.wav"),
+      ]);
+      const [group] = await library.tidyPlan();
+      expect(group.winner.artist).toBe("RPT MCK");
+      expect(group.losers[0]).toMatchObject({
+        reason: "artist-name",
+        certainty: "maybe",
+      });
     });
 
     it("adds a second copy when upgrades are off, as the downloader does", async () => {

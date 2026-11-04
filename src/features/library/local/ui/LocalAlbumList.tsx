@@ -1,9 +1,14 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { collectionPath } from "@/features/collection/lib/collectionPreview";
+import { useModalStore } from "@/features/library";
 import { playerEngine } from "@/features/player";
-import { useMixStore } from "@/features/mix/store/mixStore";
 import { useTranslation } from "@/languages";
 import { HERO_BUTTON_CLASS, showToast } from "@/shared/ui";
 import Button from "@/shared/ui/Button";
 import type { LocalAlbum } from "../lib/albums";
+import { findCatalogAlbum } from "../lib/linkAlbum";
+import { useLocalLibraryStore } from "../store/localLibraryStore";
 
 function play(album: LocalAlbum) {
   playerEngine.clearQueue();
@@ -12,21 +17,35 @@ function play(album: LocalAlbum) {
 
 export default function LocalAlbumList({ albums }: { albums: LocalAlbum[] }) {
   const { t } = useTranslation();
-  const mixes = useMixStore((state) => state.mixes);
-  const save = useMixStore((state) => state.save);
+  const navigate = useNavigate();
+  const stamp = useLocalLibraryStore((state) => state.stamp);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const saveAsPlaylist = (album: LocalAlbum) => {
-    const exists = mixes.some(
-      (mix) =>
-        mix.name === album.title &&
-        mix.tracks.length === album.tracks.length &&
-        mix.tracks.every((track, i) => track.id === album.tracks[i].id),
-    );
-    if (exists) return showToast(t("library.local.album_exists"), "info");
-    save(album.title, album.tracks);
-    showToast(t("library.local.album_saved"), "checkmark", {
-      description: album.title,
-    });
+  // Opens the online album with this device's files tied to its songs, so
+  // every row plays from here and the usual add-to-library dialog is one tap
+  const addToLibrary = async (album: LocalAlbum) => {
+    setBusy(album.key);
+    try {
+      const link = await findCatalogAlbum(album);
+      if (!link) {
+        showToast(t("library.local.album_not_found"), "info", {
+          description: album.title,
+        });
+        return;
+      }
+      await stamp(link.stamps);
+      navigate(collectionPath("album", link.albumId));
+      useModalStore.getState().openAddToLibrary({
+        id: link.albumId,
+        title: link.title,
+        coverUrl: link.coverUrl,
+        type: "album",
+      });
+    } catch {
+      showToast(t("library.local.album_lookup_failed"), "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
   if (albums.length === 0)
@@ -71,10 +90,13 @@ export default function LocalAlbumList({ albums }: { albums: LocalAlbum[] }) {
           </Button>
           <Button
             variant="secondary"
-            onClick={() => saveAsPlaylist(album)}
+            onClick={() => void addToLibrary(album)}
+            disabled={busy !== null}
             className={`${HERO_BUTTON_CLASS} px-[16px]`}
           >
-            {t("library.local.album_save")}
+            {busy === album.key
+              ? t("library.local.album_finding")
+              : t("library.local.album_add")}
           </Button>
         </div>
       ))}

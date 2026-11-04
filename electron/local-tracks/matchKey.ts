@@ -10,11 +10,13 @@ const VERSION_SUFFIXES = [
   /\s*-\s*single(?:\s+version)?\s*$/i,
 ];
 
-function fold(text: string): string {
+// folds case, accents and punctuation; the stroke of Đ is not an accent
+export function foldText(text: string): string {
   return text
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
+    .replace(/đ/g, "d")
     .replace(/&/g, " and ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
@@ -23,8 +25,8 @@ function fold(text: string): string {
 function keyOf(artist: string, title: string): string | null {
   let bare = title;
   for (const suffix of VERSION_SUFFIXES) bare = bare.replace(suffix, "");
-  const a = fold(artist);
-  const t = fold(bare);
+  const a = foldText(artist);
+  const t = foldText(bare);
   return a && t ? `${a}${SEPARATOR}${t}` : null;
 }
 

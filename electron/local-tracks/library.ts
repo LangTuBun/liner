@@ -11,12 +11,15 @@ import {
 } from "./importer.js";
 import { probeLocalAudio } from "./metadata.js";
 import { recordMatchKey, trackMatchKey } from "./matchKey.js";
+import { compareCopies, pairKind } from "./pairing.js";
 import { compareLocalQuality } from "./quality.js";
 import type {
   LocalImportResult,
   LocalLibraryUsage,
+  LocalStamp,
   LocalTrackPatch,
   LocalTrackRecord,
+  TidyGroup,
 } from "./types.js";
 
 const ID_PATTERN = /^[a-f0-9]{20}$/;
@@ -46,10 +49,14 @@ const knownHashes = (records: LocalTrackRecord[]) =>
   );
 
 type Decision =
-  { kind: "new" } | { kind: "keep" } | { kind: "upgrade"; index: number };
+  | { kind: "new" }
+  | { kind: "keep" }
+  // `drop` are the other copies of the song that the better file outranks
+  | { kind: "upgrade"; index: number; drop: number[] };
 
 export class LocalTrackLibrary {
   private records: LocalTrackRecord[] | null = null;
+  private aliases: Record<string, string> | null = null;
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(private readonly root: string) {}
@@ -91,6 +98,68 @@ export class LocalTrackLibrary {
     this.records = records;
   }
 
+  // removed copy -> the copy that stayed, so old playlist and queue entries
+  // still find a file
+  private async loadAliases(): Promise<Record<string, string>> {
+    if (this.aliases) return this.aliases;
+    try {
+      const parsed: unknown = JSON.parse(
+        await fsp.readFile(this.filePath("aliases.json"), "utf8"),
+      );
+      this.aliases =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as Record<string, string>)
+          : {};
+    } catch {
+      this.aliases = {};
+    }
+    return this.aliases;
+  }
+
+  private async saveAliases(aliases: Record<string, string>) {
+    const target = this.filePath("aliases.json");
+    await fsp.mkdir(this.root, { recursive: true });
+    await fsp.writeFile(`${target}.tmp`, JSON.stringify(aliases));
+    await fsp.rename(`${target}.tmp`, target);
+    this.aliases = aliases;
+  }
+
+  // Drops the copies in `gone` in favour of `winnerId`: the winner picks up
+  // album details it lacks, and the files of the dropped copies are returned
+  // for the caller to delete once the index is saved.
+  private retire(
+    records: LocalTrackRecord[],
+    winnerId: string,
+    gone: Set<string>,
+    aliases: Record<string, string>,
+  ): { records: LocalTrackRecord[]; stale: string[] } {
+    const winner = records.find((record) => record.id === winnerId);
+    const losers = records.filter((record) => gone.has(record.id));
+    if (!winner || losers.length === 0) return { records, stale: [] };
+    const merged: LocalTrackRecord = { ...winner };
+    for (const loser of losers) {
+      merged.album ??= loser.album;
+      merged.trackNo ??= loser.trackNo;
+      merged.discNo ??= loser.discNo;
+      merged.coverFile ??= loser.coverFile;
+    }
+    const stale = losers.flatMap((loser) => [
+      this.filePath("audio", loser.audioFile),
+      ...(loser.coverFile && loser.coverFile !== merged.coverFile
+        ? [this.filePath("covers", loser.coverFile)]
+        : []),
+    ]);
+    for (const key of Object.keys(aliases))
+      if (gone.has(aliases[key])) aliases[key] = winnerId;
+    for (const loser of losers) aliases[loser.id] = winnerId;
+    return {
+      records: records
+        .filter((record) => !gone.has(record.id))
+        .map((record) => (record.id === winnerId ? merged : record)),
+      stale,
+    };
+  }
+
   list(): Promise<LocalTrackRecord[]> {
     return this.serialized(() => this.load());
   }
@@ -114,9 +183,9 @@ export class LocalTrackLibrary {
     return records[index];
   }
 
-  // Replace only when exactly one stored song is the same recording and the
-  // new file is clearly better. Worse or equal is left out; mixed evidence is
-  // added as its own track, as before.
+  // The new file is compared with the best stored copy of the same song (same
+  // key, same length). Clearly better replaces it and outranks the other copies;
+  // worse or equal is left out; mixed evidence is added as its own track.
   private async decide(
     records: LocalTrackRecord[],
     file: IncomingFile,
@@ -132,13 +201,17 @@ export class LocalTrackLibrary {
       .filter(
         ({ record }) => recordMatchKey(record) === key && sameLength(record),
       );
-    if (hits.length !== 1) return { kind: "new" };
-    const existing = await this.qualityOf(records, hits[0].index);
+    if (hits.length === 0) return { kind: "new" };
+    for (const hit of hits) await this.qualityOf(records, hit.index);
+    const ranked = hits
+      .map((hit) => hit.index)
+      .sort((a, b) => compareCopies(records[a], records[b]));
     const verdict = compareLocalQuality(
       { ...file.quality, mimeType: file.tags.mimeType },
-      existing,
+      records[ranked[0]],
     );
-    if (verdict === "better") return { kind: "upgrade", index: hits[0].index };
+    if (verdict === "better")
+      return { kind: "upgrade", index: ranked[0], drop: ranked.slice(1) };
     return verdict === "unknown" ? { kind: "new" } : { kind: "keep" };
   }
 
@@ -174,12 +247,30 @@ export class LocalTrackLibrary {
               this.root,
               records[decision.index],
             );
-            records[decision.index] = record;
+            let next = records.map((entry, i) =>
+              i === decision.index ? record : entry,
+            );
+            if (decision.drop.length > 0) {
+              const aliases = await this.loadAliases();
+              const out = this.retire(
+                next,
+                record.id,
+                new Set(decision.drop.map((i) => records[i].id)),
+                aliases,
+              );
+              next = out.records;
+              stale.push(...out.stale);
+              await this.saveAliases(aliases);
+            }
+            records.splice(0, records.length, ...next);
             known.add(file.id);
             await this.save(records);
             // the index no longer names these, so a failed delete only leaks
-            for (const old of stale) await fsp.rm(old, { force: true });
-            (result.upgraded ??= []).push(record);
+            for (const old of stale)
+              await fsp.rm(old, { force: true }).catch(() => undefined);
+            (result.upgraded ??= []).push(
+              records.find((entry) => entry.id === record.id) ?? record,
+            );
           } else {
             const record = await commitLocalFile(file, this.root);
             known.add(record.id);
@@ -193,6 +284,105 @@ export class LocalTrackLibrary {
         }
       }
       return result;
+    });
+  }
+
+  // Songs that exist more than once. The best copy of each is the one that
+  // stays; every other copy is a candidate, "sure" when it is the same song
+  // and length, "maybe" when the artist name differs or it is a longer video.
+  private async planGroups(records: LocalTrackRecord[]): Promise<TidyGroup[]> {
+    const buckets = new Map<string, number[]>();
+    records.forEach((record, index) => {
+      const title = recordMatchKey(record)?.split("\u0000")[1];
+      if (title) buckets.set(title, [...(buckets.get(title) ?? []), index]);
+    });
+    const groups: TidyGroup[] = [];
+    const taken = new Set<number>();
+    for (const indexes of buckets.values()) {
+      if (indexes.length < 2) continue;
+      for (const index of indexes) await this.qualityOf(records, index);
+      const ordered = [...indexes].sort((a, b) =>
+        compareCopies(records[a], records[b]),
+      );
+      for (const w of ordered) {
+        if (taken.has(w)) continue;
+        const losers: TidyGroup["losers"] = [];
+        for (const o of ordered) {
+          if (o === w || taken.has(o)) continue;
+          const reason = pairKind(records[w], records[o]);
+          if (!reason) continue;
+          taken.add(o);
+          losers.push({
+            record: records[o],
+            reason,
+            certainty: reason === "same" ? "sure" : "maybe",
+          });
+        }
+        if (losers.length === 0) continue;
+        taken.add(w);
+        groups.push({ winner: records[w], losers });
+      }
+    }
+    return groups;
+  }
+
+  tidyPlan(): Promise<TidyGroup[]> {
+    return this.serialized(async () => {
+      const stored = await this.load();
+      const records = [...stored];
+      const groups = await this.planGroups(records);
+      // reading a file's quality is worth keeping
+      if (records.some((record, i) => record !== stored[i]))
+        await this.save(records);
+      return groups;
+    });
+  }
+
+  // Removes the copies the owner approved. The plan is made again here, so only
+  // a copy that is still a candidate behind a better one can go.
+  tidyApply(ids: string[]): Promise<number> {
+    return this.serialized(async () => {
+      const approved = new Set(ids);
+      let records = [...(await this.load())];
+      const groups = await this.planGroups(records);
+      const aliases = await this.loadAliases();
+      const stale: string[] = [];
+      let removed = 0;
+      for (const group of groups) {
+        const gone = new Set(
+          group.losers
+            .filter((loser) => approved.has(loser.record.id))
+            .map((loser) => loser.record.id),
+        );
+        if (gone.size === 0) continue;
+        const out = this.retire(records, group.winner.id, gone, aliases);
+        records = out.records;
+        stale.push(...out.stale);
+        removed += gone.size;
+      }
+      if (removed === 0) return 0;
+      await this.save(records);
+      await this.saveAliases(aliases);
+      // a file that is playing cannot be deleted on Windows; it just stays
+      for (const file of stale)
+        await fsp.rm(file, { force: true }).catch(() => undefined);
+      return removed;
+    });
+  }
+
+  // tells a stored song which catalog song it is, so the catalog row plays it
+  stamp(stamps: LocalStamp[]): Promise<number> {
+    return this.serialized(async () => {
+      const wanted = new Map(stamps.map((s) => [s.id, s.matchKey]));
+      let changed = 0;
+      const records = (await this.load()).map((record) => {
+        const matchKey = wanted.get(record.id);
+        if (!matchKey || matchKey === record.matchKey) return record;
+        changed += 1;
+        return { ...record, matchKey };
+      });
+      if (changed > 0) await this.save(records);
+      return changed;
     });
   }
 
@@ -338,7 +528,8 @@ export class LocalTrackLibrary {
 
   async locate(kind: "audio" | "cover", id: string) {
     if (!ID_PATTERN.test(id)) return null;
-    const record = (await this.list()).find((entry) => entry.id === id);
+    const stayed = (await this.loadAliases())[id] ?? id;
+    const record = (await this.list()).find((entry) => entry.id === stayed);
     const file = kind === "audio" ? record?.audioFile : record?.coverFile;
     if (!record || !file) return null;
     return {

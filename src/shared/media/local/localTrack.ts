@@ -5,7 +5,9 @@ import { localTrackCoverUrl, toLocalTrackId } from "./localTrackIds";
 export type {
   LocalImportResult,
   LocalLibraryUsage,
+  LocalStamp,
   LocalTrackRecord,
+  TidyGroup,
 } from "../../../../electron/local-tracks/types";
 
 export function localRecordToTrack(record: LocalTrackRecord): Track {

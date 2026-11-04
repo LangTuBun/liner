@@ -9,5 +9,7 @@ export {
   localRecordToTrack,
   type LocalImportResult,
   type LocalLibraryUsage,
+  type LocalStamp,
   type LocalTrackRecord,
+  type TidyGroup,
 } from "./localTrack";
