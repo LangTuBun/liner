@@ -50,7 +50,8 @@ import {
 } from "./netdiag.js";
 import { TouchBarManager } from "./touchbar.js";
 import { registerAuthSessionIpc } from "./auth-session-ipc.js";
-import { ThumbarController } from "./thumbar.js";
+import { ThumbarController, type ThumbarAction } from "./thumbar.js";
+import { createTray, type TrayController } from "./tray.js";
 import { OverlayManager } from "./overlay.js";
 import { detectCompositor } from "./compositor/index.js";
 import { BundleManager } from "./bundle-manager.js";
@@ -130,6 +131,7 @@ let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let thumbar: ThumbarController | null = null;
+let tray: TrayController | null = null;
 let bundleManager: BundleManager | null = null;
 let discordRpcManager: DiscordRpcManager | null = null;
 let poTokenService: PoTokenService | null = null;
@@ -195,6 +197,10 @@ const shutdown = createShutdown({
       lossless = null;
     },
     () => touchBarManager?.unregisterShortcut(),
+    () => {
+      tray?.destroy();
+      tray = null;
+    },
     () => overlayManager?.dispose(),
     () => {
       // drop the discord ipc socket so presence clears and nothing keeps the process alive
@@ -491,6 +497,7 @@ function createWindow() {
     if (process.platform === "darwin") {
       // macOS keeps the app alive without windows; the overlay can be rebuilt on activate
       overlayManager?.destroy();
+      tray?.update(null);
     } else {
       // closing the main window (title bar button, taskbar, alt+f4) ends the whole app
       shutdown.quit();
@@ -501,6 +508,16 @@ function createWindow() {
   overlayManager?.setMainWindow(mainWindow);
   mainWindow.on("show", () => thumbar?.refresh());
   mainWindow.on("restore", () => thumbar?.refresh());
+}
+
+function revealMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+  } else {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
 }
 
 // Single instance lock
@@ -524,13 +541,7 @@ if (!gotTheLock) {
       app.exit(0);
       return;
     }
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      createWindow();
-    } else {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    revealMainWindow();
     if (raw) deliverDeeplink(parseDeeplink(raw));
   });
 
@@ -588,18 +599,23 @@ if (!gotTheLock) {
     touchBarManager.registerShortcut();
 
     const updateSleepBlocker = createSleepBlocker(powerSaveBlocker);
-    thumbar = new ThumbarController(
-      () => mainWindow,
-      (type) => {
-        if (mainWindow && !mainWindow.isDestroyed())
-          mainWindow.webContents.send("overlay:action", { type });
-      },
-    );
+    const sendPlayerAction = (type: ThumbarAction) => {
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.webContents.send("overlay:action", { type });
+    };
+    thumbar = new ThumbarController(() => mainWindow, sendPlayerAction);
+    tray = createTray({
+      iconPath: path.join(process.env.VITE_PUBLIC!, "icon.png"),
+      showWindow: revealMainWindow,
+      send: sendPlayerAction,
+      quit: () => shutdown.quit(),
+    });
     ipcMain.on(
       "touchbar:update-state",
       (_event, state: { status: string; track?: unknown }) => {
         updateSleepBlocker(state.status);
         thumbar?.update(state);
+        tray?.update(state);
       },
     );
 
