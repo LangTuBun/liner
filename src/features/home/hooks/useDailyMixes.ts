@@ -5,6 +5,8 @@ import type { Track } from "@/shared/types";
 import type { CollectionPageData } from "@/features/collection/hooks/useCollection";
 import { loadWithRetry, useSessionOwner } from "./sessionAwareLoad";
 import { freshFor, useCachedResource } from "@/shared/cache/useCachedResource";
+import { readPlays } from "@/features/taste/lib/playLog";
+import { rankByTaste } from "@/features/taste/lib/tasteModel";
 
 export interface DailyMix {
   id: string;
@@ -73,8 +75,14 @@ const EMPTY_MIXES: DailyMix[] = [];
 function toDailyMixes(
   items: Awaited<ReturnType<typeof api.getDailyMixes>>["items"],
 ): DailyMix[] {
+  const plays = readPlays();
   return (items || []).map((mix) => {
-    const clientTracks = (mix.tracks || []).map((t) => toClientTrack(t));
+    // order each mix by what this listener tends to keep (a no-op until plays are logged)
+    const clientTracks = rankByTaste(
+      (mix.tracks || []).map((t) => toClientTrack(t)),
+      null,
+      plays,
+    );
     const primaryCover = mix.cover?.url
       ? mediaUrl(mix.cover.url)
       : clientTracks[0]?.coverUrl || clientTracks[1]?.coverUrl;

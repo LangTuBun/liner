@@ -7,6 +7,8 @@ import {
 } from "../store/playerStore";
 import { playerRuntime } from "./playerRuntime";
 import { isRadioContext, shouldRefillRadio } from "./radioMode";
+import { readPlays } from "@/features/taste/lib/playLog";
+import { rankByTaste } from "@/features/taste/lib/tasteModel";
 import { pitchShifter } from "./pitchShifter";
 import { EQ_MAX_CUSTOM_PRESETS, EQ_PRESET_NAME_MAX } from "./equalizer";
 import {
@@ -1333,10 +1335,12 @@ class PlayerEngine {
     if (!radio && !continuesWithSimilar(state)) return;
 
     const queuedIds = new Set(state.queue.map((track) => track.id));
-    const additions = items
+    const fresh = items
       .map(toClientTrack)
       .filter((track) => !queuedIds.has(track.id));
-    if (additions.length === 0) return;
+    if (fresh.length === 0) return;
+    // the server sends k=20; order them by what this listener tends to keep
+    const additions = rankByTaste(fresh, state.currentTrack, readPlays());
 
     const sample = additions
       .slice(0, 3)

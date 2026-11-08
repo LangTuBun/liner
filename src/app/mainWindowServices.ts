@@ -7,6 +7,7 @@ import { initOfflineMode } from "@/features/connectivity/engine/offlineControlle
 import { initLocalLoudness } from "@/features/library/local/lib/measureLocalLoudness";
 import { useLocalLibraryStore } from "@/features/library/local/store/localLibraryStore";
 import { playerRuntime } from "@/features/player/engine/playerRuntime";
+import { initTasteLog } from "@/features/taste/lib/playLog";
 
 export function initMainWindowServices() {
   initTelemetry();
@@ -16,6 +17,7 @@ export function initMainWindowServices() {
   initOfflineMode();
   initSavedTracks();
   initLocalLoudness();
+  initTasteLog();
   void useLocalLibraryStore.getState().load();
   useLocalLibraryStore.subscribe((state, previous) => {
     if (state.records !== previous.records) playerRuntime?.refreshVolumeMatch();
