@@ -25,7 +25,6 @@ import { isLocalTrackId } from "@/shared/media/local";
 import { useLosslessStore } from "@/features/lossless";
 
 const CLOUD_ONLY_ITEMS = new Set([
-  "start-radio",
   "like-track",
   "unlike-track",
   "add-to-playlist",

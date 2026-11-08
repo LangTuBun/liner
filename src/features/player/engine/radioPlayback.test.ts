@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playerEngine, usePlayerStore } from "./playerEngine";
+import * as youtubeStandIn from "./youtubeStandIn";
 import { api } from "@/shared/api";
 import type { Track } from "@/shared/types";
 
@@ -162,6 +163,35 @@ describe("radio playback", () => {
     expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
       "1",
       "2",
+    ]);
+  });
+
+  it("starts a radio station for a local track via its YouTube stand-in", async () => {
+    vi.spyOn(youtubeStandIn, "findYoutubeStandIn").mockResolvedValue(
+      "yt-lover",
+    );
+    getRadio.mockResolvedValueOnce(radioItems(["yt-lover", "ghost", "about"]));
+    const localSeed = mk("local:abc12345678901234567");
+    await playerEngine.startRadioStation(localSeed);
+    expect(getRadio).toHaveBeenCalledWith(
+      "yt-lover",
+      expect.objectContaining({ k: 20 }),
+    );
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "local:abc12345678901234567",
+      "ghost",
+      "about",
+    ]);
+  });
+
+  it("replaces only the unplayed tail of the queue when refining a correlated queue", async () => {
+    const tracks = [mk("a"), mk("b"), mk("c")];
+    await playerEngine.playTrack(tracks[0], tracks, "Downloaded");
+    playerEngine.replaceUpcomingQueue("a", [mk("a"), mk("c"), mk("b")]);
+    expect(usePlayerStore.getState().queue.map((t) => t.id)).toEqual([
+      "a",
+      "c",
+      "b",
     ]);
   });
 });

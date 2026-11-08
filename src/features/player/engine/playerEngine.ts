@@ -41,6 +41,7 @@ import { showToast } from "@/shared/ui";
 import { createTranslatorSync, getStoredLocale } from "@/languages";
 import type { Track } from "@/shared/types";
 import { isLocalTrackId } from "@/shared/media/local";
+import { trackMatchKey } from "@/features/library/local/lib/downloadMatch";
 import { readSavedLyrics } from "@/shared/media/saved";
 import { loadAmbientScript } from "@/shared/media/ambient";
 import { STREAMS_REFUSED_MESSAGE } from "@/shared/youtube";
@@ -598,8 +599,27 @@ class PlayerEngine {
     this.maybeExtendQueue(mySession, seedTrack.id, 0, finalQueue.length);
   }
 
+  public replaceUpcomingQueue(
+    seedTrackId: string,
+    correlatedQueue: Track[],
+  ): void {
+    const state = usePlayerStore.getState();
+    if (state.currentTrack?.id !== seedTrackId) return;
+    const played = state.queue.slice(0, state.currentIndex + 1);
+    const playedIds = new Set(played.map((t) => t.id));
+    const upcoming = correlatedQueue.filter((t) => !playedIds.has(t.id));
+    const nextQueue = [...played, ...upcoming];
+    this.masterPlaylist = [...nextQueue];
+    if (state.shuffle && upcoming.length > 1) {
+      this.originalUpcomingQueue = [...upcoming];
+      state.setQueue([...played, ...shuffleArray(upcoming)]);
+    } else {
+      state.setQueue(nextQueue);
+    }
+    this.preloadNextTrack(usePlayerStore.getState());
+  }
+
   public async startRadioStation(track: Track): Promise<void> {
-    if (isLocalTrackId(track.id)) return;
     const store = usePlayerStore.getState();
     this.sessionId += 1;
     const mySession = this.sessionId;
@@ -624,11 +644,22 @@ class PlayerEngine {
     }
 
     try {
-      const response = await api.getRadio(track.id, { k: 20, wave_id: waveId });
+      const seedId = isLocalTrackId(track.id)
+        ? await findYoutubeStandIn(track)
+        : track.id;
+      if (!seedId || mySession !== this.sessionId) return;
+      const response = await api.getRadio(seedId, { k: 20, wave_id: waveId });
       if (mySession !== this.sessionId) return;
-      const additions = response.items
+      const seedKey = trackMatchKey(track.title, track.artists);
+      const fresh = response.items
         .map(toClientTrack)
-        .filter((item) => item.id !== track.id);
+        .filter(
+          (item) =>
+            item.id !== track.id &&
+            item.id !== seedId &&
+            (!seedKey || trackMatchKey(item.title, item.artists) !== seedKey),
+        );
+      const additions = rankByTaste(fresh, track, readPlays());
 
       if (additions.length > 0) {
         const latestStore = usePlayerStore.getState();
@@ -640,6 +671,7 @@ class PlayerEngine {
           const shuffledUpcoming = shuffleArray(upcoming);
           latestStore.setQueue([track, ...shuffledUpcoming]);
         }
+        this.preloadNextTrack(usePlayerStore.getState());
         const sample = additions
           .slice(0, 3)
           .map((t) => `"${t.title}" by ${t.artists || "Unknown"}`)
@@ -1296,10 +1328,23 @@ class PlayerEngine {
     // radio always continues; plain lists only when "autoplay similar" is on
     const radio = isRadioContext(currentState.playbackContext);
     if (!radio && !continuesWithSimilar(currentState)) return;
-    if (isLocalTrackId(seedTrackId)) return;
     const startContext = currentState.playbackContext;
 
-    const historyIds = currentState.queue
+    let lookupSeedId = seedTrackId;
+    if (isLocalTrackId(seedTrackId)) {
+      const seedTrack =
+        currentState.queue.find((t) => t.id === seedTrackId) ??
+        (currentState.currentTrack?.id === seedTrackId
+          ? currentState.currentTrack
+          : null);
+      if (!seedTrack) return;
+      const resolved = await findYoutubeStandIn(seedTrack);
+      if (!resolved) return;
+      lookupSeedId = resolved;
+    }
+
+    const latestBeforeFetch = usePlayerStore.getState();
+    const historyIds = latestBeforeFetch.queue
       .map((track) => track.id)
       .filter((id) => !isLocalTrackId(id));
     // keep paginating the same wave instance across queue generations
@@ -1308,7 +1353,7 @@ class PlayerEngine {
 
     let items: ApiRadioTrack[];
     try {
-      const response = await api.getRadio(seedTrackId, {
+      const response = await api.getRadio(lookupSeedId, {
         history: historyIds.slice(-20),
         k: 20,
         wave_id: waveId,
@@ -1335,9 +1380,16 @@ class PlayerEngine {
     if (!radio && !continuesWithSimilar(state)) return;
 
     const queuedIds = new Set(state.queue.map((track) => track.id));
-    const fresh = items
-      .map(toClientTrack)
-      .filter((track) => !queuedIds.has(track.id));
+    const queuedKeys = new Set(
+      state.queue
+        .map((track) => trackMatchKey(track.title, track.artists))
+        .filter((key): key is string => Boolean(key)),
+    );
+    const fresh = items.map(toClientTrack).filter((track) => {
+      if (queuedIds.has(track.id) || track.id === lookupSeedId) return false;
+      const key = trackMatchKey(track.title, track.artists);
+      return !key || !queuedKeys.has(key);
+    });
     if (fresh.length === 0) return;
     // the server sends k=20; order them by what this listener tends to keep
     const additions = rankByTaste(fresh, state.currentTrack, readPlays());

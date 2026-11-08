@@ -7,11 +7,12 @@ import {
   type RefObject,
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { SongCardWithMenu, playerEngine } from "@/features/player";
+import { SongCardWithMenu } from "@/features/player";
 import { localFileId } from "@/shared/media/local";
 import type { Track } from "@/shared/types";
 import { useTranslation } from "@/languages";
 import { formatTrackDuration } from "../lib/formatLocalDurations";
+import { playCorrelatedLocalTrack } from "../lib/playCorrelated";
 import { useLocalLibraryStore } from "../store/localLibraryStore";
 
 const ROW_HEIGHT = 64;
@@ -33,7 +34,7 @@ const LocalTrackRow = memo(function LocalTrackRow({
 }: LocalTrackRowProps) {
   const remove = useLocalLibraryStore((state) => state.remove);
   const play = useCallback(
-    () => void playerEngine.playTrack(track, queue, context),
+    () => playCorrelatedLocalTrack(track, queue, context),
     [track, queue, context],
   );
   const removeFromDevice = useCallback(

@@ -12,6 +12,7 @@ import Button from "@/shared/ui/Button";
 import { useLocalImport } from "../hooks/useLocalImport";
 import { useLocalTracks } from "../hooks/useLocalTracks";
 import { groupLocalAlbums } from "../lib/albums";
+import { playCorrelatedLocalTrack } from "../lib/playCorrelated";
 import { useLocalLibraryStore } from "../store/localLibraryStore";
 import LocalAlbumList from "./LocalAlbumList";
 import LocalTrackList from "./LocalTrackList";
@@ -49,7 +50,7 @@ export default function LocalTracksPage() {
   const playAll = useCallback(() => {
     if (!sort.sorted.length) return;
     playerEngine.clearQueue();
-    void playerEngine.playTrack(sort.sorted[0], sort.sorted, context);
+    playCorrelatedLocalTrack(sort.sorted[0], sort.sorted, context);
   }, [sort.sorted, context]);
 
   const shuffle = useCallback(() => {
@@ -60,7 +61,7 @@ export default function LocalTracksPage() {
 
   const submitSearch = useCallback(() => {
     const first = search.matches?.[0];
-    if (first) void playerEngine.playTrack(first.track, sort.sorted, context);
+    if (first) playCorrelatedLocalTrack(first.track, sort.sorted, context);
   }, [search.matches, sort.sorted, context]);
 
   return (

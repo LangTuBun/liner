@@ -179,4 +179,14 @@ describe("useSongMenuItems", () => {
     })();
     expect(elsewhere.map((item) => item.id)).not.toContain("remove-from-queue");
   });
+
+  it("keeps start-radio available for local tracks on this device", () => {
+    const localItems = renderHookHelper({
+      id: "local:0123456789abcdef0123",
+      title: "Lover",
+      artists: "Taylor Swift",
+      coverUrl: "",
+    })();
+    expect(localItems.map((item) => item.id)).toContain("start-radio");
+  });
 });
