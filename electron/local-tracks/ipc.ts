@@ -1,5 +1,6 @@
 import path from "node:path";
-import { BrowserWindow, app, dialog, ipcMain } from "electron";
+import { BrowserWindow, app, dialog } from "electron";
+import { handleTrusted } from "../ipc-guard.js";
 import { LocalTrackLibrary } from "./library.js";
 import { probeLocalAudio } from "./metadata.js";
 import { handleLocalTrackScheme } from "./protocol.js";
@@ -39,7 +40,7 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
   void library.measureLoudness().catch(() => undefined);
   handleLocalTrackScheme(library, saved);
 
-  ipcMain.handle(
+  handleTrusted(
     "local-tracks:loudness",
     (
       _event,
@@ -58,13 +59,13 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     },
   );
 
-  ipcMain.handle("local-tracks:list", () => library.list());
+  handleTrusted("local-tracks:list", () => library.list());
 
-  ipcMain.handle("local-tracks:import", (_event, paths: unknown) =>
+  handleTrusted("local-tracks:import", (_event, paths: unknown) =>
     library.importFiles(stringList(paths), { upgrade: true }),
   );
 
-  ipcMain.handle("local-tracks:pick", async (event) => {
+  handleTrusted("local-tracks:pick", async (event) => {
     const owner = BrowserWindow.fromWebContents(event.sender);
     const options: Electron.OpenDialogOptions = {
       properties: ["openFile", "multiSelections"],
@@ -77,7 +78,7 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     return library.importFiles(picked.filePaths, { upgrade: true });
   });
 
-  ipcMain.handle("local-tracks:pick-folder", async (event) => {
+  handleTrusted("local-tracks:pick-folder", async (event) => {
     const owner = BrowserWindow.fromWebContents(event.sender);
     const options: Electron.OpenDialogOptions = {
       properties: ["openDirectory"],
@@ -89,13 +90,13 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     return library.importFiles(picked.filePaths, { upgrade: true });
   });
 
-  ipcMain.handle("local-tracks:tidy-plan", () => library.tidyPlan());
+  handleTrusted("local-tracks:tidy-plan", () => library.tidyPlan());
 
-  ipcMain.handle("local-tracks:tidy-apply", (_event, ids: unknown) =>
+  handleTrusted("local-tracks:tidy-apply", (_event, ids: unknown) =>
     library.tidyApply(stringList(ids)),
   );
 
-  ipcMain.handle("local-tracks:stamp", (_event, stamps: unknown) =>
+  handleTrusted("local-tracks:stamp", (_event, stamps: unknown) =>
     library.stamp(
       (Array.isArray(stamps) ? stamps : []).filter(
         (item): item is LocalStamp =>
@@ -108,18 +109,18 @@ export function setupLocalTracks(saved: SavedTrackLibrary) {
     ),
   );
 
-  ipcMain.handle("local-tracks:remove", (_event, ids: unknown) =>
+  handleTrusted("local-tracks:remove", (_event, ids: unknown) =>
     library.remove(stringList(ids)),
   );
-  ipcMain.handle("local-tracks:probe", async (_event, id: unknown) => {
+  handleTrusted("local-tracks:probe", async (_event, id: unknown) => {
     const found =
       typeof id === "string" ? await library.locate("audio", id) : null;
     return found ? probeLocalAudio(found.path).catch(() => null) : null;
   });
 
-  ipcMain.handle("local-tracks:remove-all", () => library.removeAll());
+  handleTrusted("local-tracks:remove-all", () => library.removeAll());
 
-  ipcMain.handle("local-tracks:usage", () => library.usage());
+  handleTrusted("local-tracks:usage", () => library.usage());
 
   return library;
 }
